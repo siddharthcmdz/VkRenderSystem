@@ -4,9 +4,12 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 
-#define GLM
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
 
-int main()
+int sampleMain()
 {
     std::cout << "Hello World!\n";
     glfwInit();
@@ -18,6 +21,10 @@ int main()
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
     std::cout << extensionCount << " extension supported\n";
+
+    glm::mat4 matrix;
+    glm::vec4 vec;
+    auto test = matrix * vec;
 
     while (!glfwWindowShouldClose) {
         glfwPollEvents();
