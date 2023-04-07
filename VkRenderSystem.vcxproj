@@ -21,6 +21,10 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\source\SampleMain.cpp" />
+    <ClCompile Include="VkRendersystem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="VkRenderSystem.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
