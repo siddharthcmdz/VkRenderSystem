@@ -19,12 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\source\SampleMain.cpp" />
-    <ClCompile Include="VkRendersystem.cpp" />
+    <ClInclude Include="src\VkRenderSystem.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VkRenderSystem.h" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\SampleMain.cpp" />
+    <ClCompile Include="src\VkRendersystem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\shaders\sampleshader.frag" />
+    <None Include="src\shaders\sampleshader.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
