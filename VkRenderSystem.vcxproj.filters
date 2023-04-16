@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{4ec19176-b5fd-4a13-9ee3-dba6188e52fb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\spv">
+      <UniqueIdentifier>{9020acf8-9d57-4b12-a953-43d572751f55}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VkRenderSystem.h">
@@ -38,6 +41,15 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="src\shaders\sampleshader.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="src\shaders\spv\sampleshaderFrag.spv">
+      <Filter>Shaders\spv</Filter>
+    </None>
+    <None Include="src\shaders\spv\sampleshaderVert.spv">
+      <Filter>Shaders\spv</Filter>
+    </None>
+    <None Include="src\shaders\compile.bat">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

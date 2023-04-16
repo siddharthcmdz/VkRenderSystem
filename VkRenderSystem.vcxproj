@@ -27,8 +27,11 @@
     <ClCompile Include="src\VkRendersystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\shaders\compile.bat" />
     <None Include="src\shaders\sampleshader.frag" />
     <None Include="src\shaders\sampleshader.vert" />
+    <None Include="src\shaders\spv\sampleshaderFrag.spv" />
+    <None Include="src\shaders\spv\sampleshaderVert.spv" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

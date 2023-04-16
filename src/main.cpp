@@ -664,7 +664,7 @@ private:
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.stageCount = 1;
+		pipelineInfo.stageCount = 2;
 		pipelineInfo.pStages = shaderStages;
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -712,12 +712,22 @@ private:
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
 
+		VkSubpassDependency dependency{};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.srcAccessMask = 0;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = 1;
 		renderPassInfo.pAttachments = &colorAttachment;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = 1;
+		renderPassInfo.pDependencies = &dependency;
 
 		const VkResult result = vkCreateRenderPass(idevice, &renderPassInfo, nullptr, &irenderPass);
 		if (result != VK_SUCCESS) {
@@ -828,7 +838,7 @@ private:
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
 		VkFenceCreateInfo fenceInfo{};
-		fenceInfo.sType = VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO;
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 		VkResult imgAvailSemaphoreRes = vkCreateSemaphore(idevice, &semaphoreInfo, nullptr, &iimageAvailableSemaphore);
@@ -848,8 +858,8 @@ private:
 		createLogicalDevice();
 		createSwapChain();
 		createImageViews();
-		createGraphicsPipeline();
 		createRenderpass();
+		createGraphicsPipeline();
 		createFramebuffers();
 		createCommandPool();
 		createCommandBuffer();
@@ -887,6 +897,19 @@ private:
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 
+		VkPresentInfoKHR presentInfo{};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = signalSemaphores;
+		
+		VkSwapchainKHR swapChains[] = {iswapChain};
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pResults = nullptr;
+		
+		const VkResult res = vkQueuePresentKHR(ipresentQueue, &presentInfo);
+
 	}
 
 	void mainLoop() {
@@ -894,6 +917,8 @@ private:
 			glfwPollEvents();
 			drawFrame();
 		}
+
+		vkDeviceWaitIdle(idevice);
 	}
 
 	void cleanup() {
