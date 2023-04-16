@@ -53,6 +53,9 @@ private:
 	std::vector<VkFramebuffer> iswapChainFramebuffers;
 	VkCommandPool icommandPool; //manages the memory where command buffers are allocated from them
 	VkCommandBuffer icommandBuffer; //gets automatically disposed when command pool is disposed.
+	VkSemaphore iimageAvailableSemaphore;
+	VkSemaphore irenderFinishedSemaphore;
+	VkFence iinFlightFence;
 
 #ifdef NDEBUG
 	const bool ienableValidationLayers = false;
@@ -820,6 +823,23 @@ private:
 		}
 	}
 
+	void createSyncObjects() {
+		VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		VkFenceCreateInfo fenceInfo{};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO;
+		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		VkResult imgAvailSemaphoreRes = vkCreateSemaphore(idevice, &semaphoreInfo, nullptr, &iimageAvailableSemaphore);
+		VkResult renderFinishedSemaphoreRes = vkCreateSemaphore(idevice, &semaphoreInfo, nullptr, &irenderFinishedSemaphore);
+		VkResult fenceRes = vkCreateFence(idevice, &fenceInfo, nullptr, &iinFlightFence);
+
+		if (imgAvailSemaphoreRes != VK_SUCCESS || renderFinishedSemaphoreRes != VK_SUCCESS || fenceRes != VK_SUCCESS) {
+			throw std::runtime_error("failed to create semaphores");
+		}
+	}
+
 	void initVulkan() {
 		createInstance();
 		setupDebugMessenger();
@@ -833,15 +853,54 @@ private:
 		createFramebuffers();
 		createCommandPool();
 		createCommandBuffer();
+		createSyncObjects();
+	}
+
+	void drawFrame() {
+		vkWaitForFences(idevice, 1, &iinFlightFence, VK_TRUE, UINT64_MAX);
+		vkResetFences(idevice, 1, &iinFlightFence);
+
+		uint32_t imageIndex;
+		vkAcquireNextImageKHR(idevice, iswapChain, UINT64_MAX, iimageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		vkResetCommandBuffer(icommandBuffer, 0);
+
+		recordCommandBuffer(icommandBuffer, imageIndex);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+		VkSemaphore waitSemaphores[] = { iimageAvailableSemaphore };
+		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT};
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.pWaitDstStageMask = waitStages;
+
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &icommandBuffer;
+
+		VkSemaphore signalSemaphores[] = {irenderFinishedSemaphore};
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
+
+		const VkResult submitRes = vkQueueSubmit(igraphicsQueue, 1, &submitInfo, iinFlightFence);
+		if (submitRes != VK_SUCCESS) {
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
+
 	}
 
 	void mainLoop() {
 		while (!glfwWindowShouldClose(iwindow)) {
 			glfwPollEvents();
+			drawFrame();
 		}
 	}
 
 	void cleanup() {
+		vkDestroySemaphore(idevice, iimageAvailableSemaphore, nullptr);
+		vkDestroySemaphore(idevice, irenderFinishedSemaphore, nullptr);
+		vkDestroyFence(idevice, iinFlightFence, nullptr);
+
 		vkDestroyCommandPool(idevice, icommandPool, nullptr);
 		for (auto framebuffer : iswapChainFramebuffers) {
 			vkDestroyFramebuffer(idevice, framebuffer, nullptr);
