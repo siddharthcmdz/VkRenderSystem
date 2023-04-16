@@ -31,6 +31,7 @@ private:
 
 	const uint32_t WIDTH = 800;
 	const uint32_t HEIGHT = 600;
+	const int MAX_FRAMES_IN_FLIGHT = 2;
 	std::vector<const char*> ivalidationLayers = { "VK_LAYER_KHRONOS_validation" };
 	std::vector<const char*> ideviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 	std::vector<VkImage> iswapChainImages;
@@ -52,10 +53,11 @@ private:
 	VkPipeline igraphicsPipeline;
 	std::vector<VkFramebuffer> iswapChainFramebuffers;
 	VkCommandPool icommandPool; //manages the memory where command buffers are allocated from them
-	VkCommandBuffer icommandBuffer; //gets automatically disposed when command pool is disposed.
-	VkSemaphore iimageAvailableSemaphore;
-	VkSemaphore irenderFinishedSemaphore;
-	VkFence iinFlightFence;
+	std::vector<VkCommandBuffer> icommandBuffers; //gets automatically disposed when command pool is disposed.
+	std::vector<VkSemaphore> iimageAvailableSemaphores;
+	std::vector<VkSemaphore> irenderFinishedSemaphores;
+	std::vector<VkFence> iinFlightFences;
+	uint32_t icurrentFrame = 0;
 
 #ifdef NDEBUG
 	const bool ienableValidationLayers = false;
@@ -770,14 +772,17 @@ private:
 		}
 	}
 
-	void createCommandBuffer() {
+	void createCommandBuffers() {
+
+		icommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = icommandPool;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = 1;
+		allocInfo.commandBufferCount = (uint32_t)icommandBuffers.size();
 
-		const VkResult allocCmdBufferRes = vkAllocateCommandBuffers(idevice, &allocInfo, &icommandBuffer);
+		const VkResult allocCmdBufferRes = vkAllocateCommandBuffers(idevice, &allocInfo, icommandBuffers.data());
 		if (allocCmdBufferRes != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocated command buffers");
 		}
@@ -789,7 +794,7 @@ private:
 		beginInfo.flags = 0;
 		beginInfo.pInheritanceInfo = nullptr;
 
-		const VkResult beginRes = vkBeginCommandBuffer(icommandBuffer, &beginInfo);
+		const VkResult beginRes = vkBeginCommandBuffer(commandBuffer, &beginInfo);
 		if (beginRes != VK_SUCCESS) {
 			throw std::runtime_error("failed to begin recording command buffers!");
 		}
@@ -805,9 +810,9 @@ private:
 		renderPassInfo.clearValueCount = 1;
 		renderPassInfo.pClearValues = &clearColor;
 
-		vkCmdBeginRenderPass(icommandBuffer, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
 		{
-			vkCmdBindPipeline(icommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, igraphicsPipeline);
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, igraphicsPipeline);
 
 			VkViewport viewport{};
 			viewport.x = 0.0f;
@@ -816,24 +821,29 @@ private:
 			viewport.height = static_cast<float>(iswapChainExtent.height);
 			viewport.minDepth = 0.0f;
 			viewport.maxDepth = 1.0f;
-			vkCmdSetViewport(icommandBuffer, 0, 1, &viewport);
+			vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 			VkRect2D scissor{};
 			scissor.offset = { 0, 0 };
 			scissor.extent = iswapChainExtent;
-			vkCmdSetScissor(icommandBuffer, 0, 1, &scissor);
+			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-			vkCmdDraw(icommandBuffer, 3, 1, 0, 0);
+			vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 		}
-		vkCmdEndRenderPass(icommandBuffer);
+		vkCmdEndRenderPass(commandBuffer);
 
-		const VkResult endCmdBuffRes = vkEndCommandBuffer(icommandBuffer);
+		const VkResult endCmdBuffRes = vkEndCommandBuffer(commandBuffer);
 		if (endCmdBuffRes != VK_SUCCESS) {
 			throw std::runtime_error("failed to record command buffer");
 		}
 	}
 
 	void createSyncObjects() {
+
+		iimageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		irenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		iinFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -841,12 +851,14 @@ private:
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		VkResult imgAvailSemaphoreRes = vkCreateSemaphore(idevice, &semaphoreInfo, nullptr, &iimageAvailableSemaphore);
-		VkResult renderFinishedSemaphoreRes = vkCreateSemaphore(idevice, &semaphoreInfo, nullptr, &irenderFinishedSemaphore);
-		VkResult fenceRes = vkCreateFence(idevice, &fenceInfo, nullptr, &iinFlightFence);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+			VkResult imgAvailSemaphoreRes = vkCreateSemaphore(idevice, &semaphoreInfo, nullptr, &iimageAvailableSemaphores[i]);
+			VkResult renderFinishedSemaphoreRes = vkCreateSemaphore(idevice, &semaphoreInfo, nullptr, &irenderFinishedSemaphores[i]);
+			VkResult fenceRes = vkCreateFence(idevice, &fenceInfo, nullptr, &iinFlightFences[i]);
 
-		if (imgAvailSemaphoreRes != VK_SUCCESS || renderFinishedSemaphoreRes != VK_SUCCESS || fenceRes != VK_SUCCESS) {
-			throw std::runtime_error("failed to create semaphores");
+			if (imgAvailSemaphoreRes != VK_SUCCESS || renderFinishedSemaphoreRes != VK_SUCCESS || fenceRes != VK_SUCCESS) {
+				throw std::runtime_error("failed to create semaphores");
+			}
 		}
 	}
 
@@ -862,37 +874,37 @@ private:
 		createGraphicsPipeline();
 		createFramebuffers();
 		createCommandPool();
-		createCommandBuffer();
+		createCommandBuffers();
 		createSyncObjects();
 	}
 
 	void drawFrame() {
-		vkWaitForFences(idevice, 1, &iinFlightFence, VK_TRUE, UINT64_MAX);
-		vkResetFences(idevice, 1, &iinFlightFence);
+		vkWaitForFences(idevice, 1, &iinFlightFences[icurrentFrame], VK_TRUE, UINT64_MAX);
+		vkResetFences(idevice, 1, &iinFlightFences[icurrentFrame]);
 
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(idevice, iswapChain, UINT64_MAX, iimageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-		vkResetCommandBuffer(icommandBuffer, 0);
+		vkAcquireNextImageKHR(idevice, iswapChain, UINT64_MAX, iimageAvailableSemaphores[icurrentFrame], VK_NULL_HANDLE, &imageIndex);
+		vkResetCommandBuffer(icommandBuffers[icurrentFrame], 0);
 
-		recordCommandBuffer(icommandBuffer, imageIndex);
+		recordCommandBuffer(icommandBuffers[icurrentFrame], imageIndex);
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore waitSemaphores[] = { iimageAvailableSemaphore };
+		VkSemaphore waitSemaphores[] = { iimageAvailableSemaphores[icurrentFrame]};
 		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT};
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &icommandBuffer;
+		submitInfo.pCommandBuffers = &icommandBuffers[icurrentFrame];
 
-		VkSemaphore signalSemaphores[] = {irenderFinishedSemaphore};
+		VkSemaphore signalSemaphores[] = {irenderFinishedSemaphores[icurrentFrame]};
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		const VkResult submitRes = vkQueueSubmit(igraphicsQueue, 1, &submitInfo, iinFlightFence);
+		const VkResult submitRes = vkQueueSubmit(igraphicsQueue, 1, &submitInfo, iinFlightFences[icurrentFrame]);
 		if (submitRes != VK_SUCCESS) {
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
@@ -910,6 +922,7 @@ private:
 		
 		const VkResult res = vkQueuePresentKHR(ipresentQueue, &presentInfo);
 
+		icurrentFrame = (icurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void mainLoop() {
@@ -922,9 +935,11 @@ private:
 	}
 
 	void cleanup() {
-		vkDestroySemaphore(idevice, iimageAvailableSemaphore, nullptr);
-		vkDestroySemaphore(idevice, irenderFinishedSemaphore, nullptr);
-		vkDestroyFence(idevice, iinFlightFence, nullptr);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+			vkDestroySemaphore(idevice, iimageAvailableSemaphores[i], nullptr);
+			vkDestroySemaphore(idevice, irenderFinishedSemaphores[i], nullptr);
+			vkDestroyFence(idevice, iinFlightFences[i], nullptr);
+		}
 
 		vkDestroyCommandPool(idevice, icommandPool, nullptr);
 		for (auto framebuffer : iswapChainFramebuffers) {
