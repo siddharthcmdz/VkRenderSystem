@@ -8,8 +8,8 @@
 class VkRenderSystem {
 
 private:
-	std::unordered_map<RSviewID ,RSview> iviewMap;
-	MakeID viewIDpool();
+	std::unordered_map<uint32_t ,RSview> iviewMap;
+	MakeID iviewIDpool = MakeID(MAX_IDS);
 	
 public:
 	static VkRenderSystem& getInstance() {

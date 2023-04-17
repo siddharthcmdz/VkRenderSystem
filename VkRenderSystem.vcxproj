@@ -23,12 +23,14 @@
     <ClInclude Include="src\RSdataTypes.h" />
     <ClInclude Include="src\RStypes.h" />
     <ClInclude Include="src\VkRenderSystem.h" />
+    <ClInclude Include="src\VkRSdataTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\RSdataTypes.cpp" />
     <ClCompile Include="src\SampleMain.cpp" />
     <ClCompile Include="src\VkRendersystem.cpp" />
+    <ClCompile Include="src\VKRSdataTypes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\compile.bat" />

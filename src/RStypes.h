@@ -10,3 +10,5 @@ enum CameraType {
 	POV
 };
 
+#define RSuint uint32_t
+
