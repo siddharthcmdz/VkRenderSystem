@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <glm/vec4.hpp>
+#include <vector>
 #include "RStypes.h"
 
 #define MAX_IDS UINT32_MAX
@@ -19,3 +20,9 @@ struct RSviewID {
 	bool isValid() const;
 };
 
+struct RSinitInfo {
+	bool enableValidation = true;
+	char appName[256];
+	//needs to be sent by the windowing system like glfw
+	std::vector<const char*> requiredExtensions;
+};

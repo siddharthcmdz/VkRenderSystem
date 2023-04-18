@@ -1,6 +1,7 @@
 #pragma once
 #include "RStypes.h"
 #include "RSdataTypes.h"
+#include "VkRSdataTypes.h"
 #include <vector>
 #include <unordered_map>
 #include "MakeID.h"
@@ -8,9 +9,15 @@
 class VkRenderSystem {
 
 private:
+	VkRSinstance iinstance;
 	std::unordered_map<uint32_t ,RSview> iviewMap;
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	
+	bool checkValidationLayerSupport() const;
+	std::vector<const char*> getRequiredExtensions(const RSinitInfo& info) const;
+	void populateInstanceData(VkRSinstance& inst, const RSinitInfo& info);
+	void initInstance(const RSinitInfo& info);
+
 public:
 	static VkRenderSystem& getInstance() {
 		static VkRenderSystem INSTANCE;
@@ -18,7 +25,7 @@ public:
 		return INSTANCE;
 	}
 
-	RSresult renderSystemInit();
+	RSresult renderSystemInit(const RSinitInfo& info);
 	bool isRenderSystemInit();
 	RSresult renderSystemDispose();
 

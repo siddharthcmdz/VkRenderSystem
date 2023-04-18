@@ -19,18 +19,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\RSVkDebugUtils.h" />
     <ClInclude Include="src\MakeID.h" />
     <ClInclude Include="src\RSdataTypes.h" />
     <ClInclude Include="src\RStypes.h" />
     <ClInclude Include="src\VkRenderSystem.h" />
+    <ClInclude Include="src\VkRenderSystemEntry.h" />
     <ClInclude Include="src\VkRSdataTypes.h" />
+    <ClInclude Include="src\VkSampleMain0.h" />
+    <ClInclude Include="src\VkSampleMain1.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\VkRenderSystemEntry.cpp" />
+    <ClCompile Include="src\VkSampleMain1.cpp" />
     <ClCompile Include="src\RSdataTypes.cpp" />
-    <ClCompile Include="src\SampleMain.cpp" />
+    <ClCompile Include="src\VkSampleMain0.cpp" />
     <ClCompile Include="src\VkRendersystem.cpp" />
-    <ClCompile Include="src\VKRSdataTypes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\compile.bat" />
