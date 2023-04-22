@@ -58,6 +58,7 @@ private:
 	std::vector<VkSemaphore> irenderFinishedSemaphores;
 	std::vector<VkFence> iinFlightFences;
 	uint32_t icurrentFrame = 0;
+	bool iframebufferResized = false;
 
 #ifdef NDEBUG
 	const bool ienableValidationLayers = false;
@@ -862,6 +863,35 @@ private:
 		}
 	}
 
+	void cleanupSwapChain() {
+		for (size_t i = 0; i < iswapChainFramebuffers.size(); ++i) {
+			vkDestroyFramebuffer(idevice, iswapChainFramebuffers[i], nullptr);
+		}
+
+		for (size_t i = 0; i < iswapChainImageViews.size(); ++i) {
+			vkDestroyImageView(idevice, iswapChainImageViews[i], nullptr);
+		}
+
+		vkDestroySwapchainKHR(idevice, iswapChain, nullptr);
+	}
+
+	void recreateSwapChain() {
+		int width = 0, height = 0;
+		glfwGetFramebufferSize(iwindow, &width, &height);
+		while (width == 0 || height == 0) {
+			glfwGetFramebufferSize(iwindow, &width, &height);
+			glfwWaitEvents();
+		}
+
+		vkDeviceWaitIdle(idevice);
+
+		cleanupSwapChain();
+
+		createSwapChain();
+		createImageViews();
+		createFramebuffers();
+	}
+
 	void initVulkan() {
 		createInstance();
 		setupDebugMessenger();
@@ -883,7 +913,16 @@ private:
 		vkResetFences(idevice, 1, &iinFlightFences[icurrentFrame]);
 
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(idevice, iswapChain, UINT64_MAX, iimageAvailableSemaphores[icurrentFrame], VK_NULL_HANDLE, &imageIndex);
+		const VkResult result = vkAcquireNextImageKHR(idevice, iswapChain, UINT64_MAX, iimageAvailableSemaphores[icurrentFrame], VK_NULL_HANDLE, &imageIndex);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			recreateSwapChain();
+			return;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+			throw std::runtime_error("failed to acquire swap chain image");
+		}
+		vkResetFences(idevice, 1, &iinFlightFences[icurrentFrame]);
+
 		vkResetCommandBuffer(icommandBuffers[icurrentFrame], 0);
 
 		recordCommandBuffer(icommandBuffers[icurrentFrame], imageIndex);
@@ -921,7 +960,13 @@ private:
 		presentInfo.pResults = nullptr;
 		
 		const VkResult res = vkQueuePresentKHR(ipresentQueue, &presentInfo);
-
+		if (res == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || iframebufferResized) {
+			iframebufferResized = false;
+			recreateSwapChain();
+		}
+		else if (res != VK_SUCCESS) {
+			throw std::runtime_error("failed to present swap chain image!");
+		}
 		icurrentFrame = (icurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
@@ -942,18 +987,10 @@ private:
 		}
 
 		vkDestroyCommandPool(idevice, icommandPool, nullptr);
-		for (auto framebuffer : iswapChainFramebuffers) {
-			vkDestroyFramebuffer(idevice, framebuffer, nullptr);
-		}
-
+		cleanupSwapChain();
 		vkDestroyPipeline(idevice, igraphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(idevice, ipipelineLayout, nullptr);
 		vkDestroyRenderPass(idevice, irenderPass, nullptr);
-		for (const auto& imageView : iswapChainImageViews) {
-			vkDestroyImageView(idevice, imageView, nullptr);
-		}
-
-		vkDestroySwapchainKHR(idevice, iswapChain, nullptr);
 		vkDestroyDevice(idevice, nullptr);
 		if (ienableValidationLayers) {
 			DestroyDebugUtilsMessengerEXT(iinstance, idebugMessenger, nullptr);
@@ -969,8 +1006,16 @@ private:
 	void initWindow() {
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		iwindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+		glfwSetWindowUserPointer(iwindow, this);
+		glfwSetFramebufferSizeCallback(iwindow, framebufferResizeCallback);
+	}
+
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+		auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+		app->iframebufferResized = true;
 	}
 
 public:
