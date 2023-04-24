@@ -60,7 +60,7 @@ void VkRenderSystem::populateInstanceData(VkRSinstance& inst, const RSinitInfo& 
 	}
 }
 
-void VkRenderSystem::initInstance(const RSinitInfo& info) {
+void VkRenderSystem::createInstance(const RSinitInfo& info) {
 	if (info.enableValidation && !checkValidationLayerSupport()) {
 		std::runtime_error("Validation layers requested by not available!");
 	}
@@ -113,9 +113,121 @@ void VkRenderSystem::initInstance(const RSinitInfo& info) {
 
 }
 
+void VkRenderSystem::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const {
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	createInfo.messageSeverity = /*VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |*/
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+	createInfo.messageType = /*VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |*/
+		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.pfnUserCallback = debugCallback;
+	createInfo.pUserData = nullptr; // Optional
+}
+
+void VkRenderSystem::setupDebugMessenger() {
+	if (!iinstance.enableValidation)
+		return;
+
+	VkDebugUtilsMessengerCreateInfoEXT createInfo;
+	populateDebugMessengerCreateInfo(createInfo);
+
+	if (CreateDebugUtilsMessengerEXT(iinstance.instance, &createInfo, nullptr, &iinstance.debugMessenger) != VK_SUCCESS) {
+		throw std::runtime_error("failed to set up debug messenger!");
+	}
+
+}
+
+void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
+	const VkResult result = glfwCreateWindowSurface(iinstance.instance, vkrsctx.window, nullptr, &vkrsctx.surface);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to create a window surface!");
+	}
+}
+
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+	QueueFamilyIndices indices;
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+	std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilyProperties.data());
+
+	for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilyProperties.size()); ++i) {
+		const VkQueueFamilyProperties& queueFamilyProp = queueFamilyProperties[i];
+		if (queueFamilyProp.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			indices.graphicsFamily = i;
+		}
+
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, isurface, &presentSupport);
+		if (presentSupport) {
+			indices.presentFamily = i;
+		}
+
+		if (indices.isComplete()) {
+			break;
+		}
+	}
+
+	return indices;
+}
+
+bool isDeviceSuitable(VkPhysicalDevice device) {
+	bool extensionsSupported = checkDeviceExtensionSupport(device);
+	QueueFamilyIndices indices = findQueueFamilies(device);
+
+	bool swapChainAdequate = false;
+	if (extensionsSupported) {
+		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+	}
+
+	return indices.isComplete() && extensionsSupported && swapChainAdequate;
+}
+
+bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+	uint32_t availableExtensionCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &availableExtensionCount, nullptr);
+	std::vector<VkExtensionProperties> availableExtensions(availableExtensionCount);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &availableExtensionCount, availableExtensions.data());
+
+	std::set<std::string> requiredExtensions(ideviceExtensions.begin(), ideviceExtensions.end());
+	for (const auto& extension : availableExtensions) {
+		requiredExtensions.erase(extension.extensionName);
+	}
+
+	return requiredExtensions.empty();
+}
+
+void VkRenderSystem::pickPhysicalDevice(VkRSinstance& vkrsinst) {
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices(vkrsinst.instance, &deviceCount, nullptr);
+	std::vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(vkrsinst.instance, &deviceCount, devices.data());
+	for (const auto& device : devices) {
+		if (isDeviceSuitable(device)) {
+			vkrsinst.physicalDevice = device;
+			printPhysicalDeviceInfo(device);
+			break;
+		}
+	}
+
+	if (vkrsinst.physicalDevice == VK_NULL_HANDLE) {
+		throw std::runtime_error("failed to find a suitable card");
+	}
+}
+
+void VkRenderSystem::createLogicalDevice() {
+
+}
+
 RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 {
-	initInstance(info);
+	createInstance(info);
+	setupDebugMessenger();
+	pickPhysicalDevice();
+	createLogicalDevice();
 	return RSresult::SUCCESS;
 }
 
@@ -129,13 +241,46 @@ RSresult VkRenderSystem::renderSystemDispose()
 	return RSresult::FAILURE;
 }
 
+void VkRenderSystem::createWindow(VkRScontext& vkrxctx) {
+	glfwInit();
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	const int WIDTH = 800, HEIGHT = 600;
+	vkrxctx.window  = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+}
+
+RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID) {
+
+	RSuint id;
+	bool success = ictxIDpool.CreateID(id);
+	assert(success && "failed to create a context ID");
+	if (success && outCtxID.isValid()) {
+		VkRScontext vkrxctx;
+		ictxMap[id] = vkrxctx;
+		outCtxID.id = id;
+
+		createWindow(vkrxctx);
+		createSurface(vkrxctx);
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+
+}
+
+RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
+
+}
+
 RSresult VkRenderSystem::viewCreate(const RSview& view, RSviewID& viewID)
 {
 	RSuint id;
 	bool success = iviewIDpool.CreateID(id);
 	assert(success && "failed to create a view ID");
 	if (success && viewID.isValid()) {
-		iviewMap[id] = view;
+		VkRSview vkrsview;
+		vkrsview.view = view;
+		iviewMap[id] = vkrsview;
 		viewID.id = id;
 		return RSresult::SUCCESS;
 	}
@@ -147,8 +292,8 @@ RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
 {
 	if (viewID.isValid()) {
 		if (iviewMap.find(viewID.id) != iviewMap.end()) {
-			iviewMap[viewID.id] = view;
-			iviewMap[viewID.id].dirty = true;
+			iviewMap[viewID.id].view = view;
+			iviewMap[viewID.id].view.dirty = true;
 
 			return RSresult::SUCCESS;
 		}

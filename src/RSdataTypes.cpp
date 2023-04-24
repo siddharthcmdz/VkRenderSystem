@@ -3,3 +3,7 @@
 bool RSviewID::isValid() const {
 	return id != INVALID_ID;
 }
+
+bool RScontextID::isValid() const {
+	return id != INVALID_ID;
+}

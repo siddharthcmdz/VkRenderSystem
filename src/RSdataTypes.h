@@ -20,6 +20,11 @@ struct RSviewID {
 	bool isValid() const;
 };
 
+struct RScontextID {
+	uint32_t id = ~0;
+	bool isValid() const;
+};
+
 struct RSinitInfo {
 	bool enableValidation = true;
 	char appName[256];
