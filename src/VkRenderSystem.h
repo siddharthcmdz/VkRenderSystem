@@ -32,13 +32,21 @@ private:
 	//rs global helpers
 	void printPhysicalDeviceInfo(VkPhysicalDevice device);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-
 	bool checkValidationLayerSupport() const;
 	std::vector<const char*> getRequiredExtensions(const RSinitInfo& info) const;
 	void populateInstanceData(VkRSinstance& inst, const RSinitInfo& info);
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
 	void createInstance(const RSinitInfo& info);
 	void setupDebugMessenger();
+
+	//collection related helpers
+	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
+	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx);
+	VkShaderModule createShaderModule(const std::vector<char>& code, const VkDevice& device);
+	static std::vector<char> readFile(const std::string& filename);
+
+	//view related helpers
+	void createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass);
 
 public:
 	static VkRenderSystem& getInstance() {
@@ -49,11 +57,14 @@ public:
 
 	RSresult renderSystemInit(const RSinitInfo& info);
 	bool isRenderSystemInit();
-	void renderSystemDrawLoop(const RScontextID& ctxID, const RSviewID& viewID);
 	RSresult renderSystemDispose();
 
+	bool contextAvailable(const RScontextID& ctxID) const;
 	RSresult contextCreate(RScontextID& outCtxID, const RScontextInfo& info);
+	RSresult contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID);
 	RSresult contextDispose(const RScontextID& ctxID);
+	
+	bool viewAvailable(const RSviewID& viewID) const;
 	RSresult viewCreate(RSviewID& viewID, const RSview& view);
 	//RSresult viewUpdate(const RSviewID& viewID, const RSview& view);
 	RSresult viewAddCollection(const RSviewID& viewID, const RScollectionID& colID);
@@ -61,7 +72,8 @@ public:
 	RSresult viewFinalize(const RSviewID& viewID);
 	RSresult viewDispose(const RSviewID& viewID);
 
+	bool collectionAvailable(const RScollectionID& colID);
 	RSresult collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo);
-	RSresult collectionFinalize(const RScollectionID& colID);
+	RSresult collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID);
 	RSresult collectionDispose(const RScollectionID& colID);
 };

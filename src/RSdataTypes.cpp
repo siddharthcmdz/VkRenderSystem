@@ -11,3 +11,5 @@ bool RScontextID::isValid() const {
 bool RScollectionID::isValid() const {
 	return id != INVALID_ID;
 }
+
+RScollectionID::RScollectionID(uint32_t id) { this->id = id; }

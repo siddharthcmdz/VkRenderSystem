@@ -4,6 +4,7 @@
 #include <iostream>
 #include <set>
 #include <algorithm>
+#include <fstream>
 
 #include "RSdataTypes.h"
 #include "VkRSdataTypes.h"
@@ -152,18 +153,57 @@ void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
 	}
 }
 
-void VkRenderSystem::renderSystemDrawLoop(const RScontextID& ctxID, const RSviewID& viewID) {
+void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass) {
+	view.swapChainFramebuffers.resize(ctx.swapChainImageViews.size());
+
+	for (size_t i = 0; i < ctx.swapChainImageViews.size(); ++i) {
+		VkImageView attachments[] = { ctx.swapChainImageViews[i] };
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = ctx.swapChainExtent.width;
+		framebufferInfo.height = ctx.swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		const VkResult fboresult = vkCreateFramebuffer(ctx.device, &framebufferInfo, nullptr, &view.swapChainFramebuffers[i]);
+		if (fboresult != VK_SUCCESS) {
+			throw std::runtime_error("failed to create framebuffer");
+		}
+	}
+}
+
+RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID) {
 	if (iinitInfo.onScreenCanvas) {
-		if (ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end()) {
+		if (contextAvailable(ctxID) && viewAvailable(viewID)) {
 			const VkRScontext& ctx = ictxMap[ctxID.id];
+			VkRSview& view = iviewMap[viewID.id];
+			VkRenderPass renderPass; //hack for now until we figure out how renderpasses work
+			for (const uint32_t colID : view.view.collectionList) {
+				if (collectionAvailable(RScollectionID(colID))) {
+					VkRScollection& coll = icollectionMap[colID];
+					if (coll.renderPass == nullptr) {
+						createRenderpass(coll, ctx);
+						renderPass = coll.renderPass;
+					}
+				}
+			}
+
+			if (view.swapChainFramebuffers.empty()) {
+				createFramebuffers(view, ctx, renderPass); //hacky renderpass.
+			}
+
 			while (!glfwWindowShouldClose(ctx.window)) {
 				glfwPollEvents();
 				//drawFrame();
 			}
+			vkDeviceWaitIdle(ctx.device);
 		}
 	}
 
-	//vkDeviceWaitIdle(idevice);
+	return RSresult::SUCCESS;
 }
 
 VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(VkPhysicalDevice device, VkRScontext& ctx) {
@@ -510,7 +550,10 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 	}
 
 	return RSresult::FAILURE;
+}
 
+bool VkRenderSystem::contextAvailable(const RScontextID& ctxID) const {
+	return ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end();
 }
 
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
@@ -527,6 +570,10 @@ RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 	}
 
 	return RSresult::FAILURE;
+}
+
+bool VkRenderSystem::viewAvailable(const RSviewID& viewID) const {
+	return viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end();
 }
 
 RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
@@ -562,7 +609,10 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
 		VkRSview& vkrsview = iviewMap[viewID.id];
-		vkrsview.view.collectionList.push_back(colID.id);
+		//for now support only one collection
+		if (vkrsview.view.collectionList.empty()) {
+			vkrsview.view.collectionList.push_back(colID.id);
+		}
 		vkrsview.view.dirty = true;
 		return RSresult::SUCCESS;
 	}
@@ -608,6 +658,54 @@ RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)
 	return RSresult::FAILURE;
 }
 
+void VkRenderSystem::createRenderpass(VkRScollection& collection, const VkRScontext& ctx) {
+	VkAttachmentDescription colorAttachment{};
+	colorAttachment.format = ctx.swapChainImageFormat;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentReference colorAttachmentRef{};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass{};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
+
+	const VkResult result = vkCreateRenderPass(ctx.device, &renderPassInfo, nullptr, &collection.renderPass);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to create render pass!");
+	}
+}
+
+
+bool VkRenderSystem::collectionAvailable(const RScollectionID& colID) {
+	return colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end();
+}
+
 RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo) {
 	RSuint id;
 	bool success = icollIDpool.CreateID(id);
@@ -624,11 +722,195 @@ RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollect
 
 }
 
-RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID) {
-	if (colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end()) {
-		VkRScollection collection = icollectionMap[colID.id];
+std::vector<char> VkRenderSystem::readFile(const std::string& filename) {
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open()) {
+		throw std::runtime_error("failed to open file!");
+	}
+
+	size_t filesize = (size_t)file.tellg();
+	std::vector<char> buffer(filesize);
+
+	file.seekg(0);
+	file.read(buffer.data(), filesize);
+
+	file.close();
+
+	return buffer;
+}
+
+VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code, const VkDevice& device) {
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = code.size();
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+	VkShaderModule shaderModule;
+	const VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to create a shader module!");
+	}
+
+	return shaderModule;
+}
+
+void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx) {
+	auto vertShaderCode = readFile("./src/shaders/spv/sampleshaderVert.spv");
+	auto fragShaderCode = readFile("./src/shaders/spv/sampleshaderFrag.spv");
+
+	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, ctx.device);
+	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, ctx.device);
+
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertShaderStageInfo.module = vertShaderModule;
+	vertShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = fragShaderModule;
+	fragShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo , fragShaderStageInfo };
+
+	std::vector<VkDynamicState> dynamicStates = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicState{};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	dynamicState.pDynamicStates = dynamicStates.data();
+
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputInfo.vertexBindingDescriptionCount = 0;
+	vertexInputInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)ctx.swapChainExtent.width;
+	viewport.height = (float)ctx.swapChainExtent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = ctx.swapChainExtent;
+
+	VkPipelineViewportStateCreateInfo viewportState{};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.viewportCount = 1;
+	viewportState.pViewports = &viewport;
+	viewportState.scissorCount = 1;
+	viewportState.pScissors = &scissor;
+
+	VkPipelineRasterizationStateCreateInfo rasterizer{};
+	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizer.depthClampEnable = VK_FALSE;
+	rasterizer.rasterizerDiscardEnable = VK_FALSE;
+	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizer.lineWidth = 1.0f;
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.depthBiasEnable = VK_FALSE;
+	rasterizer.depthBiasConstantFactor = 0.0f; //optional
+	rasterizer.depthBiasClamp = 0.0f; //optional
+	rasterizer.depthBiasSlopeFactor = 0.0f; //optional
+
+	VkPipelineMultisampleStateCreateInfo multisampling{};
+	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisampling.sampleShadingEnable = VK_FALSE;
+	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.minSampleShading = 1.0f;
+	multisampling.pSampleMask = nullptr;
+	multisampling.alphaToCoverageEnable = VK_FALSE;
+	multisampling.alphaToOneEnable = VK_FALSE;
+
+	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachment.blendEnable = VK_FALSE;
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+	VkPipelineColorBlendStateCreateInfo colorBlending{};
+	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlending.logicOpEnable = VK_FALSE;
+	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+	colorBlending.attachmentCount = 1;
+	colorBlending.pAttachments = &colorBlendAttachment;
+	colorBlending.blendConstants[0] = 0.0f; // Optional
+	colorBlending.blendConstants[1] = 0.0f; // Optional
+	colorBlending.blendConstants[2] = 0.0f; // Optional
+	colorBlending.blendConstants[3] = 0.0f; // Optional
+
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.pushConstantRangeCount = 0;
+	pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(ctx.device, &pipelineLayoutInfo, nullptr, &collection.pipelineLayout);
+	if (pipelineLayoutResult != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
+
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState = &multisampling;
+	pipelineInfo.pDepthStencilState = nullptr;
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pDynamicState = &dynamicState;
+
+	pipelineInfo.layout = collection.pipelineLayout;
+
+	pipelineInfo.renderPass = collection.renderPass; //hack until we find renderpasses are hierarchical.
+	pipelineInfo.subpass = 0;
+
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo.basePipelineIndex = -1;
+
+	const VkResult graphicsPipelineResult = vkCreateGraphicsPipelines(ctx.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &collection.graphicsPipeline);
+	if (graphicsPipelineResult != VK_SUCCESS) {
+		throw std::runtime_error("failed to create graphics pipeline!");
+	}
+
+	vkDestroyShaderModule(ctx.device, vertShaderModule, nullptr);
+	vkDestroyShaderModule(ctx.device, fragShaderModule, nullptr);
+}
+
+RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID) {
+	if (collectionAvailable(colID) && contextAvailable(ctxID)) {
+		VkRScollection& collection = icollectionMap[colID.id];
+		const VkRScontext& ctx = ictxMap[ctxID.id];
 		//finalize the collection
-		collection.dirty = false;
+		if (collection.dirty) {
+			createGraphicsPipeline(collection, ctx);
+			collection.dirty = false;
+		}
 		return RSresult::SUCCESS;
 	}
 

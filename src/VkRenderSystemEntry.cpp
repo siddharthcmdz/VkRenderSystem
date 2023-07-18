@@ -38,7 +38,7 @@ int RSmain() {
 	vkrs.viewCreate(viewID, rsview);
 
 	if (vkrs.isRenderSystemInit()) {
-		vkrs.renderSystemDrawLoop(ctxID, viewID);
+		vkrs.contextDrawCollections(ctxID, viewID);
 	}
 
 	return 0;

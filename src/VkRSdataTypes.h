@@ -33,15 +33,14 @@ struct VkRScontext {
 	VkSwapchainKHR swapChain{};
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
-	VkPipelineLayout pipelineLayout{};
 	VkDevice device;
 };
 
 struct VkRScollection {
 	RScollectionInfo info;
 	VkRenderPass renderPass{};
+	VkPipelineLayout pipelineLayout{};
 	VkPipeline graphicsPipeline{};
-	std::vector<VkFramebuffer> swapChainFramebuffers;
 	VkCommandPool commandPool{}; //manages the memory where command buffers are allocated from them
 	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
 	std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -51,6 +50,7 @@ struct VkRScollection {
 };
 
 struct VkRSview {
+	std::vector<VkFramebuffer> swapChainFramebuffers;
 	RSview view;
 };
 
