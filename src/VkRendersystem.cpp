@@ -545,15 +545,51 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 	return RSresult::FAILURE;
 }
 
-RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
-{
-	if (viewID.isValid()) {
-		if (iviewMap.find(viewID.id) != iviewMap.end()) {
-			iviewMap[viewID.id].view = view;
-			iviewMap[viewID.id].view.dirty = true;
+//RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
+//{
+//	if (viewID.isValid()) {
+//		if (iviewMap.find(viewID.id) != iviewMap.end()) {
+//			iviewMap[viewID.id].view = view;
+//			iviewMap[viewID.id].view.dirty = true;
+//
+//			return RSresult::SUCCESS;
+//		}
+//	}
+//
+//	return RSresult::FAILURE;
+//}
 
-			return RSresult::SUCCESS;
-		}
+RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScollectionID& colID) {
+	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
+		VkRSview& vkrsview = iviewMap[viewID.id];
+		vkrsview.view.collectionList.push_back(colID.id);
+		vkrsview.view.dirty = true;
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID) {
+	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
+		VkRSview& vkrsview = iviewMap[viewID.id];
+		vkrsview.view.collectionList.erase(std::remove(vkrsview.view.collectionList.begin(), vkrsview.view.collectionList.end(), colID.id));
+		vkrsview.view.dirty = true;
+
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::viewFinalize(const RSviewID& viewID) {
+	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
+		VkRSview& vkrsview = iviewMap[viewID.id];
+		vkrsview.view.dirty = false;
+		
+		//finalize the view
+
+		return RSresult::SUCCESS;
 	}
 
 	return RSresult::FAILURE;
@@ -561,5 +597,51 @@ RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
 
 RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)
 {
-	return RSresult::SUCCESS;
+	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
+		VkRSview& vkrsview = iviewMap[viewID.id];
+		//dispose view contents
+
+		iviewMap.erase(viewID.id);
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo) {
+	RSuint id;
+	bool success = icollIDpool.CreateID(id);
+	assert(success && "failed to create a collection");
+	if (success && colID.isValid()) {
+		VkRScollection vkrscol;
+		vkrscol.info = collInfo;
+		icollectionMap[colID.id] = vkrscol;
+		colID.id = id;
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+
+}
+
+RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID) {
+	if (colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end()) {
+		VkRScollection collection = icollectionMap[colID.id];
+		//finalize the collection
+		collection.dirty = false;
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::collectionDispose(const RScollectionID& colID) {
+	if (colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end()) {
+		VkRScollection collection = icollectionMap[colID.id];
+		//dispose the collection
+		icollectionMap.erase(colID.id);
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
 }

@@ -7,3 +7,7 @@ bool RSviewID::isValid() const {
 bool RScontextID::isValid() const {
 	return id != INVALID_ID;
 }
+
+bool RScollectionID::isValid() const {
+	return id != INVALID_ID;
+}

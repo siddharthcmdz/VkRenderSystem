@@ -34,6 +34,11 @@ struct VkRScontext {
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
 	VkPipelineLayout pipelineLayout{};
+	VkDevice device;
+};
+
+struct VkRScollection {
+	RScollectionInfo info;
 	VkRenderPass renderPass{};
 	VkPipeline graphicsPipeline{};
 	std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -42,7 +47,7 @@ struct VkRScontext {
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
-	VkDevice device;
+	bool dirty = true;
 };
 
 struct VkRSview {

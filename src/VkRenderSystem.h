@@ -14,9 +14,11 @@ private:
 	VkRSinstance iinstance;
 	std::unordered_map<uint32_t ,VkRSview> iviewMap;
 	std::unordered_map<uint32_t, VkRScontext> ictxMap;
+	std::unordered_map<uint32_t, VkRScollection> icollectionMap;
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
-	
+	MakeID icollIDpool = MakeID(MAX_IDS);
+
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
 	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkRScontext& ctx);
@@ -53,6 +55,13 @@ public:
 	RSresult contextCreate(RScontextID& outCtxID, const RScontextInfo& info);
 	RSresult contextDispose(const RScontextID& ctxID);
 	RSresult viewCreate(RSviewID& viewID, const RSview& view);
-	RSresult viewUpdate(const RSviewID& viewID, const RSview& view);
+	//RSresult viewUpdate(const RSviewID& viewID, const RSview& view);
+	RSresult viewAddCollection(const RSviewID& viewID, const RScollectionID& colID);
+	RSresult viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID);
+	RSresult viewFinalize(const RSviewID& viewID);
 	RSresult viewDispose(const RSviewID& viewID);
+
+	RSresult collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo);
+	RSresult collectionFinalize(const RScollectionID& colID);
+	RSresult collectionDispose(const RScollectionID& colID);
 };
