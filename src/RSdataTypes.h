@@ -8,8 +8,6 @@
 #define INVALID_ID ~0
 
 struct RSview {
-	uint32_t width = 0;
-	uint32_t height = 0;
 	glm::vec4 clearColor = glm::vec4(0.f, 0.f, 0.f, 1.f);
 	CameraType cameraType = CameraType::ORBITAL;
 	bool dirty = true;
@@ -27,7 +25,12 @@ struct RScontextID {
 
 struct RSinitInfo {
 	bool enableValidation = true;
-	char appName[256];
-	//needs to be sent by the windowing system like glfw
-	std::vector<const char*> requiredExtensions;
+	bool onScreenCanvas = true;
+	char appName[256]; //name of the engine or application
+};
+
+struct RScontextInfo {
+	uint32_t width = 800;
+	uint32_t height = 600;
+	char title[256]{0}; //name of the window displayed as title
 };

@@ -12,53 +12,34 @@
 #include <algorithm>         //for std::clamp
 #include <fstream>           //for file reading
 
-class VkScene {
-private:
-	static const inline uint32_t WIDTH = 800, HEIGHT = 600;
 
-	void init();
-	void mainLoop();
-	void cleanup();
 
-public:
-	void run() {
-		init();
-		mainLoop();
-		cleanup();
-	}
-};
-
-void VkScene::cleanup() {
-
-}
-
-void VkScene::mainLoop() {
-	while (!glfwWindowShouldClose(iwindow)) {
-		glfwPollEvents();
-		drawFrame();
-	}
-}
-
-void VkScene::init() {
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	iwindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-}
 
 
 int RSmain() {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 	RSinitInfo info;
-	sprintf_s(info.appName, "VkRSexample");
+	sprintf_s(info.appName, "RenderSystem");
 	info.enableValidation = true;
+	info.onScreenCanvas = true;
 	vkrs.renderSystemInit(info);
+
+	RScontextID ctxID;
+	RScontextInfo ctxInfo;
+	ctxInfo.width = 800;
+	ctxInfo.height = 600;
+	sprintf_s(ctxInfo.title, "Hello Triangle");
+	vkrs.contextCreate(ctxID, ctxInfo);
+
+	RSviewID viewID;
+	RSview rsview;
+	rsview.clearColor = glm::vec4(0, 0, 0, 1);
+	rsview.cameraType = CameraType::ORBITAL;
+	vkrs.viewCreate(viewID, rsview);
+
+	if (vkrs.isRenderSystemInit()) {
+		vkrs.renderSystemDrawLoop(ctxID, viewID);
+	}
 
 	return 0;
 }

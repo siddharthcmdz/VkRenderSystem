@@ -9,12 +9,23 @@
 class VkRenderSystem {
 
 private:
+	bool irenderOnscreen = true;
+	RSinitInfo iinitInfo;
 	VkRSinstance iinstance;
 	std::unordered_map<uint32_t ,VkRSview> iviewMap;
 	std::unordered_map<uint32_t, VkRScontext> ictxMap;
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
 	
+	//context related helpers
+	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
+	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkRScontext& ctx);
+	VkRSqueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkRScontext& ctx);
+
+	//rs global helpers
+	void printPhysicalDeviceInfo(VkPhysicalDevice device);
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
 	bool checkValidationLayerSupport() const;
 	std::vector<const char*> getRequiredExtensions(const RSinitInfo& info) const;
 	void populateInstanceData(VkRSinstance& inst, const RSinitInfo& info);
@@ -22,9 +33,8 @@ private:
 	void createInstance(const RSinitInfo& info);
 	void setupDebugMessenger();
 	void createSurface(VkRScontext& vkrsctx);
-	void pickPhysicalDevice(VkRSinstance& vkrsinst);
+	void setPhysicalDevice(VkRSinstance& vkrsinst, VkRScontext& ctx);
 	void createLogicalDevice();
-	void createWindow(VkRScontext& vkrxctx);
 
 public:
 	static VkRenderSystem& getInstance() {
@@ -35,12 +45,12 @@ public:
 
 	RSresult renderSystemInit(const RSinitInfo& info);
 	bool isRenderSystemInit();
+	void renderSystemDrawLoop(const RScontextID& ctxID, const RSviewID& viewID);
 	RSresult renderSystemDispose();
 
-	RSresult contextCreate(RScontextID& outCtxID);
+	RSresult contextCreate(RScontextID& outCtxID, const RScontextInfo& info);
 	RSresult contextDispose(const RScontextID& ctxID);
-	RSresult viewCreate(const RSview& view, RSviewID& viewID);
+	RSresult viewCreate(RSviewID& viewID, const RSview& view);
 	RSresult viewUpdate(const RSviewID& viewID, const RSview& view);
-	RSresult viewDraw(const RSviewID& viewID);
 	RSresult viewDispose(const RSviewID& viewID);
 };

@@ -2,6 +2,8 @@
 #include <vulkan/vulkan.h>
 #include <assert.h>
 #include <iostream>
+#include <set>
+
 #include "RSdataTypes.h"
 #include "VkRSdataTypes.h"
 #include "RSVkDebugUtils.h"
@@ -34,8 +36,10 @@ bool VkRenderSystem::checkValidationLayerSupport() const {
 std::vector<const char*> VkRenderSystem::getRequiredExtensions(const RSinitInfo& info) const {
 
 	std::vector<const char*> extensions;
-	for (const auto& ext : info.requiredExtensions) {
-		extensions.push_back(ext);
+	if (info.onScreenCanvas) {
+		uint32_t glfwExtensionCount = 0;
+		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+		extensions = std::vector(glfwExtensions, glfwExtensions + glfwExtensionCount);
 	}
 
 	if (info.enableValidation) {
@@ -140,14 +144,29 @@ void VkRenderSystem::setupDebugMessenger() {
 }
 
 void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
+	
 	const VkResult result = glfwCreateWindowSurface(iinstance.instance, vkrsctx.window, nullptr, &vkrsctx.surface);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create a window surface!");
 	}
 }
 
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
-	QueueFamilyIndices indices;
+void VkRenderSystem::renderSystemDrawLoop(const RScontextID& ctxID, const RSviewID& viewID) {
+	if (iinitInfo.onScreenCanvas) {
+		if (ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end()) {
+			const VkRScontext& ctx = ictxMap[ctxID.id];
+			while (!glfwWindowShouldClose(ctx.window)) {
+				glfwPollEvents();
+				//drawFrame();
+			}
+		}
+	}
+
+	//vkDeviceWaitIdle(idevice);
+}
+
+VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(VkPhysicalDevice device, VkRScontext& ctx) {
+	VkRSqueueFamilyIndices indices;
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 	std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
@@ -160,7 +179,7 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
 		}
 
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, isurface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, ctx.surface, &presentSupport);
 		if (presentSupport) {
 			indices.presentFamily = i;
 		}
@@ -173,26 +192,48 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
 	return indices;
 }
 
-bool isDeviceSuitable(VkPhysicalDevice device) {
+VkRSswapChainSupportDetails VkRenderSystem::querySwapChainSupport(VkPhysicalDevice device, VkRScontext& ctx) {
+	VkRSswapChainSupportDetails details;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, ctx.surface, &details.capabilities);
+
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, ctx.surface, &formatCount, nullptr);
+	if (formatCount != 0) {
+		details.formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, ctx.surface, &formatCount, details.formats.data());
+	}
+
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, ctx.surface, &presentModeCount, nullptr);
+	if (presentModeCount) {
+		details.presentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, ctx.surface, &presentModeCount, details.presentModes.data());
+	}
+
+	return details;
+}
+
+bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx) {
 	bool extensionsSupported = checkDeviceExtensionSupport(device);
-	QueueFamilyIndices indices = findQueueFamilies(device);
+	VkRSqueueFamilyIndices indices = findQueueFamilies(device, ctx);
 
 	bool swapChainAdequate = false;
 	if (extensionsSupported) {
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, ctx);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
 	return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool VkRenderSystem::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	uint32_t availableExtensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &availableExtensionCount, nullptr);
 	std::vector<VkExtensionProperties> availableExtensions(availableExtensionCount);
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &availableExtensionCount, availableExtensions.data());
 
-	std::set<std::string> requiredExtensions(ideviceExtensions.begin(), ideviceExtensions.end());
+	std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 	for (const auto& extension : availableExtensions) {
 		requiredExtensions.erase(extension.extensionName);
 	}
@@ -200,13 +241,30 @@ bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	return requiredExtensions.empty();
 }
 
-void VkRenderSystem::pickPhysicalDevice(VkRSinstance& vkrsinst) {
+void VkRenderSystem::printPhysicalDeviceInfo(VkPhysicalDevice device) {
+	VkPhysicalDeviceFeatures features;
+	VkPhysicalDeviceProperties props;
+	vkGetPhysicalDeviceFeatures(device, &features);
+	vkGetPhysicalDeviceProperties(device, &props);
+	std::cout << "\n" << "Device properties" << std::endl;
+	std::cout << "=================" << std::endl;
+	std::cout << "\tDevice name: " << props.deviceName << std::endl;
+	std::cout << "\tDriver version: " << props.driverVersion << std::endl;
+	std::cout << "\tDevice Type: " << props.deviceType << std::endl;
+	std::cout << "\nFeatures" << std::endl;
+	std::cout << "===========" << std::endl;
+	std::cout << "\tmultiDrawIndirect: " << features.multiDrawIndirect << std::endl;
+	std::cout << "\tshaderInt64: " << features.shaderInt64 << std::endl;
+	std::cout << "\tfragmentStoresAndAtomics: " << features.fragmentStoresAndAtomics << std::endl;
+}
+
+void VkRenderSystem::setPhysicalDevice(VkRSinstance& vkrsinst, VkRScontext& ctx) {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(vkrsinst.instance, &deviceCount, nullptr);
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(vkrsinst.instance, &deviceCount, devices.data());
 	for (const auto& device : devices) {
-		if (isDeviceSuitable(device)) {
+		if (isDeviceSuitable(device, ctx)) {
 			vkrsinst.physicalDevice = device;
 			printPhysicalDeviceInfo(device);
 			break;
@@ -224,9 +282,18 @@ void VkRenderSystem::createLogicalDevice() {
 
 RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 {
+	irenderOnscreen = info.onScreenCanvas;
+	iinitInfo = info;
+	std::vector<const char*> extensions;
+	if (info.onScreenCanvas) {
+		glfwInit();
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+	}
 	createInstance(info);
 	setupDebugMessenger();
-	pickPhysicalDevice();
+	
 	createLogicalDevice();
 	return RSresult::SUCCESS;
 }
@@ -241,26 +308,21 @@ RSresult VkRenderSystem::renderSystemDispose()
 	return RSresult::FAILURE;
 }
 
-void VkRenderSystem::createWindow(VkRScontext& vkrxctx) {
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	const int WIDTH = 800, HEIGHT = 600;
-	vkrxctx.window  = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-}
-
-RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID) {
+RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInfo& info) {
 
 	RSuint id;
 	bool success = ictxIDpool.CreateID(id);
 	assert(success && "failed to create a context ID");
 	if (success && outCtxID.isValid()) {
-		VkRScontext vkrxctx;
-		ictxMap[id] = vkrxctx;
+		VkRScontext vkrsctx;
+		ictxMap[id] = vkrsctx;
 		outCtxID.id = id;
 
-		createWindow(vkrxctx);
-		createSurface(vkrxctx);
+		if (irenderOnscreen) {
+			vkrsctx.window = glfwCreateWindow(info.width, info.height, info.title, nullptr, nullptr);
+		}
+		createSurface(vkrsctx);
+		setPhysicalDevice(iinstance, vkrsctx);
 		return RSresult::SUCCESS;
 	}
 
@@ -270,9 +332,21 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID) {
 
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 
+	if (ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end()) {
+		const VkRScontext& ctx = ictxMap[ctxID.id];
+
+		if (irenderOnscreen && ctx.window != nullptr) {
+			glfwDestroyWindow(ctx.window);
+			ictxMap.erase(ctxID.id);
+		}
+
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
 }
 
-RSresult VkRenderSystem::viewCreate(const RSview& view, RSviewID& viewID)
+RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 {
 	RSuint id;
 	bool success = iviewIDpool.CreateID(id);
@@ -300,11 +374,6 @@ RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
 	}
 
 	return RSresult::FAILURE;
-}
-
-RSresult VkRenderSystem::viewDraw(const RSviewID& viewID)
-{
-	return RSresult::SUCCESS;
 }
 
 RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)

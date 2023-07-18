@@ -8,16 +8,6 @@
 #include <string>
 #include <optional>
 
-
-struct VkRSqueueFamilyIndices {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value();
-	}
-};
-
 struct VkRSinstance {
 	static const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 	static const inline std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -57,4 +47,19 @@ struct VkRScontext {
 
 struct VkRSview {
 	RSview view;
+};
+
+struct VkRSqueueFamilyIndices {
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+
+	bool isComplete() {
+		return graphicsFamily.has_value() && presentFamily.has_value();
+	}
+};
+
+struct VkRSswapChainSupportDetails {
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> presentModes;
 };
