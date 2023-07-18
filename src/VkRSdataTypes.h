@@ -20,7 +20,6 @@ struct VkRSinstance {
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice device;
 };
 
 
@@ -43,6 +42,7 @@ struct VkRScontext {
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
+	VkDevice device;
 };
 
 struct VkRSview {

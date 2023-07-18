@@ -21,6 +21,11 @@ private:
 	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
 	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkRScontext& ctx);
 	VkRSqueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkRScontext& ctx);
+	void createSurface(VkRScontext& vkrsctx);
+	void setPhysicalDevice(VkRScontext& ctx);
+	void createLogicalDevice(VkRScontext& ctx);
+	void createSwapChain(VkRScontext& ctx);
+	void createImageViews(VkRScontext& ctx);
 
 	//rs global helpers
 	void printPhysicalDeviceInfo(VkPhysicalDevice device);
@@ -32,9 +37,6 @@ private:
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
 	void createInstance(const RSinitInfo& info);
 	void setupDebugMessenger();
-	void createSurface(VkRScontext& vkrsctx);
-	void setPhysicalDevice(VkRSinstance& vkrsinst, VkRScontext& ctx);
-	void createLogicalDevice();
 
 public:
 	static VkRenderSystem& getInstance() {
