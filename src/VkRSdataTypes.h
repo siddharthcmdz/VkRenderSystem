@@ -20,10 +20,12 @@ struct VkRSinstance {
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkDevice device;
 };
 
 
 struct VkRScontext {
+	static const int MAX_FRAMES_IN_FLIGHT = 2;
 	GLFWwindow* window = nullptr;
 	VkSurfaceKHR surface{};
 	std::vector<VkImage> swapChainImages;
@@ -33,7 +35,6 @@ struct VkRScontext {
 	VkSwapchainKHR swapChain{};
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
-	VkDevice device;
 };
 
 struct VkRScollection {
@@ -51,6 +52,7 @@ struct VkRScollection {
 
 struct VkRSview {
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	uint32_t currentFrame = 0;
 	RSview view;
 };
 

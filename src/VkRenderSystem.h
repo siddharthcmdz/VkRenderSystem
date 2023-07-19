@@ -22,12 +22,13 @@ private:
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
 	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkRScontext& ctx);
-	VkRSqueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkRScontext& ctx);
+	VkRSqueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkRScontext& ctx);
 	void createSurface(VkRScontext& vkrsctx);
 	void setPhysicalDevice(VkRScontext& ctx);
 	void createLogicalDevice(VkRScontext& ctx);
 	void createSwapChain(VkRScontext& ctx);
 	void createImageViews(VkRScontext& ctx);
+	void disposeContext(VkRScontext& ctx);
 
 	//rs global helpers
 	void printPhysicalDeviceInfo(VkPhysicalDevice device);
@@ -42,11 +43,18 @@ private:
 	//collection related helpers
 	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
 	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx);
+	void createCommandPool(VkRScollection& collection, const VkRScontext& ctx);
+	void createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx);
+	void createSyncObjects(VkRScollection& collection, const VkRScontext& ctx);
+	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
 	VkShaderModule createShaderModule(const std::vector<char>& code, const VkDevice& device);
 	static std::vector<char> readFile(const std::string& filename);
+	void contextDrawCollection(const VkRScontext& context, VkRSview& view, const VkRScollection& collection);
+	void disposeCollection(VkRScollection& collection);
 
 	//view related helpers
 	void createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass);
+	void disposeView(VkRSview& view);
 
 public:
 	static VkRenderSystem& getInstance() {

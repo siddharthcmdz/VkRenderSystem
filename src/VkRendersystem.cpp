@@ -168,11 +168,65 @@ void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx, 
 		framebufferInfo.height = ctx.swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
-		const VkResult fboresult = vkCreateFramebuffer(ctx.device, &framebufferInfo, nullptr, &view.swapChainFramebuffers[i]);
+		const VkResult fboresult = vkCreateFramebuffer(iinstance.device, &framebufferInfo, nullptr, &view.swapChainFramebuffers[i]);
 		if (fboresult != VK_SUCCESS) {
 			throw std::runtime_error("failed to create framebuffer");
 		}
 	}
+}
+
+void VkRenderSystem::contextDrawCollection(const VkRScontext& ctx, VkRSview& view, const VkRScollection& collection) {
+	const VkDevice& device = iinstance.device;
+	uint32_t currentFrame = view.currentFrame;
+	VkFence inflightFence = collection.inFlightFences[currentFrame];
+	VkSemaphore imageAvailableSemaphore = collection.imageAvailableSemaphores[currentFrame];
+	VkSemaphore renderFinishedSemaphore = collection.renderFinishedSemaphores[currentFrame];
+	VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
+
+	vkWaitForFences(device, 1, &inflightFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(device, 1, &inflightFence);
+
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(device, ctx.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	vkResetCommandBuffer(commandBuffer, 0);
+
+	recordCommandBuffer(collection, view, ctx, imageIndex, currentFrame);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	const VkResult submitRes = vkQueueSubmit(ctx.graphicsQueue, 1, &submitInfo, inflightFence);
+	if (submitRes != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
+
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChains[] = { ctx.swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pResults = nullptr;
+
+	const VkResult res = vkQueuePresentKHR(ctx.presentQueue, &presentInfo);
+
+	view.currentFrame = (currentFrame + 1) % VkRScontext::MAX_FRAMES_IN_FLIGHT;
 }
 
 RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID) {
@@ -180,33 +234,42 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 		if (contextAvailable(ctxID) && viewAvailable(viewID)) {
 			const VkRScontext& ctx = ictxMap[ctxID.id];
 			VkRSview& view = iviewMap[viewID.id];
-			VkRenderPass renderPass; //hack for now until we figure out how renderpasses work
 			for (const uint32_t colID : view.view.collectionList) {
 				if (collectionAvailable(RScollectionID(colID))) {
 					VkRScollection& coll = icollectionMap[colID];
 					if (coll.renderPass == nullptr) {
 						createRenderpass(coll, ctx);
-						renderPass = coll.renderPass;
+					}
+					if (view.swapChainFramebuffers.empty()) {
+						createFramebuffers(view, ctx, coll.renderPass); //hacky renderpass.
+					}
+					if (coll.commandPool == nullptr) {
+						createCommandPool(coll, ctx);
+					}
+					if (coll.commandBuffers.empty()) {
+						createCommandBuffers(coll, ctx);
+					}
+					if (coll.inFlightFences.empty()) {
+						createSyncObjects(coll, ctx);
 					}
 				}
 			}
 
-			if (view.swapChainFramebuffers.empty()) {
-				createFramebuffers(view, ctx, renderPass); //hacky renderpass.
-			}
 
 			while (!glfwWindowShouldClose(ctx.window)) {
 				glfwPollEvents();
-				//drawFrame();
+				RScollectionID collID0(view.view.collectionList[0]);
+				const VkRScollection& coll = icollectionMap[collID0.id];
+				contextDrawCollection(ctx, view, coll);
 			}
-			vkDeviceWaitIdle(ctx.device);
+			vkDeviceWaitIdle(iinstance.device);
 		}
 	}
 
 	return RSresult::SUCCESS;
 }
 
-VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(VkPhysicalDevice device, VkRScontext& ctx) {
+VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(const VkPhysicalDevice device, const VkRScontext& ctx) {
 	VkRSqueueFamilyIndices indices;
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -352,16 +415,16 @@ void VkRenderSystem::createLogicalDevice(VkRScontext& ctx) {
 		createInfo.enabledLayerCount = 0;
 	}
 
-	const VkResult result = vkCreateDevice(iinstance.physicalDevice, &createInfo, nullptr, &ctx.device);
+	const VkResult result = vkCreateDevice(iinstance.physicalDevice, &createInfo, nullptr, &iinstance.device);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create logical device");
 	}
 
 	//get the graphics queue handle from the logical device.
-	vkGetDeviceQueue(ctx.device, indices.graphicsFamily.value(), 0, &ctx.graphicsQueue);
+	vkGetDeviceQueue(iinstance.device, indices.graphicsFamily.value(), 0, &ctx.graphicsQueue);
 
 	//get the present queue handle from the logical device
-	vkGetDeviceQueue(ctx.device, indices.presentFamily.value(), 0, &ctx.presentQueue);
+	vkGetDeviceQueue(iinstance.device, indices.presentFamily.value(), 0, &ctx.presentQueue);
 }
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
@@ -460,14 +523,15 @@ void VkRenderSystem::createSwapChain(VkRScontext& ctx) {
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	const VkResult result = vkCreateSwapchainKHR(ctx.device, &createInfo, nullptr, &ctx.swapChain);
+	const VkDevice& device = iinstance.device;
+	const VkResult result = vkCreateSwapchainKHR(device, &createInfo, nullptr, &ctx.swapChain);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create swapchain!");
 	}
 
-	vkGetSwapchainImagesKHR(ctx.device, ctx.swapChain, &imageCount, nullptr);
+	vkGetSwapchainImagesKHR(device, ctx.swapChain, &imageCount, nullptr);
 	ctx.swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(ctx.device, ctx.swapChain, &imageCount, ctx.swapChainImages.data());
+	vkGetSwapchainImagesKHR(device, ctx.swapChain, &imageCount, ctx.swapChainImages.data());
 
 	ctx.swapChainImageFormat = surfaceFormat.format;
 	ctx.swapChainExtent = extent;
@@ -497,6 +561,14 @@ bool VkRenderSystem::isRenderSystemInit()
 
 RSresult VkRenderSystem::renderSystemDispose()
 {
+	vkDestroyDevice(iinstance.device, nullptr);
+	if (iinstance.enableValidation) {
+		DestroyDebugUtilsMessengerEXT(iinstance.instance, iinstance.debugMessenger, nullptr);
+	}
+	vkDestroyInstance(iinstance.instance, nullptr);
+
+	glfwTerminate();
+
 	return RSresult::FAILURE;
 }
 
@@ -521,7 +593,7 @@ void VkRenderSystem::createImageViews(VkRScontext& ctx) {
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		const VkResult result = vkCreateImageView(ctx.device, &createInfo, nullptr, &ctx.swapChainImageViews[i]);
+		const VkResult result = vkCreateImageView(iinstance.device, &createInfo, nullptr, &ctx.swapChainImageViews[i]);
 		if (result != VK_SUCCESS) {
 			throw std::runtime_error("failed to create image views!");
 		}
@@ -554,6 +626,19 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 
 bool VkRenderSystem::contextAvailable(const RScontextID& ctxID) const {
 	return ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end();
+}
+
+void VkRenderSystem::disposeContext(VkRScontext& ctx) {
+	
+	const VkDevice& device = iinstance.device;
+	for (const auto& imageView : ctx.swapChainImageViews) {
+		vkDestroyImageView(device, imageView, nullptr);
+	}
+	vkDestroySwapchainKHR(device, ctx.swapChain, nullptr);
+	vkDestroySurfaceKHR(iinstance.instance, ctx.surface, nullptr);
+
+	glfwDestroyWindow(ctx.window);
+	ctx.window = nullptr;
 }
 
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
@@ -650,12 +735,19 @@ RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)
 	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
 		VkRSview& vkrsview = iviewMap[viewID.id];
 		//dispose view contents
-
+		disposeView(vkrsview);
 		iviewMap.erase(viewID.id);
 		return RSresult::SUCCESS;
 	}
 
 	return RSresult::FAILURE;
+}
+
+void VkRenderSystem::disposeView(VkRSview& view) {
+	
+	for (auto framebuffer : view.swapChainFramebuffers) {
+		vkDestroyFramebuffer(iinstance.device, framebuffer, nullptr);
+	}
 }
 
 void VkRenderSystem::createRenderpass(VkRScollection& collection, const VkRScontext& ctx) {
@@ -695,7 +787,7 @@ void VkRenderSystem::createRenderpass(VkRScollection& collection, const VkRScont
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	const VkResult result = vkCreateRenderPass(ctx.device, &renderPassInfo, nullptr, &collection.renderPass);
+	const VkResult result = vkCreateRenderPass(iinstance.device, &renderPassInfo, nullptr, &collection.renderPass);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
 	}
@@ -758,9 +850,10 @@ VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code,
 void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx) {
 	auto vertShaderCode = readFile("./src/shaders/spv/sampleshaderVert.spv");
 	auto fragShaderCode = readFile("./src/shaders/spv/sampleshaderFrag.spv");
-
-	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, ctx.device);
-	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, ctx.device);
+	
+	const VkDevice& device = iinstance.device;
+	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, device);
+	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, device);
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -867,7 +960,7 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(ctx.device, &pipelineLayoutInfo, nullptr, &collection.pipelineLayout);
+	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &collection.pipelineLayout);
 	if (pipelineLayoutResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
@@ -893,13 +986,116 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
 
-	const VkResult graphicsPipelineResult = vkCreateGraphicsPipelines(ctx.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &collection.graphicsPipeline);
+	const VkResult graphicsPipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &collection.graphicsPipeline);
 	if (graphicsPipelineResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 
-	vkDestroyShaderModule(ctx.device, vertShaderModule, nullptr);
-	vkDestroyShaderModule(ctx.device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	vkDestroyShaderModule(device, fragShaderModule, nullptr);
+}
+
+void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame) {
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0;
+	beginInfo.pInheritanceInfo = nullptr;
+
+	const VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
+	const VkResult beginRes = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	if (beginRes != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffers!");
+	}
+
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = collection.renderPass;
+	renderPassInfo.framebuffer = view.swapChainFramebuffers[imageIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = ctx.swapChainExtent;
+
+	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
+	{
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, collection.graphicsPipeline);
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(ctx.swapChainExtent.width);
+		viewport.height = static_cast<float>(ctx.swapChainExtent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = ctx.swapChainExtent;
+		vkCmdSetScissor(collection.commandBuffers[currentFrame], 0, 1, &scissor);
+
+		vkCmdDraw(collection.commandBuffers[currentFrame], 3, 1, 0, 0);
+	}
+	vkCmdEndRenderPass(collection.commandBuffers[currentFrame]);
+
+	const VkResult endCmdBuffRes = vkEndCommandBuffer(commandBuffer);
+	if (endCmdBuffRes != VK_SUCCESS) {
+		throw std::runtime_error("failed to record command buffer");
+	}
+}
+
+void VkRenderSystem::createCommandPool(VkRScollection& collection, const VkRScontext& ctx) {
+	VkRSqueueFamilyIndices queueFamilyIndices = findQueueFamilies(iinstance.physicalDevice, ctx);
+
+	VkCommandPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+	const VkResult cmdpoolResult = vkCreateCommandPool(iinstance.device, &poolInfo, nullptr, &collection.commandPool);
+	if (cmdpoolResult != VK_SUCCESS) {
+		throw std::runtime_error("faailed to create command pool");
+	}
+}
+
+void VkRenderSystem::createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx) {
+	collection.commandBuffers.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = collection.commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)collection.commandBuffers.size();
+
+	const VkResult allocCmdBufferRes = vkAllocateCommandBuffers(iinstance.device, &allocInfo, collection.commandBuffers.data());
+	if (allocCmdBufferRes != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocated command buffers");
+	}
+}
+
+void VkRenderSystem::createSyncObjects(VkRScollection& collection, const VkRScontext& ctx) {
+	collection.imageAvailableSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+	collection.renderFinishedSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+	collection.inFlightFences.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	const VkDevice& device = iinstance.device;
+	for (size_t i = 0; i < ctx.MAX_FRAMES_IN_FLIGHT; ++i) {
+		VkResult imgAvailSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &collection.imageAvailableSemaphores[i]);
+		VkResult renderFinishedSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &collection.renderFinishedSemaphores[i]);
+		VkResult fenceRes = vkCreateFence(device, &fenceInfo, nullptr, &collection.inFlightFences[i]);
+
+		if (imgAvailSemaphoreRes != VK_SUCCESS || renderFinishedSemaphoreRes != VK_SUCCESS || fenceRes != VK_SUCCESS) {
+			throw std::runtime_error("failed to create semaphores");
+		}
+	}
 }
 
 RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID) {
@@ -909,6 +1105,10 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 		//finalize the collection
 		if (collection.dirty) {
 			createGraphicsPipeline(collection, ctx);
+			createCommandPool(collection, ctx);
+			createCommandBuffers(collection, ctx);
+			createSyncObjects(collection, ctx);
+
 			collection.dirty = false;
 		}
 		return RSresult::SUCCESS;
@@ -921,9 +1121,25 @@ RSresult VkRenderSystem::collectionDispose(const RScollectionID& colID) {
 	if (colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end()) {
 		VkRScollection collection = icollectionMap[colID.id];
 		//dispose the collection
+
 		icollectionMap.erase(colID.id);
 		return RSresult::SUCCESS;
 	}
 
 	return RSresult::FAILURE;
+}
+
+void VkRenderSystem::disposeCollection(VkRScollection& collection) {
+	const VkDevice& device = iinstance.device;
+	for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; ++i) {
+		vkDestroySemaphore(device, collection.imageAvailableSemaphores[i], nullptr);
+		vkDestroySemaphore(device, collection.renderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(device, collection.inFlightFences[i], nullptr);
+	}
+
+	vkDestroyCommandPool(device, collection.commandPool, nullptr);
+
+	vkDestroyPipeline(device, collection.graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, collection.pipelineLayout, nullptr);
+	vkDestroyRenderPass(device, collection.renderPass, nullptr);
 }
