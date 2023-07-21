@@ -9,7 +9,6 @@
 class VkRenderSystem {
 
 private:
-	bool irenderOnscreen = true;
 	RSinitInfo iinitInfo;
 	VkRSinstance iinstance;
 	std::unordered_map<uint32_t ,VkRSview> iviewMap;
@@ -18,6 +17,7 @@ private:
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
 	MakeID icollIDpool = MakeID(MAX_IDS);
+	bool iisRSinited = false;
 
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);

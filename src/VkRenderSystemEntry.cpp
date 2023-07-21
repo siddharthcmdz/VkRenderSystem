@@ -37,12 +37,19 @@ int RSmain() {
 	rsview.cameraType = CameraType::ORBITAL;
 	vkrs.viewCreate(viewID, rsview);
 
+	RScollectionID collID;
+	RScollectionInfo collInfo;
+	vkrs.collectionCreate(collID, collInfo);
+	vkrs.viewAddCollection(viewID, collID);
+	vkrs.collectionFinalize(collID, ctxID);
+	
 	if (vkrs.isRenderSystemInit()) {
 		vkrs.contextDrawCollections(ctxID, viewID);
 	}
 
 	vkrs.contextDispose(ctxID);
 	vkrs.viewDispose(viewID);
+	vkrs.collectionDispose(collID);
 	vkrs.contextDispose(ctxID);
 	vkrs.renderSystemDispose();
 

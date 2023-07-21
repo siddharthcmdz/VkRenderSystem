@@ -136,7 +136,7 @@ void VkRenderSystem::setupDebugMessenger() {
 	if (!iinstance.enableValidation)
 		return;
 
-	VkDebugUtilsMessengerCreateInfoEXT createInfo;
+	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
 	populateDebugMessengerCreateInfo(createInfo);
 
 	if (CreateDebugUtilsMessengerEXT(iinstance.instance, &createInfo, nullptr, &iinstance.debugMessenger) != VK_SUCCESS) {
@@ -237,21 +237,21 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 			for (const uint32_t colID : view.view.collectionList) {
 				if (collectionAvailable(RScollectionID(colID))) {
 					VkRScollection& coll = icollectionMap[colID];
-					if (coll.renderPass == nullptr) {
-						createRenderpass(coll, ctx);
-					}
+					//if (coll.renderPass == nullptr) {
+					//	createRenderpass(coll, ctx);
+					//}
 					if (view.swapChainFramebuffers.empty()) {
-						createFramebuffers(view, ctx, coll.renderPass); //hacky renderpass.
+						createFramebuffers(view, ctx, coll.renderPass); //hacky renderpass. need to move this to viewCreate(..)
 					}
-					if (coll.commandPool == nullptr) {
-						createCommandPool(coll, ctx);
-					}
-					if (coll.commandBuffers.empty()) {
-						createCommandBuffers(coll, ctx);
-					}
-					if (coll.inFlightFences.empty()) {
-						createSyncObjects(coll, ctx);
-					}
+					//if (coll.commandPool == nullptr) {
+					//	createCommandPool(coll, ctx);
+					//}
+					//if (coll.commandBuffers.empty()) {
+					//	createCommandBuffers(coll, ctx);
+					//}
+					//if (coll.inFlightFences.empty()) {
+					//	createSyncObjects(coll, ctx);
+					//}
 				}
 			}
 
@@ -539,7 +539,6 @@ void VkRenderSystem::createSwapChain(VkRScontext& ctx) {
 
 RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 {
-	irenderOnscreen = info.onScreenCanvas;
 	iinitInfo = info;
 	std::vector<const char*> extensions;
 	if (info.onScreenCanvas) {
@@ -550,13 +549,15 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 	}
 	createInstance(info);
 	setupDebugMessenger();
+
+	iisRSinited = true;
 	
 	return RSresult::SUCCESS;
 }
 
 bool VkRenderSystem::isRenderSystemInit()
 {
-	return false;
+	return iisRSinited;
 }
 
 RSresult VkRenderSystem::renderSystemDispose()
@@ -566,8 +567,10 @@ RSresult VkRenderSystem::renderSystemDispose()
 		DestroyDebugUtilsMessengerEXT(iinstance.instance, iinstance.debugMessenger, nullptr);
 	}
 	vkDestroyInstance(iinstance.instance, nullptr);
-
-	glfwTerminate();
+	
+	if (iinitInfo.onScreenCanvas) {
+		glfwTerminate();
+	}
 
 	return RSresult::FAILURE;
 }
@@ -605,12 +608,10 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 	RSuint id;
 	bool success = ictxIDpool.CreateID(id);
 	assert(success && "failed to create a context ID");
-	if (success && outCtxID.isValid()) {
+	if (success) {
 		VkRScontext vkrsctx;
-		ictxMap[id] = vkrsctx;
-		outCtxID.id = id;
 
-		if (irenderOnscreen) {
+		if (iinitInfo.onScreenCanvas) {
 			vkrsctx.window = glfwCreateWindow(info.width, info.height, info.title, nullptr, nullptr);
 		}
 		createSurface(vkrsctx);
@@ -618,6 +619,8 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 		createLogicalDevice(vkrsctx);
 		createSwapChain(vkrsctx);
 		createImageViews(vkrsctx);
+		ictxMap[id] = vkrsctx;
+		outCtxID.id = id;
 		return RSresult::SUCCESS;
 	}
 
@@ -646,7 +649,7 @@ RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 	if (ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end()) {
 		const VkRScontext& ctx = ictxMap[ctxID.id];
 
-		if (irenderOnscreen && ctx.window != nullptr) {
+		if (iinitInfo.onScreenCanvas && ctx.window != nullptr) {
 			glfwDestroyWindow(ctx.window);
 			ictxMap.erase(ctxID.id);
 		}
@@ -666,7 +669,7 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 	RSuint id;
 	bool success = iviewIDpool.CreateID(id);
 	assert(success && "failed to create a view ID");
-	if (success && viewID.isValid()) {
+	if (success) {
 		VkRSview vkrsview;
 		vkrsview.view = view;
 		iviewMap[id] = vkrsview;
@@ -795,18 +798,18 @@ void VkRenderSystem::createRenderpass(VkRScollection& collection, const VkRScont
 
 
 bool VkRenderSystem::collectionAvailable(const RScollectionID& colID) {
-	return colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end();
+	return colID.isValid() && (icollectionMap.find(colID.id) != icollectionMap.end());
 }
 
 RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo) {
 	RSuint id;
 	bool success = icollIDpool.CreateID(id);
 	assert(success && "failed to create a collection");
-	if (success && colID.isValid()) {
+	if (success) {
 		VkRScollection vkrscol;
 		vkrscol.info = collInfo;
-		icollectionMap[colID.id] = vkrscol;
 		colID.id = id;
+		icollectionMap[colID.id] = vkrscol;
 		return RSresult::SUCCESS;
 	}
 
@@ -1104,6 +1107,7 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 		const VkRScontext& ctx = ictxMap[ctxID.id];
 		//finalize the collection
 		if (collection.dirty) {
+			createRenderpass(collection, ctx);
 			createGraphicsPipeline(collection, ctx);
 			createCommandPool(collection, ctx);
 			createCommandBuffers(collection, ctx);

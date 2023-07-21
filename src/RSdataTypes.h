@@ -20,6 +20,7 @@ struct RScontextID {
 
 struct RScollectionID {
 	uint32_t id = INVALID_ID;
+	RScollectionID() = default;
 	RScollectionID(uint32_t id);
 	bool isValid() const;
 };
