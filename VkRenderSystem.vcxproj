@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\GeometryData.h" />
     <ClInclude Include="src\RSVkDebugUtils.h" />
     <ClInclude Include="src\MakeID.h" />
     <ClInclude Include="src\RSdataTypes.h" />

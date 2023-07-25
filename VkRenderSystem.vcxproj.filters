@@ -48,6 +48,9 @@
     <ClInclude Include="src\VkRenderSystemEntry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\GeometryData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
