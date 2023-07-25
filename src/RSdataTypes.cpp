@@ -8,6 +8,8 @@ bool RScontextID::isValid() const {
 	return id != INVALID_ID;
 }
 
+RScontextID::RScontextID(uint32_t id) { this->id = id; }
+
 bool RScollectionID::isValid() const {
 	return id != INVALID_ID;
 }

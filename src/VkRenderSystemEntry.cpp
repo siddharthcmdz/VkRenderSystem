@@ -47,10 +47,10 @@ int RSmain() {
 		vkrs.contextDrawCollections(ctxID, viewID);
 	}
 
+
 	vkrs.contextDispose(ctxID);
 	vkrs.viewDispose(viewID);
 	vkrs.collectionDispose(collID);
-	vkrs.contextDispose(ctxID);
 	vkrs.renderSystemDispose();
 
 	return 0;

@@ -30,6 +30,7 @@ struct VkRSinstance {
 
 struct VkRScontext {
 	static const int MAX_FRAMES_IN_FLIGHT = 2;
+	bool framebufferResized = false;
 	GLFWwindow* window = nullptr;
 	VkSurfaceKHR surface{};
 	std::vector<VkImage> swapChainImages;

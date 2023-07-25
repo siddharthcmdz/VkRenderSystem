@@ -15,6 +15,8 @@ struct RSviewID {
 
 struct RScontextID {
 	uint32_t id = INVALID_ID;
+	RScontextID() = default;
+	RScontextID(uint32_t id);
 	bool isValid() const;
 };
 

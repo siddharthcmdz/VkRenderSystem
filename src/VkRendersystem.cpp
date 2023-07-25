@@ -183,7 +183,35 @@ void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx, 
 	}
 }
 
-void VkRenderSystem::contextDrawCollection(const VkRScontext& ctx, VkRSview& view, const VkRScollection& collection) {
+void VkRenderSystem::cleanupSwapChain(VkRScontext& ctx, VkRSview& view) {
+	for (auto framebuffer : view.swapChainFramebuffers) {
+		vkDestroyFramebuffer(iinstance.device, framebuffer, nullptr);
+	}
+
+	for (const auto& imageView : ctx.swapChainImageViews) {
+		vkDestroyImageView(iinstance.device, imageView, nullptr);
+	}
+	vkDestroySwapchainKHR(iinstance.device, ctx.swapChain, nullptr);
+}
+
+void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view, const VkRenderPass& renderpass) {
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(ctx.window, &width, &height);
+	while (width == 0 || height == 0) {
+		glfwGetFramebufferSize(ctx.window, &width, &height);
+		glfwWaitEvents();
+	}
+
+	vkDeviceWaitIdle(iinstance.device);
+
+	cleanupSwapChain(ctx, view);
+
+	createSwapChain(ctx);
+	createImageViews(ctx);
+	createFramebuffers(view, ctx, renderpass);
+}
+
+void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, const VkRScollection& collection) {
 	const VkDevice& device = iinstance.device;
 	uint32_t currentFrame = view.currentFrame;
 	VkFence inflightFence = collection.inFlightFences[currentFrame];
@@ -192,10 +220,19 @@ void VkRenderSystem::contextDrawCollection(const VkRScontext& ctx, VkRSview& vie
 	VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
 
 	vkWaitForFences(device, 1, &inflightFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(device, 1, &inflightFence);
 
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(device, ctx.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	VkResult res = vkAcquireNextImageKHR(device, ctx.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+		recreateSwapchain(ctx, view, collection.renderPass);
+		return;
+	}
+	else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+	//only reset the fence if we are submitting work.
+	vkResetFences(device, 1, &inflightFence);
+
 	vkResetCommandBuffer(commandBuffer, 0);
 
 	recordCommandBuffer(collection, view, ctx, imageIndex, currentFrame);
@@ -232,7 +269,14 @@ void VkRenderSystem::contextDrawCollection(const VkRScontext& ctx, VkRSview& vie
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr;
 
-	const VkResult res = vkQueuePresentKHR(ctx.presentQueue, &presentInfo);
+	res = vkQueuePresentKHR(ctx.presentQueue, &presentInfo);
+	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || ctx.framebufferResized) {
+		ctx.framebufferResized = false;
+		recreateSwapchain(ctx, view, collection.renderPass);
+	}
+	else if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
 
 	view.currentFrame = (currentFrame + 1) % VkRScontext::MAX_FRAMES_IN_FLIGHT;
 }
@@ -240,7 +284,7 @@ void VkRenderSystem::contextDrawCollection(const VkRScontext& ctx, VkRSview& vie
 RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID) {
 	if (iinitInfo.onScreenCanvas) {
 		if (contextAvailable(ctxID) && viewAvailable(viewID)) {
-			const VkRScontext& ctx = ictxMap[ctxID.id];
+			VkRScontext& ctx = ictxMap[ctxID.id];
 			VkRSview& view = iviewMap[viewID.id];
 			for (const uint32_t colID : view.view.collectionList) {
 				if (collectionAvailable(RScollectionID(colID))) {
@@ -540,7 +584,7 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 	if (info.onScreenCanvas) {
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	}
 	createInstance(info);
@@ -599,6 +643,21 @@ void VkRenderSystem::createImageViews(VkRScontext& ctx) {
 	}
 }
 
+void VkRenderSystem::contextResizeSet(const RScontextID& ctxID, bool onOff) {
+	if (contextAvailable(ctxID)) {
+		VkRScontext& ctx = ictxMap[ctxID.id];
+		ctx.framebufferResized = onOff;
+	}
+}
+
+void VkRenderSystem::framebufferResizeCallback(GLFWwindow* window, int widht, int height) {
+	uint32_t id = *(reinterpret_cast<uint32_t*>(glfwGetWindowUserPointer(window)));
+	RScontextID ctxID(id);
+	if (getInstance().contextAvailable(ctxID)) {
+		getInstance().contextResizeSet(ctxID, true);
+	}
+}
+
 RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInfo& info) {
 
 	RSuint id;
@@ -609,6 +668,8 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 
 		if (iinitInfo.onScreenCanvas) {
 			vkrsctx.window = glfwCreateWindow(info.width, info.height, info.title, nullptr, nullptr);
+			glfwSetWindowUserPointer(vkrsctx.window, &id);
+			glfwSetFramebufferSizeCallback(vkrsctx.window, framebufferResizeCallback);
 		}
 		createSurface(vkrsctx);
 		setPhysicalDevice(vkrsctx);
@@ -633,8 +694,11 @@ void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 	for (const auto& imageView : ctx.swapChainImageViews) {
 		vkDestroyImageView(device, imageView, nullptr);
 	}
+	ctx.swapChainImageViews.clear();
 	vkDestroySwapchainKHR(device, ctx.swapChain, nullptr);
+	ctx.swapChain = nullptr;
 	vkDestroySurfaceKHR(iinstance.instance, ctx.surface, nullptr);
+	ctx.surface = nullptr;
 
 	glfwDestroyWindow(ctx.window);
 	ctx.window = nullptr;
@@ -643,10 +707,10 @@ void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 
 	if (ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end()) {
-		const VkRScontext& ctx = ictxMap[ctxID.id];
+		VkRScontext& ctx = ictxMap[ctxID.id];
 
 		if (iinitInfo.onScreenCanvas && ctx.window != nullptr) {
-			glfwDestroyWindow(ctx.window);
+			disposeContext(ctx);
 			ictxMap.erase(ctxID.id);
 		}
 
@@ -1119,9 +1183,9 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 
 RSresult VkRenderSystem::collectionDispose(const RScollectionID& colID) {
 	if (colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end()) {
-		VkRScollection collection = icollectionMap[colID.id];
+		VkRScollection& collection = icollectionMap[colID.id];
 		//dispose the collection
-
+		disposeCollection(collection);
 		icollectionMap.erase(colID.id);
 		return RSresult::SUCCESS;
 	}

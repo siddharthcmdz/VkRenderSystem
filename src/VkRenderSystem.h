@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "MakeID.h"
 
+
 class VkRenderSystem {
 
 private:
@@ -29,6 +30,7 @@ private:
 	void createSwapChain(VkRScontext& ctx);
 	void createImageViews(VkRScontext& ctx);
 	void disposeContext(VkRScontext& ctx);
+	void cleanupSwapChain(VkRScontext& ctx, VkRSview& view);
 
 	//rs global helpers
 	void printPhysicalDeviceInfo(VkPhysicalDevice device);
@@ -39,6 +41,8 @@ private:
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
 	void createInstance(const RSinitInfo& info);
 	void setupDebugMessenger();
+	void recreateSwapchain(VkRScontext& ctx, VkRSview& view, const VkRenderPass& renderpass);
+	static void framebufferResizeCallback(GLFWwindow* window, int widht, int height);
 
 	//collection related helpers
 	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
@@ -49,7 +53,7 @@ private:
 	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
 	VkShaderModule createShaderModule(const std::vector<char>& code, const VkDevice& device);
 	static std::vector<char> readFile(const std::string& filename);
-	void contextDrawCollection(const VkRScontext& context, VkRSview& view, const VkRScollection& collection);
+	void contextDrawCollection(VkRScontext& context, VkRSview& view, const VkRScollection& collection);
 	void disposeCollection(VkRScollection& collection);
 
 	//view related helpers
@@ -71,6 +75,7 @@ public:
 	RSresult contextCreate(RScontextID& outCtxID, const RScontextInfo& info);
 	RSresult contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID);
 	RSresult contextDispose(const RScontextID& ctxID);
+	void contextResizeSet(const RScontextID& ctxID, bool onOff);
 	
 	bool viewAvailable(const RSviewID& viewID) const;
 	RSresult viewCreate(RSviewID& viewID, const RSview& view);

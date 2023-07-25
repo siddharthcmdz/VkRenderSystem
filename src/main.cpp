@@ -8,8 +8,8 @@ int main() {
 	std::cout << "Main entry" << std::endl;
 
 	//sampleMain0();
-	sampleMain1();
-	//RSmain();
+	//sampleMain1();
+	RSmain();
 
 	return 0;
 }
