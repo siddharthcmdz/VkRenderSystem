@@ -1,5 +1,4 @@
-// VkRenderSystem.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+#include "VkSampleMain0.h"
 #define GLFW_INCLUDE_VULKAN
 #include <iostream>
 #include <GLFW/glfw3.h>
@@ -9,7 +8,7 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
-int sampleMain()
+int sampleMain0()
 {
     std::cout << "Hello World!\n";
     glfwInit();
