@@ -64,6 +64,14 @@ void VkRenderSystem::populateInstanceData(VkRSinstance& inst, const RSinitInfo& 
 	for (const auto& prop : extensionProperties) {
 		inst.vkExtensionProps.push_back(prop.extensionName);
 	}
+
+	uint32_t version;
+	vkEnumerateInstanceVersion(&version);
+	inst.majorVersion = VK_API_VERSION_MAJOR(version);
+	inst.minorVersion = VK_API_VERSION_MINOR(version);
+	inst.patchVersion = VK_API_VERSION_PATCH(version);
+	inst.variantVersion = VK_API_VERSION_VARIANT(version);
+	std::cout << "Vulkan version: " << inst.majorVersion << " (major) " << inst.minorVersion << " (minor)" << inst.patchVersion << " (patch) " << inst.variantVersion << " (variant)" << std::endl;
 }
 
 void VkRenderSystem::createInstance(const RSinitInfo& info) {
@@ -237,21 +245,9 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 			for (const uint32_t colID : view.view.collectionList) {
 				if (collectionAvailable(RScollectionID(colID))) {
 					VkRScollection& coll = icollectionMap[colID];
-					//if (coll.renderPass == nullptr) {
-					//	createRenderpass(coll, ctx);
-					//}
 					if (view.swapChainFramebuffers.empty()) {
 						createFramebuffers(view, ctx, coll.renderPass); //hacky renderpass. need to move this to viewCreate(..)
 					}
-					//if (coll.commandPool == nullptr) {
-					//	createCommandPool(coll, ctx);
-					//}
-					//if (coll.commandBuffers.empty()) {
-					//	createCommandBuffers(coll, ctx);
-					//}
-					//if (coll.inFlightFences.empty()) {
-					//	createSyncObjects(coll, ctx);
-					//}
 				}
 			}
 

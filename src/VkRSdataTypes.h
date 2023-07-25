@@ -21,6 +21,10 @@ struct VkRSinstance {
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
+	uint32_t majorVersion = ~0;
+	uint32_t minorVersion = ~0;
+	uint32_t patchVersion = ~0;
+	uint32_t variantVersion = ~0;
 };
 
 
