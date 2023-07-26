@@ -39,11 +39,15 @@ private:
 	};
 
 	const std::vector<Vertex> ivertices = {
-		{{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}} 
 	};
 
+	const std::vector<uint16_t> iindices = {
+		0, 1, 2, 2, 3, 0
+	};
 
 	const uint32_t WIDTH = 800;
 	const uint32_t HEIGHT = 600;
@@ -70,6 +74,8 @@ private:
 	VkPipeline igraphicsPipeline;
 	VkBuffer ivertexBuffer;
 	VkDeviceMemory ivertexBufferMemory;
+	VkBuffer iindexBuffer;
+	VkDeviceMemory iindexBufferMemory;
 	std::vector<VkFramebuffer> iswapChainFramebuffers;
 	VkCommandPool icommandPool; //manages the memory where command buffers are allocated from them
 	std::vector<VkCommandBuffer> icommandBuffers; //gets automatically disposed when command pool is disposed.
@@ -879,6 +885,27 @@ private:
 		vkFreeMemory(idevice, stagingBufferMemory, nullptr);
 	}
 
+	void createIndexBuffer() {
+		
+		VkDeviceSize bufferSize = sizeof(iindices[0]) * iindices.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(idevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+		memcpy(data, iindices.data(), (size_t)bufferSize);
+		vkUnmapMemory(idevice, stagingBufferMemory);
+
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, iindexBuffer, iindexBufferMemory);
+
+		copyBuffer(stagingBuffer, iindexBuffer, bufferSize);
+
+		vkDestroyBuffer(idevice, stagingBuffer, nullptr);
+		vkFreeMemory(idevice, stagingBufferMemory, nullptr);
+	}
+
 	void createFramebuffers() {
 		iswapChainFramebuffers.resize(iswapChainImageViews.size());
 
@@ -973,8 +1000,9 @@ private:
 			VkBuffer vertexBuffers[] = { ivertexBuffer };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, iindexBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
 
-			vkCmdDraw(commandBuffer, static_cast<uint32_t>(ivertices.size()), 1, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(iindices.size()), 1, 0, 0, 0);
 		}
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -1021,6 +1049,7 @@ private:
 		createFramebuffers();
 		createCommandPool();
 		createVertexBuffer();
+		createIndexBuffer();
 		createCommandBuffers();
 		createSyncObjects();
 	}
@@ -1111,8 +1140,13 @@ private:
 	void cleanup() {
 
 		cleanupSwapChain();
+		
 		vkDestroyBuffer(idevice, ivertexBuffer, nullptr);
 		vkFreeMemory(idevice, ivertexBufferMemory, nullptr);
+
+		vkDestroyBuffer(idevice, iindexBuffer, nullptr);
+		vkFreeMemory(idevice, iindexBufferMemory, nullptr);
+
 		vkDestroyPipeline(idevice, igraphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(idevice, ipipelineLayout, nullptr);
 		vkDestroyRenderPass(idevice, irenderPass, nullptr);
