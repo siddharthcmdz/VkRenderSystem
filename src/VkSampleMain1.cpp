@@ -38,6 +38,13 @@ private:
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
+	const std::vector<Vertex> ivertices = {
+		{{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
+		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	};
+
+
 	const uint32_t WIDTH = 800;
 	const uint32_t HEIGHT = 600;
 	const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -61,6 +68,8 @@ private:
 	VkPipelineLayout ipipelineLayout;
 	VkRenderPass irenderPass;
 	VkPipeline igraphicsPipeline;
+	VkBuffer ivertexBuffer;
+	VkDeviceMemory ivertexBufferMemory;
 	std::vector<VkFramebuffer> iswapChainFramebuffers;
 	VkCommandPool icommandPool; //manages the memory where command buffers are allocated from them
 	std::vector<VkCommandBuffer> icommandBuffers; //gets automatically disposed when command pool is disposed.
@@ -93,11 +102,11 @@ private:
 		return buffer;
 	}
 
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, 
-		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
-		const VkAllocationCallbacks* pAllocator, 
+	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
+		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+		const VkAllocationCallbacks* pAllocator,
 		VkDebugUtilsMessengerEXT* pDebugMessenger) {
-		
+
 		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 		if (func != nullptr) {
 			return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -107,9 +116,9 @@ private:
 		}
 	}
 
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, 
-									   VkDebugUtilsMessengerEXT debugMessenger, 
-									   const VkAllocationCallbacks* pAllocator) {
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+		VkDebugUtilsMessengerEXT debugMessenger,
+		const VkAllocationCallbacks* pAllocator) {
 		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr) {
 			func(instance, debugMessenger, pAllocator);
@@ -121,7 +130,7 @@ private:
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData) {
-		
+
 		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
 		return VK_FALSE;
@@ -221,11 +230,11 @@ private:
 	/**
 	* VK_PRESENT_MODE_IMMEDIATE_KHR : images submitted by the app is transferred to the screen immediately (may result in tearing)
 	* VK_PRESENT_MODE_FIFO_KHR: vertical sync mode - if the queue is full, the app needs to wait before submitting a new image
-	* VK_PRESENT_MODE_FIFO_RELAXED_KHR - if the queue is empty, then instead of waiting for the next vertical blank, 
+	* VK_PRESENT_MODE_FIFO_RELAXED_KHR - if the queue is empty, then instead of waiting for the next vertical blank,
 	*                                 the image is transferred right away.
-	* VK_PRESENT_MODE_MAILBOX_KHR - if the queue is full, instead of blocking the app from submitting a new image to the queue, the 
+	* VK_PRESENT_MODE_MAILBOX_KHR - if the queue is full, instead of blocking the app from submitting a new image to the queue, the
 	*								newest image is replaced with "newer" images. AKA triple buffering
-	* 
+	*
 	* VK_PRESENT_MODE_FIFO_KHR  - is guaranteed to be available.
 	*/
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
@@ -408,7 +417,7 @@ private:
 		//create a collection of queue create infos to set all at once on device create info.
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		QueueFamilyIndices indices = findQueueFamilies(iphysicalDevice);
-		std::set<uint32_t> uniqueQueueFamiles = { indices.graphicsFamily.value(), indices.presentFamily.value()};
+		std::set<uint32_t> uniqueQueueFamiles = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 		float queuePriority = 1.f;
 		for (uint32_t queueFamily : uniqueQueueFamiles) {
@@ -417,10 +426,10 @@ private:
 			queueCreateInfo.queueFamilyIndex = queueFamily;
 			queueCreateInfo.queueCount = 1;
 			queueCreateInfo.pQueuePriorities = &queuePriority;
-			
+
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
-		
+
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -469,7 +478,7 @@ private:
 		}
 
 		vkDeviceWaitIdle(idevice);
-		
+
 		cleanupSwapChain();
 
 		createSwapChain();
@@ -512,8 +521,8 @@ private:
 		}
 		else {
 			//image is owned by one queue family at a time and ownership must be explicity transferred to another queue.
-			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; 
-			createInfo.queueFamilyIndexCount = 0; 
+			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			createInfo.queueFamilyIndexCount = 0;
 			createInfo.pQueueFamilyIndices = nullptr;
 		}
 
@@ -544,7 +553,7 @@ private:
 			createInfo.image = iswapChainImages[i];
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 			createInfo.format = iswapChainImageFormat;
-			
+
 			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -771,6 +780,57 @@ private:
 		}
 	}
 
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+		VkPhysicalDeviceMemoryProperties memProperties;
+		vkGetPhysicalDeviceMemoryProperties(iphysicalDevice, &memProperties);
+		
+		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+			if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+				return i;
+			}
+		}
+
+		throw std::runtime_error("failed to find suitable memory type!");
+	}
+
+	void createVertexBuffer() {
+
+		VkBufferCreateInfo bufferInfo{};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = sizeof(ivertices[0]) * ivertices.size();
+		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		bufferInfo.flags = 0;
+		
+		VkResult res = vkCreateBuffer(idevice, &bufferInfo, nullptr, &ivertexBuffer);
+		if (res != VK_SUCCESS) {
+			throw std::runtime_error("failed to create vertex buffer");
+		}
+
+		VkMemoryRequirements memRequirements;
+		vkGetBufferMemoryRequirements(idevice, ivertexBuffer, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		
+		res = vkAllocateMemory(idevice, &allocInfo, nullptr, &ivertexBufferMemory);
+		if (res != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate vertex buffer memory");
+		}
+
+		res = vkBindBufferMemory(idevice, ivertexBuffer, ivertexBufferMemory, 0);
+		if (res != VK_SUCCESS) {
+			throw std::runtime_error("failed to bind buffer memory");
+		}
+
+		void* data;
+		vkMapMemory(idevice, ivertexBufferMemory, 0, bufferInfo.size, 0, &data);
+		memcpy(data, ivertices.data(), (size_t)bufferInfo.size);
+		vkUnmapMemory(idevice, ivertexBufferMemory);
+	}
+
 	void createFramebuffers() {
 		iswapChainFramebuffers.resize(iswapChainImageViews.size());
 
@@ -862,7 +922,11 @@ private:
 			scissor.extent = iswapChainExtent;
 			vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-			vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+			VkBuffer vertexBuffers[] = { ivertexBuffer };
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+			vkCmdDraw(commandBuffer, static_cast<uint32_t>(ivertices.size()), 1, 0, 0);
 		}
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -908,6 +972,7 @@ private:
 		createGraphicsPipeline();
 		createFramebuffers();
 		createCommandPool();
+		createVertexBuffer();
 		createCommandBuffers();
 		createSyncObjects();
 	}
@@ -998,6 +1063,8 @@ private:
 	void cleanup() {
 
 		cleanupSwapChain();
+		vkDestroyBuffer(idevice, ivertexBuffer, nullptr);
+		vkFreeMemory(idevice, ivertexBufferMemory, nullptr);
 		vkDestroyPipeline(idevice, igraphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(idevice, ipipelineLayout, nullptr);
 		vkDestroyRenderPass(idevice, irenderPass, nullptr);
