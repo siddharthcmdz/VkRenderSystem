@@ -793,42 +793,90 @@ private:
 		throw std::runtime_error("failed to find suitable memory type!");
 	}
 
-	void createVertexBuffer() {
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = icommandPool;
+		allocInfo.commandBufferCount = 1;
 
+		VkCommandBuffer commandBuffer;
+		vkAllocateCommandBuffers(idevice, &allocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		{
+			VkBufferCopy copyRegion{};
+			copyRegion.srcOffset = 0;
+			copyRegion.dstOffset = 0;
+			copyRegion.size = size;
+			vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+		}
+		vkEndCommandBuffer(commandBuffer);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		vkQueueSubmit(igraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(igraphicsQueue);
+
+		vkFreeCommandBuffers(idevice, icommandPool, 1, &commandBuffer);
+	}
+
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = sizeof(ivertices[0]) * ivertices.size();
-		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.size = size;
+		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		bufferInfo.flags = 0;
 		
-		VkResult res = vkCreateBuffer(idevice, &bufferInfo, nullptr, &ivertexBuffer);
+		VkResult res = vkCreateBuffer(idevice, &bufferInfo, nullptr, &buffer);
 		if (res != VK_SUCCESS) {
 			throw std::runtime_error("failed to create vertex buffer");
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(idevice, ivertexBuffer, &memRequirements);
+		vkGetBufferMemoryRequirements(idevice, buffer, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 		
-		res = vkAllocateMemory(idevice, &allocInfo, nullptr, &ivertexBufferMemory);
+		res = vkAllocateMemory(idevice, &allocInfo, nullptr, &bufferMemory);
 		if (res != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate vertex buffer memory");
 		}
 
-		res = vkBindBufferMemory(idevice, ivertexBuffer, ivertexBufferMemory, 0);
+		res = vkBindBufferMemory(idevice, buffer, bufferMemory, 0);
 		if (res != VK_SUCCESS) {
 			throw std::runtime_error("failed to bind buffer memory");
 		}
+	}
+
+	void createVertexBuffer() {
+
+		VkDeviceSize bufferSize = sizeof(ivertices[0]) * ivertices.size();
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 		void* data;
-		vkMapMemory(idevice, ivertexBufferMemory, 0, bufferInfo.size, 0, &data);
-		memcpy(data, ivertices.data(), (size_t)bufferInfo.size);
-		vkUnmapMemory(idevice, ivertexBufferMemory);
+		vkMapMemory(idevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+		memcpy(data, ivertices.data(), (size_t)bufferSize);
+		vkUnmapMemory(idevice, stagingBufferMemory);
+		
+		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ivertexBuffer, ivertexBufferMemory);
+		copyBuffer(stagingBuffer, ivertexBuffer, bufferSize);
+
+		vkDestroyBuffer(idevice, stagingBuffer, nullptr);
+		vkFreeMemory(idevice, stagingBufferMemory, nullptr);
 	}
 
 	void createFramebuffers() {
