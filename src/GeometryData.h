@@ -7,4 +7,10 @@ namespace rsgd {
 		glm::vec2 pos;
 		glm::vec3 color;
 	};
+
+	struct Vertex3 {
+		glm::vec4 pos;
+		glm::vec4 color;
+		glm::vec4 normal;
+	};
 }

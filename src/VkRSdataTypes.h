@@ -55,6 +55,11 @@ struct VkRScollection {
 	bool dirty = true;
 };
 
+struct VkRSgeometryData {
+	VkBuffer buffer;
+	VkDeviceMemory deviceMemory;
+};
+
 struct VkRSview {
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	uint32_t currentFrame = 0;

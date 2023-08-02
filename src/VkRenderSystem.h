@@ -5,20 +5,26 @@
 #include <vector>
 #include <unordered_map>
 #include "MakeID.h"
-
+#include "rsids.h"
 
 class VkRenderSystem {
 
 private:
 	RSinitInfo iinitInfo;
 	VkRSinstance iinstance;
-	std::unordered_map<uint32_t ,VkRSview> iviewMap;
-	std::unordered_map<uint32_t, VkRScontext> ictxMap;
-	std::unordered_map<uint32_t, VkRScollection> icollectionMap;
+	using RSviews = std::unordered_map<RSviewID ,VkRSview, IDHasher<RSviewID>>;
+	using RScontexts = std::unordered_map<RScontextID, VkRScontext, IDHasher<RScontextID>> ;
+	using RScollections = std::unordered_map<RScollectionID, VkRScollection, IDHasher<RScollectionID>> ;
+	using RSgeometries = std::unordered_map<RSgeometryID, VkRSgeometryData, IDHasher<RSgeometryID>> ;
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
 	MakeID icollIDpool = MakeID(MAX_IDS);
 	bool iisRSinited = false;
+
+	RSviews iviewMap;
+	RScontexts ictxMap;
+	RScollections icollectionMap;
+	RSgeometries igeometryDataMap;
 
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
@@ -89,4 +95,6 @@ public:
 	RSresult collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo);
 	RSresult collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID);
 	RSresult collectionDispose(const RScollectionID& colID);
+
+	
 };

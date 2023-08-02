@@ -5,27 +5,8 @@
 #include "RStypes.h"
 
 #define MAX_IDS UINT32_MAX
-#define INVALID_ID ~0
 
 
-struct RSviewID {
-	uint32_t id = INVALID_ID;
-	bool isValid() const;
-};
-
-struct RScontextID {
-	uint32_t id = INVALID_ID;
-	RScontextID() = default;
-	RScontextID(uint32_t id);
-	bool isValid() const;
-};
-
-struct RScollectionID {
-	uint32_t id = INVALID_ID;
-	RScollectionID() = default;
-	RScollectionID(uint32_t id);
-	bool isValid() const;
-};
 
 struct RSinitInfo {
 	bool enableValidation = true;

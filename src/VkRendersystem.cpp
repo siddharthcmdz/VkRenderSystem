@@ -285,7 +285,7 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 	if (iinitInfo.onScreenCanvas) {
 		if (contextAvailable(ctxID) && viewAvailable(viewID)) {
 			VkRScontext& ctx = ictxMap[ctxID.id];
-			VkRSview& view = iviewMap[viewID.id];
+			VkRSview& view = iviewMap[viewID];
 			for (const uint32_t colID : view.view.collectionList) {
 				if (collectionAvailable(RScollectionID(colID))) {
 					VkRScollection& coll = icollectionMap[colID];
@@ -299,7 +299,7 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 			while (!glfwWindowShouldClose(ctx.window)) {
 				glfwPollEvents();
 				RScollectionID collID0(view.view.collectionList[0]);
-				const VkRScollection& coll = icollectionMap[collID0.id];
+				const VkRScollection& coll = icollectionMap[collID0];
 				contextDrawCollection(ctx, view, coll);
 			}
 			vkDeviceWaitIdle(iinstance.device);
@@ -676,8 +676,8 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 		createLogicalDevice(vkrsctx);
 		createSwapChain(vkrsctx);
 		createImageViews(vkrsctx);
-		ictxMap[id] = vkrsctx;
 		outCtxID.id = id;
+		ictxMap[outCtxID] = vkrsctx;
 		return RSresult::SUCCESS;
 	}
 
@@ -706,7 +706,7 @@ void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 
-	if (ctxID.isValid() && ictxMap.find(ctxID.id) != ictxMap.end()) {
+	if (contextAvailable(ctxID)) {
 		VkRScontext& ctx = ictxMap[ctxID.id];
 
 		if (iinitInfo.onScreenCanvas && ctx.window != nullptr) {
@@ -721,7 +721,7 @@ RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 }
 
 bool VkRenderSystem::viewAvailable(const RSviewID& viewID) const {
-	return viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end();
+	return viewID.isValid() && iviewMap.find(viewID) != iviewMap.end();
 }
 
 RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
@@ -732,8 +732,8 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 	if (success) {
 		VkRSview vkrsview;
 		vkrsview.view = view;
-		iviewMap[id] = vkrsview;
 		viewID.id = id;
+		iviewMap[viewID] = vkrsview;
 		return RSresult::SUCCESS;
 	}
 
@@ -755,8 +755,8 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 //}
 
 RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScollectionID& colID) {
-	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
-		VkRSview& vkrsview = iviewMap[viewID.id];
+	if (viewAvailable(viewID)) {
+		VkRSview& vkrsview = iviewMap[viewID];
 		//for now support only one collection
 		if (vkrsview.view.collectionList.empty()) {
 			vkrsview.view.collectionList.push_back(colID.id);
@@ -769,8 +769,8 @@ RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScolle
 }
 
 RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID) {
-	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
-		VkRSview& vkrsview = iviewMap[viewID.id];
+	if (viewAvailable(viewID)) {
+		VkRSview& vkrsview = iviewMap[viewID];
 		vkrsview.view.collectionList.erase(std::remove(vkrsview.view.collectionList.begin(), vkrsview.view.collectionList.end(), colID.id));
 		vkrsview.view.dirty = true;
 
@@ -781,8 +781,8 @@ RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RSco
 }
 
 RSresult VkRenderSystem::viewFinalize(const RSviewID& viewID) {
-	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
-		VkRSview& vkrsview = iviewMap[viewID.id];
+	if (viewAvailable(viewID)) {
+		VkRSview& vkrsview = iviewMap[viewID];
 		vkrsview.view.dirty = false;
 		
 		//finalize the view
@@ -795,11 +795,11 @@ RSresult VkRenderSystem::viewFinalize(const RSviewID& viewID) {
 
 RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)
 {
-	if (viewID.isValid() && iviewMap.find(viewID.id) != iviewMap.end()) {
-		VkRSview& vkrsview = iviewMap[viewID.id];
+	if (viewAvailable(viewID)) {
+		VkRSview& vkrsview = iviewMap[viewID];
 		//dispose view contents
 		disposeView(vkrsview);
-		iviewMap.erase(viewID.id);
+		iviewMap.erase(viewID);
 		return RSresult::SUCCESS;
 	}
 
@@ -858,7 +858,7 @@ void VkRenderSystem::createRenderpass(VkRScollection& collection, const VkRScont
 
 
 bool VkRenderSystem::collectionAvailable(const RScollectionID& colID) {
-	return colID.isValid() && (icollectionMap.find(colID.id) != icollectionMap.end());
+	return colID.isValid() && (icollectionMap.find(colID) != icollectionMap.end());
 }
 
 RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo) {
@@ -869,7 +869,7 @@ RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollect
 		VkRScollection vkrscol;
 		vkrscol.info = collInfo;
 		colID.id = id;
-		icollectionMap[colID.id] = vkrscol;
+		icollectionMap[colID] = vkrscol;
 		return RSresult::SUCCESS;
 	}
 
@@ -1163,7 +1163,7 @@ void VkRenderSystem::createSyncObjects(VkRScollection& collection, const VkRScon
 
 RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID) {
 	if (collectionAvailable(colID) && contextAvailable(ctxID)) {
-		VkRScollection& collection = icollectionMap[colID.id];
+		VkRScollection& collection = icollectionMap[colID];
 		const VkRScontext& ctx = ictxMap[ctxID.id];
 		//finalize the collection
 		if (collection.dirty) {
@@ -1182,11 +1182,11 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 }
 
 RSresult VkRenderSystem::collectionDispose(const RScollectionID& colID) {
-	if (colID.isValid() && icollectionMap.find(colID.id) != icollectionMap.end()) {
-		VkRScollection& collection = icollectionMap[colID.id];
+	if (colID.isValid() && icollectionMap.find(colID) != icollectionMap.end()) {
+		VkRScollection& collection = icollectionMap[colID];
 		//dispose the collection
 		disposeCollection(collection);
-		icollectionMap.erase(colID.id);
+		icollectionMap.erase(colID);
 		return RSresult::SUCCESS;
 	}
 
