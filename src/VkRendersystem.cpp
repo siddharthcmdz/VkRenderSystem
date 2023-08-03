@@ -253,7 +253,7 @@ void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, con
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	const VkResult submitRes = vkQueueSubmit(ctx.graphicsQueue, 1, &submitInfo, inflightFence);
+	const VkResult submitRes = vkQueueSubmit(iinstance.graphicsQueue, 1, &submitInfo, inflightFence);
 	if (submitRes != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
@@ -269,7 +269,7 @@ void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, con
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr;
 
-	res = vkQueuePresentKHR(ctx.presentQueue, &presentInfo);
+	res = vkQueuePresentKHR(iinstance.presentQueue, &presentInfo);
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || ctx.framebufferResized) {
 		ctx.framebufferResized = false;
 		recreateSwapchain(ctx, view, collection.renderPass);
@@ -461,10 +461,10 @@ void VkRenderSystem::createLogicalDevice(VkRScontext& ctx) {
 	}
 
 	//get the graphics queue handle from the logical device.
-	vkGetDeviceQueue(iinstance.device, indices.graphicsFamily.value(), 0, &ctx.graphicsQueue);
+	vkGetDeviceQueue(iinstance.device, indices.graphicsFamily.value(), 0, &iinstance.graphicsQueue);
 
 	//get the present queue handle from the logical device
-	vkGetDeviceQueue(iinstance.device, indices.presentFamily.value(), 0, &ctx.presentQueue);
+	vkGetDeviceQueue(iinstance.device, indices.presentFamily.value(), 0, &iinstance.presentQueue);
 }
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
@@ -602,6 +602,7 @@ bool VkRenderSystem::isRenderSystemInit()
 
 RSresult VkRenderSystem::renderSystemDispose()
 {
+	vkDestroyCommandPool(iinstance.device, iinstance.commandPool, nullptr);
 	vkDestroyDevice(iinstance.device, nullptr);
 	if (iinstance.enableValidation) {
 		DestroyDebugUtilsMessengerEXT(iinstance.instance, iinstance.debugMessenger, nullptr);
@@ -1116,7 +1117,7 @@ void VkRenderSystem::createCommandPool(VkRScollection& collection, const VkRScon
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-	const VkResult cmdpoolResult = vkCreateCommandPool(iinstance.device, &poolInfo, nullptr, &collection.commandPool);
+	const VkResult cmdpoolResult = vkCreateCommandPool(iinstance.device, &poolInfo, nullptr, &iinstance.commandPool);
 	if (cmdpoolResult != VK_SUCCESS) {
 		throw std::runtime_error("faailed to create command pool");
 	}
@@ -1127,7 +1128,7 @@ void VkRenderSystem::createCommandBuffers(VkRScollection& collection, const VkRS
 
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = collection.commandPool;
+	allocInfo.commandPool = iinstance.commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)collection.commandBuffers.size();
 
@@ -1201,7 +1202,6 @@ void VkRenderSystem::disposeCollection(VkRScollection& collection) {
 		vkDestroyFence(device, collection.inFlightFences[i], nullptr);
 	}
 
-	vkDestroyCommandPool(device, collection.commandPool, nullptr);
 
 	vkDestroyPipeline(device, collection.graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(device, collection.pipelineLayout, nullptr);
@@ -1259,7 +1259,7 @@ void VkRenderSystem::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevice
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	//allocInfo.commandPool = icommandPool; FIXME
+	allocInfo.commandPool = iinstance.commandPool; 
 	allocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer commandBuffer;
@@ -1284,12 +1284,10 @@ void VkRenderSystem::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevice
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
 
-	//FIXME
-	//vkQueueSubmit(igraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	//vkQueueWaitIdle(igraphicsQueue);
+	vkQueueSubmit(iinstance.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(iinstance.graphicsQueue);
 
-	//FIXME
-	//vkFreeCommandBuffers(iinstance.device, icommandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(iinstance.device, iinstance.commandPool, 1, &commandBuffer);
 }
 
 RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints usageHints) {

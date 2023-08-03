@@ -22,6 +22,9 @@ struct VkRSinstance {
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
+	VkQueue graphicsQueue{};
+	VkQueue presentQueue{};
+	VkCommandPool commandPool{}; //manages the memory where command buffers are allocated from them
 	uint32_t majorVersion = ~0;
 	uint32_t minorVersion = ~0;
 	uint32_t patchVersion = ~0;
@@ -36,8 +39,6 @@ struct VkRScontext {
 	VkSurfaceKHR surface{};
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
-	VkQueue graphicsQueue{};
-	VkQueue presentQueue{};
 	VkSwapchainKHR swapChain{};
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
@@ -48,7 +49,6 @@ struct VkRScollection {
 	VkRenderPass renderPass{};
 	VkPipelineLayout pipelineLayout{};
 	VkPipeline graphicsPipeline{};
-	VkCommandPool commandPool{}; //manages the memory where command buffers are allocated from them
 	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
