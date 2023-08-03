@@ -3,6 +3,7 @@
 #include <glm/vec4.hpp>
 #include <vector>
 #include "RStypes.h"
+#include "rsenums.h"
 
 #define MAX_IDS UINT32_MAX
 
@@ -29,4 +30,11 @@ struct RSview {
 
 struct RScollectionInfo {
 
+};
+
+struct RSvertexAttribsInfo {
+	uint32_t numVertexAttribs = 0;
+	RSvertexAttribute* attributes = nullptr;
+
+	uint32_t sizeOfAttrib() const;
 };

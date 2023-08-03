@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <string>
 #include <optional>
+#include "rsenums.h"
 
 struct VkRSinstance {
 	static const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -55,9 +56,31 @@ struct VkRScollection {
 	bool dirty = true;
 };
 
+struct AllocationID {
+	
+	uint32_t offset;
+	uint32_t numElements;
+	uint16_t elemSize;
+};
+
 struct VkRSgeometryData {
-	VkBuffer buffer;
-	VkDeviceMemory deviceMemory;
+	uint32_t numVertices = 0;
+	uint32_t numIndices = 0;
+	RSvertexAttribsInfo attribInfo;
+	RSbufferUsageHints usageHints = RSbufferUsageHints::buVertices;
+	
+	VkBuffer vaBuffer = VK_NULL_HANDLE;
+	VkBuffer stagingVABuffer = VK_NULL_HANDLE;
+	VkDeviceMemory vaBufferMemory = VK_NULL_HANDLE;
+	VkDeviceMemory stagingVAbufferMemory = VK_NULL_HANDLE;
+	void* mappedStagingVAPtr;
+
+	VkBuffer indicesBuffer = VK_NULL_HANDLE;
+	VkBuffer stagingIndexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory indicesBufferMemory = VK_NULL_HANDLE;
+	VkDeviceMemory stagingIndexBufferMemory = VK_NULL_HANDLE;
+	void* mappedIndexPtr;
+
 };
 
 struct VkRSview {

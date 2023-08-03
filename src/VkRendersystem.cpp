@@ -1207,3 +1207,153 @@ void VkRenderSystem::disposeCollection(VkRScollection& collection) {
 	vkDestroyPipelineLayout(device, collection.pipelineLayout, nullptr);
 	vkDestroyRenderPass(device, collection.renderPass, nullptr);
 }
+
+uint32_t VkRenderSystem::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(iinstance.physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("failed to find suitable memory type!");
+}
+
+void VkRenderSystem::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memProperties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	bufferInfo.flags = 0;
+
+	VkResult res = vkCreateBuffer(iinstance.device, &bufferInfo, nullptr, &buffer);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to create a buffer!");
+	}
+
+	VkMemoryRequirements memRequirements{};
+	vkGetBufferMemoryRequirements(iinstance.device, buffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, memProperties);
+
+	res = vkAllocateMemory(iinstance.device, &allocInfo, nullptr, &bufferMemory);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate vertex buffer memory");
+	}
+
+	res = vkBindBufferMemory(iinstance.device, buffer, bufferMemory, 0);
+}
+
+bool VkRenderSystem::geometryDataAvailable(const RSgeometryDataID& geomDataID) {
+	return geomDataID.isValid() && (igeometryDataMap.find(geomDataID) != igeometryDataMap.end());
+}
+
+void VkRenderSystem::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	//allocInfo.commandPool = icommandPool; FIXME
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(iinstance.device, &allocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	{
+		VkBufferCopy copyRegion{};
+		copyRegion.srcOffset = 0;
+		copyRegion.dstOffset = 0;
+		copyRegion.size = size;
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	}
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	//FIXME
+	//vkQueueSubmit(igraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	//vkQueueWaitIdle(igraphicsQueue);
+
+	//FIXME
+	//vkFreeCommandBuffers(iinstance.device, icommandPool, 1, &commandBuffer);
+}
+
+RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints usageHints) {
+	RSuint id;
+	bool success = igeomDataIDpool.CreateID(id);
+	assert(success && "failed to create a geometry data ID");
+	if (success) {
+		VkRSgeometryData gdata;
+		gdata.numVertices = numVertices;
+		gdata.numIndices = numIndices;
+		gdata.usageHints = usageHints;
+		gdata.attribInfo = attributesInfo;
+
+		//Create buffer for position
+		bool foundPosition = false;
+		for (uint32_t i = 0; i < gdata.attribInfo.numVertexAttribs; i++) {
+			if (gdata.attribInfo.attributes[i] == RSvertexAttribute::vaPosition) {
+				foundPosition = true;
+			}
+		}
+		if (foundPosition == false) {
+			return RSresult::FAILURE;
+		}
+
+		
+		//create buffer for staging position vertex attribs
+		VkDeviceSize posBufferSize = numVertices * sizeof(glm::vec4);
+		createBuffer(posBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingVABuffer, gdata.stagingVAbufferMemory);
+		vkMapMemory(iinstance.device, gdata.stagingVAbufferMemory, 0, posBufferSize, 0, &gdata.mappedStagingVAPtr);
+
+		//create buffer for final vertex attributes buffer
+		createBuffer(posBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.vaBuffer, gdata.vaBufferMemory);
+
+		//create buffer for indices
+		VkDeviceSize indexBufferSize = numIndices * sizeof(uint32_t);
+		createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingIndexBuffer, gdata.stagingIndexBufferMemory);
+		vkMapMemory(iinstance.device, gdata.stagingIndexBufferMemory, 0, indexBufferSize, 0, &gdata.mappedIndexPtr);
+		
+		createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.indicesBuffer, gdata.indicesBufferMemory);
+
+		outgdataID.id = id;
+		igeometryDataMap[outgdataID] = gdata;
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::geometryDataUpdate(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeinBytes, void* data, RSvertexAttribute vertAttrib) {
+
+	if (geometryDataAvailable(gdataID)) {
+		VkRSgeometryData gdata = igeometryDataMap[gdataID];
+		if(gdata.usageHints == RSbufferUsageHints::buVertices) {
+		}
+
+		return RSresult::SUCCESS;
+	}
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::geometryDataFinalize(const RSgeometryDataID& gdataID) {
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::geometryDataDispose(const RSgeometryDataID& gdataID) {
+	return RSresult::FAILURE;
+}
