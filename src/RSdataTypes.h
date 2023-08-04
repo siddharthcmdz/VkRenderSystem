@@ -4,6 +4,7 @@
 #include <vector>
 #include "RStypes.h"
 #include "rsenums.h"
+#include "rsids.h"
 
 #define MAX_IDS UINT32_MAX
 
@@ -29,7 +30,7 @@ struct RSview {
 };
 
 struct RScollectionInfo {
-
+	uint32_t maxInstances = 0;
 };
 
 struct RSvertexAttribsInfo {
@@ -37,4 +38,11 @@ struct RSvertexAttribsInfo {
 	RSvertexAttribute* attributes = nullptr;
 
 	uint32_t sizeOfAttrib() const;
+};
+
+struct RSinstanceInfo {
+	RSgeometryDataID gdataID;
+	//RSstateID stateID;
+	//RSprimitiveType ptype;
+	//RSspatialID spatialID;
 };

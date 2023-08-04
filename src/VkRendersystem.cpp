@@ -5,10 +5,12 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
+#include <array>
 
 #include "RSdataTypes.h"
 #include "VkRSdataTypes.h"
 #include "RSVkDebugUtils.h"
+#include "VertexData.h"
 
 bool VkRenderSystem::checkValidationLayerSupport() const {
 	uint32_t layerCount;
@@ -878,6 +880,44 @@ RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollect
 
 }
 
+bool VkRenderSystem::collectionInstanceAvailable(const RScollectionID& collID, const RSinstanceID& instanceID) {
+	if (collectionAvailable(collID)) {
+		const VkRScollection& coll = icollectionMap[collID];
+		if (instanceID.isValid() && coll.instanceMap.find(instanceID) != coll.instanceMap.end()) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinstanceID& outInstID, const RSinstanceInfo& instInfo) {
+	if (collectionAvailable(collID)) {
+
+		uint32_t id;
+		iinstanceIDpool.CreateID(id);
+		outInstID.id = id;
+		VkRScollection& coll = icollectionMap[collID];
+
+		VkRSinstanceData inst;
+		inst.instInfo = instInfo;
+
+		coll.instanceMap[outInstID] = inst;
+
+		return RSresult::SUCCESS;
+	}
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::collectionInstanceDispose(RScollectionID& collID, RSinstanceID& instID) {
+	if (collectionInstanceAvailable(collID, instID)) {
+		VkRScollection& coll = icollectionMap[collID];
+		coll.instanceMap.erase(instID);
+		return RSresult::SUCCESS;
+	}
+	return RSresult::FAILURE;
+}
+
 std::vector<char> VkRenderSystem::readFile(const std::string& filename) {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -943,12 +983,15 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 	dynamicState.pDynamicStates = dynamicStates.data();
 
+	auto bindingDescription = getBindingDescription();
+	auto attributeDescriptions = getAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1099,8 +1142,19 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 		scissor.offset = { 0, 0 };
 		scissor.extent = ctx.swapChainExtent;
 		vkCmdSetScissor(collection.commandBuffers[currentFrame], 0, 1, &scissor);
+		
+		vkCmdBindVertexBuffers(collection.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+		if (indexed) {
+			vkCmdBindIndexBuffer(collection.commandBuffers[currentFrame], iindexBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
+		}
 
-		vkCmdDraw(collection.commandBuffers[currentFrame], 3, 1, 0, 0);
+		if (indexed) {
+			vkCmdDrawIndexed(collection.commandBuffers[currentFrame], iindices.size(), 1, 0, 0, 0);
+		}
+		else {
+			vkCmdDraw(collection.commandBuffers[currentFrame], 3, 1, 0, 0);
+
+		}
 	}
 	vkCmdEndRenderPass(collection.commandBuffers[currentFrame]);
 
@@ -1290,6 +1344,27 @@ void VkRenderSystem::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevice
 	vkFreeCommandBuffers(iinstance.device, iinstance.commandPool, 1, &commandBuffer);
 }
 
+/**
+* vertex input binding description describes what rate to load data from memory throughout the vertices.
+*/
+VkVertexInputBindingDescription VkRenderSystem::getBindingDescription() {
+	VkVertexInputBindingDescription bindingDescription{};
+	bindingDescription.binding = 0;
+	bindingDescription.stride = sizeof(rsvd::Vertex);
+	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	return bindingDescription;
+}
+
+std::array<VkVertexInputAttributeDescription, 2> VkRenderSystem::getAttributeDescriptions() {
+	std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+	attributeDescriptions[0].binding = 0;
+	attributeDescriptions[0].location = 0;
+	attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescriptions[0].offset = offsetof(rsvd::Vertex, pos);
+	return attributeDescriptions;
+}
+
 RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints usageHints) {
 	RSuint id;
 	bool success = igeomDataIDpool.CreateID(id);
@@ -1299,12 +1374,12 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 		gdata.numVertices = numVertices;
 		gdata.numIndices = numIndices;
 		gdata.usageHints = usageHints;
-		gdata.attribInfo = attributesInfo;
+		gdata.attributesInfo = attributesInfo;
 
 		//Create buffer for position
 		bool foundPosition = false;
-		for (uint32_t i = 0; i < gdata.attribInfo.numVertexAttribs; i++) {
-			if (gdata.attribInfo.attributes[i] == RSvertexAttribute::vaPosition) {
+		for (uint32_t i = 0; i < gdata.attributesInfo.numVertexAttribs; i++) {
+			if (gdata.attributesInfo.attributes[i] == RSvertexAttribute::vaPosition) {
 				foundPosition = true;
 			}
 		}
@@ -1314,12 +1389,12 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 
 		
 		//create buffer for staging position vertex attribs
-		VkDeviceSize posBufferSize = numVertices * sizeof(glm::vec4);
-		createBuffer(posBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingVABuffer, gdata.stagingVAbufferMemory);
-		vkMapMemory(iinstance.device, gdata.stagingVAbufferMemory, 0, posBufferSize, 0, &gdata.mappedStagingVAPtr);
+		VkDeviceSize vaBufferSize = numVertices * attributesInfo.sizeOfAttrib();
+		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingVABuffer, gdata.stagingVAbufferMemory);
+		vkMapMemory(iinstance.device, gdata.stagingVAbufferMemory, 0, vaBufferSize, 0, &gdata.mappedStagingVAPtr);
 
 		//create buffer for final vertex attributes buffer
-		createBuffer(posBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.vaBuffer, gdata.vaBufferMemory);
+		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.vaBuffer, gdata.vaBufferMemory);
 
 		//create buffer for indices
 		VkDeviceSize indexBufferSize = numIndices * sizeof(uint32_t);
@@ -1340,7 +1415,19 @@ RSresult VkRenderSystem::geometryDataUpdate(const RSgeometryDataID& gdataID, uin
 
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
-		if(gdata.usageHints == RSbufferUsageHints::buVertices) {
+		if (offset != 0) throw std::runtime_error("Unsupported operation!");
+		switch (gdata.usageHints) {
+		case RSbufferUsageHints::buVertices:
+			memcpy((char*)gdata.mappedStagingVAPtr + offset, data, sizeinBytes);
+			break;
+
+		case RSbufferUsageHints::buUniforms:
+			throw std::runtime_error("Unsupported operation!");
+			break;
+
+		case RSbufferUsageHints::buSpatials:
+			throw std::runtime_error("Unsupported operation!");
+			break;
 		}
 
 		return RSresult::SUCCESS;
@@ -1348,10 +1435,55 @@ RSresult VkRenderSystem::geometryDataUpdate(const RSgeometryDataID& gdataID, uin
 	return RSresult::FAILURE;
 }
 
+RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data) {
+	if (geometryDataAvailable(gdataID)) {
+		VkRSgeometryData gdata = igeometryDataMap[gdataID];
+		memcpy((char*)(gdata.stagingIndexBuffer) + offset, data, sizeInBytes);
+		return RSresult::SUCCESS;
+	}
+	return RSresult::FAILURE;
+}
+
+
 RSresult VkRenderSystem::geometryDataFinalize(const RSgeometryDataID& gdataID) {
+	if (geometryDataAvailable(gdataID)) {
+		VkRSgeometryData gdata = igeometryDataMap[gdataID];
+
+		//unmap the host pointers
+		vkUnmapMemory(iinstance.device, gdata.stagingVAbufferMemory);
+		gdata.mappedStagingVAPtr = nullptr;
+		//copy to device buffer
+		VkDeviceSize vaBufferSize = gdata.numVertices * gdata.attributesInfo.sizeOfAttrib();
+		copyBuffer(gdata.stagingVABuffer, gdata.vaBuffer, vaBufferSize);
+		//destroy the staging buffers
+		vkDestroyBuffer(iinstance.device, gdata.stagingVABuffer, nullptr);
+		vkFreeMemory(iinstance.device, gdata.stagingVAbufferMemory, nullptr);
+
+		if (gdata.numIndices) {
+			vkUnmapMemory(iinstance.device, gdata.stagingIndexBufferMemory);
+			gdata.mappedIndexPtr = nullptr;
+			//copy to device buffer
+			VkDeviceSize indexBufferSize = gdata.numIndices * sizeof(uint32_t);
+			copyBuffer(gdata.stagingIndexBuffer, gdata.indicesBuffer, indexBufferSize);
+			//destroy the staging buffers
+			vkDestroyBuffer(iinstance.device, gdata.stagingIndexBuffer, nullptr);
+			vkFreeMemory(iinstance.device, gdata.stagingIndexBufferMemory, nullptr);
+		}
+
+		return RSresult::SUCCESS;
+	}
 	return RSresult::FAILURE;
 }
 
 RSresult VkRenderSystem::geometryDataDispose(const RSgeometryDataID& gdataID) {
+	if (geometryDataAvailable(gdataID)) {
+		VkRSgeometryData gdata = igeometryDataMap[gdataID];
+		vkDestroyBuffer(iinstance.device, gdata.vaBuffer, nullptr);
+		vkFreeMemory(iinstance.device, gdata.vaBufferMemory, nullptr);
+
+		igeometryDataMap.erase(gdataID);
+
+		return RSresult::SUCCESS;
+	}
 	return RSresult::FAILURE;
 }

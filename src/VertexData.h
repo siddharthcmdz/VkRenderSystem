@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace rsgd {
+namespace rsvd {
 	struct Vertex {
 		glm::vec2 pos;
 		glm::vec3 color;

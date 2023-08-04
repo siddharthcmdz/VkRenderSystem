@@ -48,7 +48,7 @@
     <ClInclude Include="src\VkRenderSystemEntry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\GeometryData.h">
+    <ClInclude Include="src\VertexData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rsids.h">

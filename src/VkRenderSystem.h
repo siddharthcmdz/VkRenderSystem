@@ -17,10 +17,13 @@ private:
 	using RScontexts = std::unordered_map<RScontextID, VkRScontext, IDHasher<RScontextID>> ;
 	using RScollections = std::unordered_map<RScollectionID, VkRScollection, IDHasher<RScollectionID>> ;
 	using RSgeometryDataMaps = std::unordered_map<RSgeometryDataID, VkRSgeometryData, IDHasher<RSgeometryDataID>> ;
+
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
 	MakeID icollIDpool = MakeID(MAX_IDS);
 	MakeID igeomDataIDpool = MakeID(MAX_IDS);
+	MakeID iinstanceIDpool = MakeID(MAX_IDS);
+
 	bool iisRSinited = false;
 
 	RSviews iviewMap;
@@ -72,6 +75,8 @@ private:
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memProperties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	VkVertexInputBindingDescription getBindingDescription();
+	std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
 
 public:
 	static VkRenderSystem& getInstance() {
@@ -99,14 +104,19 @@ public:
 	RSresult viewDispose(const RSviewID& viewID);
 
 	bool collectionAvailable(const RScollectionID& colID);
+	bool collectionInstanceAvailable(const RScollectionID& collID, const RSinstanceID& instanceID);
 	RSresult collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo);
+	RSresult collectionInstanceCreate(RScollectionID& collID, RSinstanceID& instID, const RSinstanceInfo& instInfo);
+	RSresult collectionInstanceDispose(RScollectionID& collID, RSinstanceID& instID);
 	RSresult collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID);
 	RSresult collectionDispose(const RScollectionID& colID);
 
 	bool geometryDataAvailable(const RSgeometryDataID& geomDataID);
 	RSresult geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints bufferUsage);
-	RSresult geometryDataUpdate(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeinBytes, void* data, RSvertexAttribute vertAttrib);
+	RSresult geometryDataUpdate(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data, RSvertexAttribute vertAttrib);
+	RSresult geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
 	RSresult geometryDataFinalize(const RSgeometryDataID& gdataID);
 	RSresult geometryDataDispose(const RSgeometryDataID& gdataID);
+
 
 };

@@ -53,6 +53,10 @@ struct VkRScollection {
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
+
+	using RSinstances = std::unordered_map<RSinstanceID, VkRSinstanceData, IDHasher<RSinstanceID>>;
+
+	RSinstances instanceMap;
 	bool dirty = true;
 };
 
@@ -66,21 +70,25 @@ struct AllocationID {
 struct VkRSgeometryData {
 	uint32_t numVertices = 0;
 	uint32_t numIndices = 0;
-	RSvertexAttribsInfo attribInfo;
+	RSvertexAttribsInfo attributesInfo;
 	RSbufferUsageHints usageHints = RSbufferUsageHints::buVertices;
 	
 	VkBuffer vaBuffer = VK_NULL_HANDLE;
 	VkBuffer stagingVABuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vaBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory stagingVAbufferMemory = VK_NULL_HANDLE;
-	void* mappedStagingVAPtr;
+	void* mappedStagingVAPtr = nullptr;
 
 	VkBuffer indicesBuffer = VK_NULL_HANDLE;
 	VkBuffer stagingIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory indicesBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory stagingIndexBufferMemory = VK_NULL_HANDLE;
-	void* mappedIndexPtr;
+	void* mappedIndexPtr = nullptr;
 
+};
+
+struct VkRSinstanceData {
+	RSinstanceInfo instInfo;
 };
 
 struct VkRSview {
