@@ -8,6 +8,7 @@
 #include <string>
 #include <optional>
 #include "rsenums.h"
+#include "DrawCommand.h"
 
 struct VkRSinstance {
 	static const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -44,21 +45,6 @@ struct VkRScontext {
 	VkExtent2D swapChainExtent{};
 };
 
-struct VkRScollection {
-	RScollectionInfo info;
-	VkRenderPass renderPass{};
-	VkPipelineLayout pipelineLayout{};
-	VkPipeline graphicsPipeline{};
-	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
-	std::vector<VkSemaphore> imageAvailableSemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
-
-	using RSinstances = std::unordered_map<RSinstanceID, VkRSinstanceData, IDHasher<RSinstanceID>>;
-
-	RSinstances instanceMap;
-	bool dirty = true;
-};
 
 struct AllocationID {
 	
@@ -89,6 +75,24 @@ struct VkRSgeometryData {
 
 struct VkRSinstanceData {
 	RSinstanceInfo instInfo;
+};
+
+struct VkRScollection {
+	RScollectionInfo info;
+	VkRenderPass renderPass{};
+	VkPipelineLayout pipelineLayout{};
+	VkPipeline graphicsPipeline{};
+	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
+	std::vector<VkSemaphore> imageAvailableSemaphores;
+	std::vector<VkSemaphore> renderFinishedSemaphores;
+	std::vector<VkFence> inFlightFences;
+
+	using DrawCommands = std::vector<VkRSdrawCommand>;
+	using RSinstances = std::unordered_map<RSinstanceID, VkRSinstanceData, IDHasher<RSinstanceID>>;
+
+	DrawCommands drawCommands;
+	RSinstances instanceMap;
+	bool dirty = true;
 };
 
 struct VkRSview {

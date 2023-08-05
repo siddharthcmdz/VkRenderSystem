@@ -1143,17 +1143,21 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 		scissor.extent = ctx.swapChainExtent;
 		vkCmdSetScissor(collection.commandBuffers[currentFrame], 0, 1, &scissor);
 		
-		vkCmdBindVertexBuffers(collection.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-		if (indexed) {
-			vkCmdBindIndexBuffer(collection.commandBuffers[currentFrame], iindexBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
-		}
+		for (const VkRSdrawCommand& drawcmd : collection.drawCommands) {
+			VkBuffer vertexBuffers[]{ drawcmd.vertexBuffer };
+			VkDeviceSize offsets[]{ drawcmd.vertexOffset };
+			vkCmdBindVertexBuffers(collection.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+			if (drawcmd.isIndexed) {
+				vkCmdBindIndexBuffer(collection.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
+			}
 
-		if (indexed) {
-			vkCmdDrawIndexed(collection.commandBuffers[currentFrame], iindices.size(), 1, 0, 0, 0);
-		}
-		else {
-			vkCmdDraw(collection.commandBuffers[currentFrame], 3, 1, 0, 0);
-
+			if (drawcmd.isIndexed) {
+				
+				vkCmdDrawIndexed(collection.commandBuffers[currentFrame], drawcmd.numIndices, 1, 0, 0, 0);
+			}
+			else {
+				vkCmdDraw(collection.commandBuffers[currentFrame], drawcmd.numVertices, 1, 0, 0);
+			}
 		}
 	}
 	vkCmdEndRenderPass(collection.commandBuffers[currentFrame]);
@@ -1228,6 +1232,20 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 			createCommandBuffers(collection, ctx);
 			createSyncObjects(collection, ctx);
 
+			//create drawcommands
+			for (auto& iter : collection.instanceMap) {
+				const VkRSinstanceData& inst = iter.second;
+				const RSgeometryDataID& gdataID = inst.instInfo.gdataID;
+				if (geometryDataAvailable(gdataID)) {
+					const VkRSgeometryData& gdata = igeometryDataMap[gdataID];
+					VkRSdrawCommand cmd;
+					cmd.indicesBuffer = gdata.indicesBuffer;
+					cmd.isIndexed = gdata.indicesBuffer != VK_NULL_HANDLE;
+					cmd.numIndices = gdata.numIndices;
+					cmd.numVertices = gdata.numVertices;
+					cmd.vertexBuffer = gdata.vaBuffer;
+				}
+			}
 			collection.dirty = false;
 		}
 		return RSresult::SUCCESS;

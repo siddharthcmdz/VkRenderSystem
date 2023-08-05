@@ -11,9 +11,19 @@
 #include <limits>            //for std::numeric_limits
 #include <algorithm>         //for std::clamp
 #include <fstream>           //for file reading
+#include "VertexData.h"
 
 
+const std::vector<rsvd::Vertex> ivertices = {
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
 
+const std::vector<uint32_t> iindices = {
+	0, 1, 2, 2, 3, 0
+};
 
 
 int RSmain() {
@@ -37,17 +47,29 @@ int RSmain() {
 	rsview.cameraType = CameraType::ORBITAL;
 	vkrs.viewCreate(viewID, rsview);
 
+	RSgeometryDataID gdataID;
+	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor };
+	RSvertexAttribsInfo attribInfo;
+	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
+	attribInfo.attributes = attribs.data();
+	vkrs.geometryDataCreate(gdataID, static_cast<uint32_t>(ivertices.size()), static_cast<uint32_t>(iindices.size()), attribInfo, RSbufferUsageHints::buVertices);
+
+
 	RScollectionID collID;
 	RScollectionInfo collInfo;
 	vkrs.collectionCreate(collID, collInfo);
 	vkrs.viewAddCollection(viewID, collID);
+	RSinstanceID instID;
+	RSinstanceInfo instInfo;
+	instInfo.gdataID = gdataID;
+	vkrs.collectionInstanceCreate(collID, instID, instInfo);
 	vkrs.collectionFinalize(collID, ctxID);
 	
 	if (vkrs.isRenderSystemInit()) {
 		vkrs.contextDrawCollections(ctxID, viewID);
 	}
 
-
+	vkrs.geometryDataDispose(gdataID);
 	vkrs.contextDispose(ctxID);
 	vkrs.viewDispose(viewID);
 	vkrs.collectionDispose(collID);

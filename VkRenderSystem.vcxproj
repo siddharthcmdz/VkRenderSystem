@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\DrawCommand.h" />
     <ClInclude Include="src\VertexData.h" />
     <ClInclude Include="src\rsenums.h" />
     <ClInclude Include="src\rsids.h" />
