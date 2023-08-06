@@ -239,7 +239,9 @@ void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, con
 	}
 	//only reset the fence if we are submitting work.
 	vkResetFences(device, 1, &inflightFence);
-
+	
+	updateUniformBuffer(view, ctx, currentFrame);
+	
 	vkResetCommandBuffer(commandBuffer, 0);
 
 	recordCommandBuffer(collection, view, ctx, imageIndex, currentFrame);
@@ -843,7 +845,9 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 		VkRSview vkrsview;
 		vkrsview.view = view;
 		createDescriptorSetLayout(vkrsview);
+		createUniformBuffers(vkrsview);
 		createDescriptorPool(vkrsview);
+		createDescriptorSet(vkrsview);
 
 		viewID.id = id;
 		iviewMap[viewID] = vkrsview;

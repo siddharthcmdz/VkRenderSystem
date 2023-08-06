@@ -8,6 +8,8 @@
 
 #define MAX_IDS UINT32_MAX
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
 
 
 struct RSinitInfo {
