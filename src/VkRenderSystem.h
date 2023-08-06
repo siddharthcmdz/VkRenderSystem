@@ -58,7 +58,7 @@ private:
 
 	//collection related helpers
 	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
-	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx);
+	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view);
 	void createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx);
 	void createSyncObjects(VkRScollection& collection, const VkRScontext& ctx);
 	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
@@ -113,7 +113,7 @@ public:
 	RSresult collectionCreate(RScollectionID& colID, const RScollectionInfo& collInfo);
 	RSresult collectionInstanceCreate(RScollectionID& collID, RSinstanceID& instID, const RSinstanceInfo& instInfo);
 	RSresult collectionInstanceDispose(RScollectionID& collID, RSinstanceID& instID);
-	RSresult collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID);
+	RSresult collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID, const RSviewID& viewID);
 	RSresult collectionDispose(const RScollectionID& colID);
 
 	bool geometryDataAvailable(const RSgeometryDataID& geomDataID);

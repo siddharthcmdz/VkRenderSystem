@@ -68,7 +68,7 @@ int RSmain() {
 	RSinstanceInfo instInfo;
 	instInfo.gdataID = gdataID;
 	vkrs.collectionInstanceCreate(collID, instID, instInfo);
-	vkrs.collectionFinalize(collID, ctxID);
+	vkrs.collectionFinalize(collID, ctxID, viewID);
 	
 	if (vkrs.isRenderSystemInit()) {
 		vkrs.contextDrawCollections(ctxID, viewID);

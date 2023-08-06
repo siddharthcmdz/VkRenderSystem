@@ -771,7 +771,7 @@ void VkRenderSystem::createDescriptorPool(VkRSview& view) {
 void VkRenderSystem::createDescriptorSet(VkRSview& view) {
 	std::vector<VkDescriptorSetLayout> layouts(VkRScontext::MAX_FRAMES_IN_FLIGHT, view.descriptorSetLayout);
 
-	VkDescriptorSetAllocateInfo allocInfo;
+	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = view.descriptorPool;
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
@@ -791,6 +791,7 @@ void VkRenderSystem::createDescriptorSet(VkRSview& view) {
 
 		VkWriteDescriptorSet descriptorWrite{};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = view.descriptorSets[i];
 		descriptorWrite.dstBinding = 0;
 		descriptorWrite.dstArrayElement = 0;
 		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1072,7 +1073,7 @@ VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code,
 	return shaderModule;
 }
 
-void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx) {
+void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view) {
 	auto vertShaderCode = readFile("./src/shaders/spv/sampleshaderVert.spv");
 	auto fragShaderCode = readFile("./src/shaders/spv/sampleshaderFrag.spv");
 	
@@ -1183,8 +1184,8 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &view.descriptorSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -1271,6 +1272,7 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 			if (drawcmd.isIndexed) {
 				vkCmdBindIndexBuffer(collection.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
 			}
+			vkCmdBindDescriptorSets(collection.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, collection.pipelineLayout, 0, 1, &view.descriptorSets[currentFrame], 0, nullptr);
 
 			if (drawcmd.isIndexed) {
 				
@@ -1341,14 +1343,15 @@ void VkRenderSystem::createSyncObjects(VkRScollection& collection, const VkRScon
 	}
 }
 
-RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID) {
-	if (collectionAvailable(colID) && contextAvailable(ctxID)) {
+RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID, const RSviewID& viewID) {
+	if (collectionAvailable(colID) && contextAvailable(ctxID) && viewAvailable(viewID)) {
 		VkRScollection& collection = icollectionMap[colID];
-		const VkRScontext& ctx = ictxMap[ctxID.id];
+		const VkRScontext& ctx = ictxMap[ctxID];
+		const VkRSview& view = iviewMap[viewID];
 		//finalize the collection
 		if (collection.dirty) {
 			createRenderpass(collection, ctx);
-			createGraphicsPipeline(collection, ctx);
+			createGraphicsPipeline(collection, ctx, view);
 			createCommandBuffers(collection, ctx);
 			createSyncObjects(collection, ctx);
 
