@@ -15,10 +15,10 @@
 
 
 const std::vector<rsvd::Vertex> ivertices = {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	{{-0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+	{{0.5f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+	{{0.5f, 0.5f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
 };
 
 const std::vector<uint32_t> iindices = {
@@ -53,7 +53,12 @@ int RSmain() {
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
 	attribInfo.attributes = attribs.data();
 	vkrs.geometryDataCreate(gdataID, static_cast<uint32_t>(ivertices.size()), static_cast<uint32_t>(iindices.size()), attribInfo, RSbufferUsageHints::buVertices);
-
+	
+	uint32_t vertSizeInBytes = static_cast<uint32_t>(ivertices.size() * sizeof(ivertices[0]));
+	vkrs.geometryDataUpdateVertices(gdataID, 0, vertSizeInBytes, (void*)ivertices.data());
+	uint32_t indicesSizeInBytes = static_cast<uint32_t>(iindices.size()) * sizeof(uint32_t);
+	vkrs.geometryDataUpdateIndices(gdataID, 0, indicesSizeInBytes, (void*)iindices.data());
+	vkrs.geometryDataFinalize(gdataID);
 
 	RScollectionID collID;
 	RScollectionInfo collInfo;
@@ -72,6 +77,7 @@ int RSmain() {
 	vkrs.geometryDataDispose(gdataID);
 	vkrs.contextDispose(ctxID);
 	vkrs.viewDispose(viewID);
+	vkrs.collectionInstanceDispose(collID, instID);
 	vkrs.collectionDispose(collID);
 	vkrs.renderSystemDispose();
 

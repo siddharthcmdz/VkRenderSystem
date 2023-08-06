@@ -40,6 +40,7 @@ private:
 	void createLogicalDevice(VkRScontext& ctx);
 	void createSwapChain(VkRScontext& ctx);
 	void createImageViews(VkRScontext& ctx);
+	void createCommandPool(const VkRScontext& ctx);
 	void disposeContext(VkRScontext& ctx);
 	void cleanupSwapChain(VkRScontext& ctx, VkRSview& view);
 
@@ -58,7 +59,6 @@ private:
 	//collection related helpers
 	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
 	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx);
-	void createCommandPool(VkRScollection& collection, const VkRScontext& ctx);
 	void createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx);
 	void createSyncObjects(VkRScollection& collection, const VkRScontext& ctx);
 	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
@@ -113,7 +113,7 @@ public:
 
 	bool geometryDataAvailable(const RSgeometryDataID& geomDataID);
 	RSresult geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints bufferUsage);
-	RSresult geometryDataUpdate(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data, RSvertexAttribute vertAttrib);
+	RSresult geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
 	RSresult geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
 	RSresult geometryDataFinalize(const RSgeometryDataID& gdataID);
 	RSresult geometryDataDispose(const RSgeometryDataID& gdataID);

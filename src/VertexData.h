@@ -2,10 +2,12 @@
 
 #include <glm/glm.hpp>
 
+#include "rsenums.h"
+
 namespace rsvd {
 	struct Vertex {
-		glm::vec2 pos;
-		glm::vec3 color;
+		glm::vec4 pos;
+		glm::vec4 color;
 	};
 
 	struct Vertex3 {

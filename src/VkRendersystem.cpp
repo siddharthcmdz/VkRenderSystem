@@ -679,6 +679,7 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 		createLogicalDevice(vkrsctx);
 		createSwapChain(vkrsctx);
 		createImageViews(vkrsctx);
+		createCommandPool(vkrsctx);
 		outCtxID.id = id;
 		ictxMap[outCtxID] = vkrsctx;
 		return RSresult::SUCCESS;
@@ -1168,7 +1169,7 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 	}
 }
 
-void VkRenderSystem::createCommandPool(VkRScollection& collection, const VkRScontext& ctx) {
+void VkRenderSystem::createCommandPool(const VkRScontext& ctx) {
 	VkRSqueueFamilyIndices queueFamilyIndices = findQueueFamilies(iinstance.physicalDevice, ctx);
 
 	VkCommandPoolCreateInfo poolInfo{};
@@ -1228,7 +1229,6 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 		if (collection.dirty) {
 			createRenderpass(collection, ctx);
 			createGraphicsPipeline(collection, ctx);
-			createCommandPool(collection, ctx);
 			createCommandBuffers(collection, ctx);
 			createSyncObjects(collection, ctx);
 
@@ -1378,8 +1378,14 @@ std::array<VkVertexInputAttributeDescription, 2> VkRenderSystem::getAttributeDes
 	std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
-	attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+	attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	attributeDescriptions[0].offset = offsetof(rsvd::Vertex, pos);
+
+	attributeDescriptions[1].binding = 0;
+	attributeDescriptions[1].location = 1;
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[1].offset = offsetof(rsvd::Vertex, color);
+
 	return attributeDescriptions;
 }
 
@@ -1399,6 +1405,7 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 		for (uint32_t i = 0; i < gdata.attributesInfo.numVertexAttribs; i++) {
 			if (gdata.attributesInfo.attributes[i] == RSvertexAttribute::vaPosition) {
 				foundPosition = true;
+				break;
 			}
 		}
 		if (foundPosition == false) {
@@ -1429,11 +1436,13 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 	return RSresult::FAILURE;
 }
 
-RSresult VkRenderSystem::geometryDataUpdate(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeinBytes, void* data, RSvertexAttribute vertAttrib) {
+RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeinBytes, void* data) {
 
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
-		if (offset != 0) throw std::runtime_error("Unsupported operation!");
+		if (offset != 0) {
+			throw std::runtime_error("Unsupported operation!");
+		}
 		switch (gdata.usageHints) {
 		case RSbufferUsageHints::buVertices:
 			memcpy((char*)gdata.mappedStagingVAPtr + offset, data, sizeinBytes);
@@ -1456,7 +1465,7 @@ RSresult VkRenderSystem::geometryDataUpdate(const RSgeometryDataID& gdataID, uin
 RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data) {
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
-		memcpy((char*)(gdata.stagingIndexBuffer) + offset, data, sizeInBytes);
+		memcpy((char*)(gdata.mappedStagingVAPtr) + offset, data, sizeInBytes);
 		return RSresult::SUCCESS;
 	}
 	return RSresult::FAILURE;
