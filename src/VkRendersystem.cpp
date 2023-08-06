@@ -6,11 +6,16 @@
 #include <algorithm>
 #include <fstream>
 #include <array>
+#include <chrono>
 
 #include "RSdataTypes.h"
 #include "VkRSdataTypes.h"
 #include "RSVkDebugUtils.h"
 #include "VertexData.h"
+
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 bool VkRenderSystem::checkValidationLayerSupport() const {
 	uint32_t layerCount;
@@ -724,6 +729,107 @@ RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 	return RSresult::FAILURE;
 }
 
+void VkRenderSystem::createDescriptorSetLayout(VkRSview& view) {
+	VkDescriptorSetLayoutBinding uboLayoutBinding{};
+	uboLayoutBinding.binding = 0;
+	uboLayoutBinding.descriptorCount = 1;
+	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	uboLayoutBinding.pImmutableSamplers = nullptr;
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &uboLayoutBinding;
+
+
+	VkResult res = vkCreateDescriptorSetLayout(iinstance.device, &layoutInfo, nullptr, &view.descriptorSetLayout);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to create a descriptor set layout");
+	}
+}
+
+void VkRenderSystem::createDescriptorPool(VkRSview& view) {
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+
+	VkResult res = vkCreateDescriptorPool(iinstance.device, &poolInfo, nullptr, &view.descriptorPool);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor pool");
+	}
+}
+
+void VkRenderSystem::createDescriptorSet(VkRSview& view) {
+	std::vector<VkDescriptorSetLayout> layouts(VkRScontext::MAX_FRAMES_IN_FLIGHT, view.descriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocInfo;
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = view.descriptorPool;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	allocInfo.pSetLayouts = layouts.data();
+
+	view.descriptorSets.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	VkResult res = vkAllocateDescriptorSets(iinstance.device, &allocInfo, view.descriptorSets.data());
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor sets");
+	}
+
+	for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; i++) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = view.uniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(VkRSviewDescriptor);
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pBufferInfo = &bufferInfo;
+		descriptorWrite.pImageInfo = nullptr;
+		descriptorWrite.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(iinstance.device, 1, &descriptorWrite, 0, nullptr);
+	}
+}
+
+void VkRenderSystem::createUniformBuffers(VkRSview& view) {
+	VkDeviceSize buffersize = sizeof(VkRSviewDescriptor);
+
+	view.uniformBuffers.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	view.uniformBuffersMemory.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	view.uniformBuffersMapped.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+
+
+	for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; i++) {
+		createBuffer(buffersize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, view.uniformBuffers[i], view.uniformBuffersMemory[i]);
+		vkMapMemory(iinstance.device, view.uniformBuffersMemory[i], 0, buffersize, 0, &view.uniformBuffersMapped[i]);
+	}
+}
+
+void VkRenderSystem::updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint32_t currentFrame) {
+	static auto startTime = std::chrono::high_resolution_clock::now();
+
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	VkRSviewDescriptor ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), ((float)ctx.swapChainExtent.width / (float)ctx.swapChainExtent.height), 0.0f, 1.0f);
+	ubo.proj[1][1] *= -1;
+
+	memcpy(view.uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+}
+
 bool VkRenderSystem::viewAvailable(const RSviewID& viewID) const {
 	return viewID.isValid() && iviewMap.find(viewID) != iviewMap.end();
 }
@@ -736,6 +842,9 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 	if (success) {
 		VkRSview vkrsview;
 		vkrsview.view = view;
+		createDescriptorSetLayout(vkrsview);
+		createDescriptorPool(vkrsview);
+
 		viewID.id = id;
 		iviewMap[viewID] = vkrsview;
 		return RSresult::SUCCESS;
@@ -812,6 +921,13 @@ RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)
 
 void VkRenderSystem::disposeView(VkRSview& view) {
 	
+	for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; i++) {
+		vkDestroyBuffer(iinstance.device, view.uniformBuffers[i], nullptr);
+		vkFreeMemory(iinstance.device, view.uniformBuffersMemory[i], nullptr);
+	}
+	vkDestroyDescriptorPool(iinstance.device, view.descriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(iinstance.device, view.descriptorSetLayout, nullptr);
+
 	for (auto framebuffer : view.swapChainFramebuffers) {
 		vkDestroyFramebuffer(iinstance.device, framebuffer, nullptr);
 	}
@@ -1122,7 +1238,7 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = ctx.swapChainExtent;
 
-	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	VkClearValue clearColor = { {{view.view.clearColor.r, view.view.clearColor.r, view.view.clearColor.r, view.view.clearColor.r}} };
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 

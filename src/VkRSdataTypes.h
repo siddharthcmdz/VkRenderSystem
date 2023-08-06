@@ -95,8 +95,20 @@ struct VkRScollection {
 	bool dirty = true;
 };
 
+struct VkRSviewDescriptor {
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
 struct VkRSview {
 	std::vector<VkFramebuffer> swapChainFramebuffers;
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorPool descriptorPool;
+	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkBuffer> uniformBuffers;
+	std::vector<VkDeviceMemory> uniformBuffersMemory;
+	std::vector<void*> uniformBuffersMapped;
 	uint32_t currentFrame = 0;
 	RSview view;
 };

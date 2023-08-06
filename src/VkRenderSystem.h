@@ -69,6 +69,11 @@ private:
 
 	//view related helpers
 	void createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass);
+	void createDescriptorSetLayout(VkRSview& view);
+	void createDescriptorPool(VkRSview& view);
+	void createDescriptorSet(VkRSview& view);
+	void createUniformBuffers(VkRSview& view);
+	void updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint32_t currentFrame);
 	void disposeView(VkRSview& view);
 
 	//geometry data related helpers
