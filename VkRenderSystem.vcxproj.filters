@@ -97,5 +97,17 @@
     <None Include="src\shaders\compile.bat">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="src\shaders\passthrough.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="src\shaders\passthrough.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="src\shaders\spv\passthroughFrag.spv">
+      <Filter>Shaders\spv</Filter>
+    </None>
+    <None Include="src\shaders\spv\passthroughVert.spv">
+      <Filter>Shaders\spv</Filter>
+    </None>
   </ItemGroup>
 </Project>
