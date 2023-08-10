@@ -32,9 +32,11 @@
     <ClInclude Include="src\VkRSdataTypes.h" />
     <ClInclude Include="src\VkSampleMain0.h" />
     <ClInclude Include="src\VkSampleMain1.h" />
+    <ClInclude Include="thirdparty\stb_image\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\stb_image.cpp" />
     <ClCompile Include="src\VkRenderSystemEntry.cpp" />
     <ClCompile Include="src\VkSampleMain1.cpp" />
     <ClCompile Include="src\RSdataTypes.cpp" />
@@ -51,6 +53,9 @@
     <None Include="src\shaders\spv\passthroughVert.spv" />
     <None Include="src\shaders\spv\sampleshaderFrag.spv" />
     <None Include="src\shaders\spv\sampleshaderVert.spv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="src\textures\texture.jpg" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -136,7 +141,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;STB_IMAGE_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Projects\VkRenderSystem\thirdparty\glm-0.9.9.8\glm;C:\Projects\VkRenderSystem\thirdparty\glfw-3.3.8.bin.WIN64\include;C:\VulkanSDK\1.3.243.0\Include;C:\Projects\VkRenderSystem\thirdparty\stb_image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
