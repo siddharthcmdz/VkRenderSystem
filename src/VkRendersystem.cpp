@@ -1073,7 +1073,7 @@ VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code)
 	return shaderModule;
 }
 
-void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view) {
+void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view, VkRSdrawCommand& drawcmd) {
 	auto vertShaderCode = readFile("./src/shaders/spv/passthroughVert.spv");
 	auto fragShaderCode = readFile("./src/shaders/spv/passthroughFrag.spv");
 	
@@ -1116,7 +1116,7 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssembly.topology = drawcmd.primTopology;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	VkViewport viewport{};
@@ -1188,7 +1188,7 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(iinstance.device, &pipelineLayoutInfo, nullptr, &collection.pipelineLayout);
+	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(iinstance.device, &pipelineLayoutInfo, nullptr, &drawcmd.pipelineLayout);
 	if (pipelineLayoutResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
@@ -1206,7 +1206,7 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = &dynamicState;
 
-	pipelineInfo.layout = collection.pipelineLayout;
+	pipelineInfo.layout = drawcmd.pipelineLayout;
 
 	pipelineInfo.renderPass = collection.renderPass; //hack until we find renderpasses are hierarchical.
 	pipelineInfo.subpass = 0;
@@ -1214,7 +1214,7 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
 
-	const VkResult graphicsPipelineResult = vkCreateGraphicsPipelines(iinstance.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &collection.graphicsPipeline);
+	const VkResult graphicsPipelineResult = vkCreateGraphicsPipelines(iinstance.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &drawcmd.graphicsPipeline);
 	if (graphicsPipelineResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
@@ -1248,8 +1248,6 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, collection.graphicsPipeline);
-
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -1265,13 +1263,15 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 		vkCmdSetScissor(collection.commandBuffers[currentFrame], 0, 1, &scissor);
 		
 		for (const VkRSdrawCommand& drawcmd : collection.drawCommands) {
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.graphicsPipeline);
+
 			VkBuffer vertexBuffers[]{ drawcmd.vertexBuffer };
 			VkDeviceSize offsets[]{ drawcmd.vertexOffset };
 			vkCmdBindVertexBuffers(collection.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
 			if (drawcmd.isIndexed) {
 				vkCmdBindIndexBuffer(collection.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
 			}
-			vkCmdBindDescriptorSets(collection.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, collection.pipelineLayout, 0, 1, &view.descriptorSets[currentFrame], 0, nullptr);
+			vkCmdBindDescriptorSets(collection.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, 1, &view.descriptorSets[currentFrame], 0, nullptr);
 
 			if (drawcmd.isIndexed) {
 				
@@ -1342,6 +1342,27 @@ void VkRenderSystem::createSyncObjects(VkRScollection& collection, const VkRScon
 	}
 }
 
+VkPrimitiveTopology getPrimitiveType(const RSprimitiveType& ptype) {
+	switch (ptype) {
+	case RSprimitiveType::ptLine:
+		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+
+	case RSprimitiveType::ptLineStrip:
+		return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+
+	case RSprimitiveType::ptPoint:
+		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+
+	case RSprimitiveType::ptTriangle:
+		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	case RSprimitiveType::ptTriangleStrip:
+		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	}
+
+	return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+}
+
 RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID, const RSviewID& viewID) {
 	if (collectionAvailable(colID) && contextAvailable(ctxID) && viewAvailable(viewID)) {
 		VkRScollection& collection = icollectionMap[colID];
@@ -1350,7 +1371,6 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 		//finalize the collection
 		if (collection.dirty) {
 			createRenderpass(collection, ctx);
-			createGraphicsPipeline(collection, ctx, view);
 			createCommandBuffers(collection, ctx);
 			createSyncObjects(collection, ctx);
 
@@ -1358,14 +1378,18 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 			for (auto& iter : collection.instanceMap) {
 				const VkRSinstanceData& inst = iter.second;
 				const RSgeometryDataID& gdataID = inst.instInfo.gdataID;
-				if (geometryDataAvailable(gdataID)) {
+				const RSgeometryID& geomID = inst.instInfo.geomID;
+				if (geometryDataAvailable(gdataID) && geometryAvailable(geomID)) {
 					const VkRSgeometryData& gdata = igeometryDataMap[gdataID];
+					const VkRSgeometry& geom = igeometryMap[geomID];
 					VkRSdrawCommand cmd;
 					cmd.indicesBuffer = gdata.indicesBuffer;
 					cmd.isIndexed = gdata.indicesBuffer != VK_NULL_HANDLE;
 					cmd.numIndices = gdata.numIndices;
 					cmd.numVertices = gdata.numVertices;
 					cmd.vertexBuffer = gdata.vaBuffer;
+					cmd.primTopology = getPrimitiveType(geom.geomInfo.primType);
+					createGraphicsPipeline(collection, ctx, view, cmd);
 
 					collection.drawCommands.push_back(cmd);
 				}
@@ -1399,8 +1423,11 @@ void VkRenderSystem::disposeCollection(VkRScollection& collection) {
 	}
 
 
-	vkDestroyPipeline(device, collection.graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(device, collection.pipelineLayout, nullptr);
+	for (size_t i = 0; i < collection.drawCommands.size(); i++) {
+		VkRSdrawCommand& drawcmd = collection.drawCommands[i];
+		vkDestroyPipeline(device, drawcmd.graphicsPipeline, nullptr);
+		vkDestroyPipelineLayout(device, drawcmd.pipelineLayout, nullptr);
+	}
 	vkDestroyRenderPass(device, collection.renderPass, nullptr);
 }
 
@@ -1638,3 +1665,35 @@ RSresult VkRenderSystem::geometryDataDispose(const RSgeometryDataID& gdataID) {
 	}
 	return RSresult::FAILURE;
 }
+
+bool VkRenderSystem::geometryAvailable(const RSgeometryID& geomID) {
+	return geomID.isValid() && igeometryMap.find(geomID) != igeometryMap.end();
+}
+
+RSresult VkRenderSystem::geometryCreate(RSgeometryID& outgeomID, const RSgeometryInfo& geomInfo) {
+	RSuint id;
+	bool success = igeometryIDpool.CreateID(id);
+	assert(success && "failed to create a view ID");
+	if (success) {
+		VkRSgeometry vkrsgeom;
+		vkrsgeom.geomInfo = geomInfo;
+
+		outgeomID.id = id;
+		igeometryMap[outgeomID] = vkrsgeom;
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+
+}
+
+RSresult VkRenderSystem::geometryDispose(const RSgeometryID& geomID) {
+	if (geometryAvailable(geomID)) {
+		igeometryMap.erase(geomID);
+
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+

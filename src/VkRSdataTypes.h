@@ -80,7 +80,10 @@ struct VkRSgeometryData {
 	VkDeviceMemory indicesBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory stagingIndexBufferMemory = VK_NULL_HANDLE;
 	void* mappedIndexPtr = nullptr;
+};
 
+struct VkRSgeometry {
+	RSgeometryInfo geomInfo;
 };
 
 struct VkRSinstanceData {
@@ -90,8 +93,8 @@ struct VkRSinstanceData {
 struct VkRScollection {
 	RScollectionInfo info;
 	VkRenderPass renderPass{};
-	VkPipelineLayout pipelineLayout{};
-	VkPipeline graphicsPipeline{};
+	//VkPipelineLayout pipelineLayout{};
+	//VkPipeline graphicsPipeline{};
 	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;

@@ -54,14 +54,16 @@ int RSmain() {
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
 	attribInfo.attributes = attribs.data();
 	vkrs.geometryDataCreate(gdataID, static_cast<uint32_t>(ivertices.size()), static_cast<uint32_t>(iindices.size()), attribInfo, RSbufferUsageHints::buVertices);
-	
 	uint32_t vertSizeInBytes = static_cast<uint32_t>(ivertices.size() * sizeof(ivertices[0]));
 	vkrs.geometryDataUpdateVertices(gdataID, 0, vertSizeInBytes, (void*)ivertices.data());
-
 	uint32_t indicesSizeInBytes = static_cast<uint32_t>(iindices.size()) * sizeof(uint32_t);
 	vkrs.geometryDataUpdateIndices(gdataID, 0, indicesSizeInBytes, (void*)iindices.data());
-	
 	vkrs.geometryDataFinalize(gdataID);
+
+	RSgeometryID geomID;
+	RSgeometryInfo geomInfo;
+	geomInfo.primType = RSprimitiveType::ptTriangle;
+	vkrs.geometryCreate(geomID, geomInfo);
 
 	RScollectionID collID;
 	RScollectionInfo collInfo;
@@ -70,6 +72,7 @@ int RSmain() {
 	RSinstanceID instID;
 	RSinstanceInfo instInfo;
 	instInfo.gdataID = gdataID;
+	instInfo.geomID = geomID;
 	vkrs.collectionInstanceCreate(collID, instID, instInfo);
 	vkrs.collectionFinalize(collID, ctxID, viewID);
 	

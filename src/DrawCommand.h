@@ -9,4 +9,7 @@ struct VkRSdrawCommand {
 	uint32_t numVertices = 0;
 	VkDeviceSize vertexOffset = 0;
 	VkDeviceSize indicesOffset = 0;
+	VkPrimitiveTopology primTopology;
+	VkPipelineLayout pipelineLayout{};
+	VkPipeline graphicsPipeline{};
 };

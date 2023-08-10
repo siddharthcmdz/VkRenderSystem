@@ -17,12 +17,15 @@ private:
 	using RScontexts = std::unordered_map<RScontextID, VkRScontext, IDHasher<RScontextID>> ;
 	using RScollections = std::unordered_map<RScollectionID, VkRScollection, IDHasher<RScollectionID>> ;
 	using RSgeometryDataMaps = std::unordered_map<RSgeometryDataID, VkRSgeometryData, IDHasher<RSgeometryDataID>> ;
+	using RSgeometries = std::unordered_map<RSgeometryID, VkRSgeometry, IDHasher<RSgeometryID>>;
+
 
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
 	MakeID icollIDpool = MakeID(MAX_IDS);
 	MakeID igeomDataIDpool = MakeID(MAX_IDS);
 	MakeID iinstanceIDpool = MakeID(MAX_IDS);
+	MakeID igeometryIDpool = MakeID(MAX_IDS);
 
 	bool iisRSinited = false;
 
@@ -30,6 +33,7 @@ private:
 	RScontexts ictxMap;
 	RScollections icollectionMap;
 	RSgeometryDataMaps igeometryDataMap;
+	RSgeometries igeometryMap;
 
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
@@ -58,7 +62,7 @@ private:
 
 	//collection related helpers
 	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
-	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view);
+	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view, VkRSdrawCommand& drawcmd);
 	void createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx);
 	void createSyncObjects(VkRScollection& collection, const VkRScontext& ctx);
 	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
@@ -122,6 +126,10 @@ public:
 	RSresult geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
 	RSresult geometryDataFinalize(const RSgeometryDataID& gdataID);
 	RSresult geometryDataDispose(const RSgeometryDataID& gdataID);
+
+	bool geometryAvailable(const RSgeometryID& geomID);
+	RSresult geometryCreate(RSgeometryID& outgeomID, const RSgeometryInfo& geomInfo);
+	RSresult geometryDispose(const RSgeometryID& geomID);
 
 
 };

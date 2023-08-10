@@ -47,9 +47,15 @@ struct RSvertexAttribsInfo {
 	uint32_t sizeOfAttrib() const;
 };
 
+struct RSgeometryInfo {
+	RSprimitiveType primType = RSprimitiveType::ptTriangleStrip;
+	uint32_t offset = 0;
+	uint32_t numElements = 0;
+};
+
 struct RSinstanceInfo {
 	RSgeometryDataID gdataID;
+	RSgeometryID geomID;
 	//RSstateID stateID;
-	//RSprimitiveType ptype;
 	//RSspatialID spatialID;
 };

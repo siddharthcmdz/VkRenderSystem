@@ -19,3 +19,11 @@ enum RSbufferUsageHints {
 	buUniforms,
 	buSpatials
 };
+
+enum RSprimitiveType {
+	ptTriangle,
+	ptTriangleStrip,
+	ptPoint,
+	ptLine,
+	ptLineStrip
+};
