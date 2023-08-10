@@ -221,10 +221,10 @@ void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view, const V
 void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, const VkRScollection& collection) {
 	const VkDevice& device = iinstance.device;
 	uint32_t currentFrame = view.currentFrame;
-	VkFence inflightFence = collection.inFlightFences[currentFrame];
-	VkSemaphore imageAvailableSemaphore = collection.imageAvailableSemaphores[currentFrame];
-	VkSemaphore renderFinishedSemaphore = collection.renderFinishedSemaphores[currentFrame];
-	VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
+	const VkFence inflightFence = collection.inFlightFences[currentFrame];
+	const VkSemaphore imageAvailableSemaphore = collection.imageAvailableSemaphores[currentFrame];
+	const VkSemaphore renderFinishedSemaphore = collection.renderFinishedSemaphores[currentFrame];
+	const VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
 
 	vkWaitForFences(device, 1, &inflightFence, VK_TRUE, UINT64_MAX);
 
@@ -734,8 +734,8 @@ RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 void VkRenderSystem::createDescriptorSetLayout(VkRSview& view) {
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
 	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorCount = 1;
 	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.descriptorCount = 1;
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 
@@ -830,7 +830,7 @@ void VkRenderSystem::updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint3
 	ubo.proj = glm::perspective(glm::radians(45.0f), ((float)ctx.swapChainExtent.width / (float)ctx.swapChainExtent.height), 0.0f, 1.0f);
 	ubo.proj[1][1] *= -1;
 
-	memcpy(view.uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+	memcpy(view.uniformBuffersMapped[currentFrame], &ubo, sizeof(VkRSviewDescriptor));
 }
 
 bool VkRenderSystem::viewAvailable(const RSviewID& viewID) const {
@@ -1058,14 +1058,14 @@ std::vector<char> VkRenderSystem::readFile(const std::string& filename) {
 	return buffer;
 }
 
-VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code, const VkDevice& device) {
+VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code) {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = code.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 	VkShaderModule shaderModule;
-	const VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
+	const VkResult result = vkCreateShaderModule(iinstance.device, &createInfo, nullptr, &shaderModule);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create a shader module!");
 	}
@@ -1074,12 +1074,11 @@ VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code,
 }
 
 void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view) {
-	auto vertShaderCode = readFile("./src/shaders/spv/sampleshaderVert.spv");
-	auto fragShaderCode = readFile("./src/shaders/spv/sampleshaderFrag.spv");
+	auto vertShaderCode = readFile("./src/shaders/spv/passthroughVert.spv");
+	auto fragShaderCode = readFile("./src/shaders/spv/passthroughFrag.spv");
 	
-	const VkDevice& device = iinstance.device;
-	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, device);
-	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, device);
+	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -1145,8 +1144,8 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_NONE;
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f; //optional
 	rasterizer.depthBiasClamp = 0.0f; //optional
@@ -1189,7 +1188,7 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &collection.pipelineLayout);
+	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(iinstance.device, &pipelineLayoutInfo, nullptr, &collection.pipelineLayout);
 	if (pipelineLayoutResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
@@ -1215,13 +1214,13 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
 
-	const VkResult graphicsPipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &collection.graphicsPipeline);
+	const VkResult graphicsPipelineResult = vkCreateGraphicsPipelines(iinstance.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &collection.graphicsPipeline);
 	if (graphicsPipelineResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
 
-	vkDestroyShaderModule(device, vertShaderModule, nullptr);
-	vkDestroyShaderModule(device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(iinstance.device, vertShaderModule, nullptr);
+	vkDestroyShaderModule(iinstance.device, fragShaderModule, nullptr);
 }
 
 void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame) {
@@ -1367,6 +1366,8 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					cmd.numIndices = gdata.numIndices;
 					cmd.numVertices = gdata.numVertices;
 					cmd.vertexBuffer = gdata.vaBuffer;
+
+					collection.drawCommands.push_back(cmd);
 				}
 			}
 			collection.dirty = false;
@@ -1545,11 +1546,13 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.vaBuffer, gdata.vaBufferMemory);
 
 		//create buffer for indices
-		VkDeviceSize indexBufferSize = numIndices * sizeof(uint32_t);
-		createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingIndexBuffer, gdata.stagingIndexBufferMemory);
-		vkMapMemory(iinstance.device, gdata.stagingIndexBufferMemory, 0, indexBufferSize, 0, &gdata.mappedIndexPtr);
+		if (numIndices) {
+			VkDeviceSize indexBufferSize = numIndices * sizeof(uint32_t);
+			createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingIndexBuffer, gdata.stagingIndexBufferMemory);
+			vkMapMemory(iinstance.device, gdata.stagingIndexBufferMemory, 0, indexBufferSize, 0, &gdata.mappedIndexPtr);
 		
-		createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.indicesBuffer, gdata.indicesBufferMemory);
+			createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.indicesBuffer, gdata.indicesBufferMemory);
+		}
 
 		outgdataID.id = id;
 		igeometryDataMap[outgdataID] = gdata;
@@ -1566,19 +1569,11 @@ RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdat
 		if (offset != 0) {
 			throw std::runtime_error("Unsupported operation!");
 		}
-		switch (gdata.usageHints) {
-		case RSbufferUsageHints::buVertices:
-			memcpy((char*)gdata.mappedStagingVAPtr + offset, data, sizeinBytes);
-			break;
-
-		case RSbufferUsageHints::buUniforms:
-			throw std::runtime_error("Unsupported operation!");
-			break;
-
-		case RSbufferUsageHints::buSpatials:
-			throw std::runtime_error("Unsupported operation!");
-			break;
-		}
+		
+		assert(gdata.usageHints == RSbufferUsageHints::buVertices && "invalid buffer usage hint");
+		//memcpy((char*)gdata.mappedStagingVAPtr + offset, data, sizeinBytes);
+		memcpy(gdata.mappedStagingVAPtr, data, sizeinBytes);
+		rsvd::Vertex* vertices = static_cast<rsvd::Vertex*>(gdata.mappedStagingVAPtr);
 
 		return RSresult::SUCCESS;
 	}
@@ -1588,7 +1583,9 @@ RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdat
 RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data) {
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
-		memcpy((char*)(gdata.mappedStagingVAPtr) + offset, data, sizeInBytes);
+		//memcpy((char*)(gdata.mappedStagingVAPtr) + offset, data, sizeInBytes);
+		memcpy(gdata.mappedIndexPtr, data, sizeInBytes);
+		uint32_t* indices = static_cast<uint32_t*>(gdata.mappedIndexPtr);
 		return RSresult::SUCCESS;
 	}
 	return RSresult::FAILURE;
@@ -1631,6 +1628,10 @@ RSresult VkRenderSystem::geometryDataDispose(const RSgeometryDataID& gdataID) {
 		vkDestroyBuffer(iinstance.device, gdata.vaBuffer, nullptr);
 		vkFreeMemory(iinstance.device, gdata.vaBufferMemory, nullptr);
 
+		if (gdata.numIndices) {
+			vkDestroyBuffer(iinstance.device, gdata.indicesBuffer, nullptr);
+			vkFreeMemory(iinstance.device, gdata.indicesBufferMemory, nullptr);
+		}
 		igeometryDataMap.erase(gdataID);
 
 		return RSresult::SUCCESS;

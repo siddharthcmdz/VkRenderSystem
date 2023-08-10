@@ -10,6 +10,16 @@
 #include "rsenums.h"
 #include "DrawCommand.h"
 
+#define VK_CHECK_RESULT(f)																				\
+{																										\
+	VkResult res = (f);																					\
+	if (res != VK_SUCCESS)																				\
+	{																									\
+		std::cout << "Fatal : VkResult is \"" << vks::tools::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
+		assert(res == VK_SUCCESS);																		\
+	}																									\
+}
+
 struct VkRSinstance {
 	static const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 	static const inline std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };

@@ -45,6 +45,7 @@ int RSmain() {
 	RSview rsview;
 	rsview.clearColor = glm::vec4(0, 0, 0, 1);
 	rsview.cameraType = CameraType::ORBITAL;
+	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	vkrs.viewCreate(viewID, rsview);
 
 	RSgeometryDataID gdataID;
@@ -56,8 +57,10 @@ int RSmain() {
 	
 	uint32_t vertSizeInBytes = static_cast<uint32_t>(ivertices.size() * sizeof(ivertices[0]));
 	vkrs.geometryDataUpdateVertices(gdataID, 0, vertSizeInBytes, (void*)ivertices.data());
+
 	uint32_t indicesSizeInBytes = static_cast<uint32_t>(iindices.size()) * sizeof(uint32_t);
 	vkrs.geometryDataUpdateIndices(gdataID, 0, indicesSizeInBytes, (void*)iindices.data());
+	
 	vkrs.geometryDataFinalize(gdataID);
 
 	RScollectionID collID;

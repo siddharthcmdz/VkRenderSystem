@@ -62,7 +62,7 @@ private:
 	void createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx);
 	void createSyncObjects(VkRScollection& collection, const VkRScontext& ctx);
 	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
-	VkShaderModule createShaderModule(const std::vector<char>& code, const VkDevice& device);
+	VkShaderModule createShaderModule(const std::vector<char>& code);
 	static std::vector<char> readFile(const std::string& filename);
 	void contextDrawCollection(VkRScontext& context, VkRSview& view, const VkRScollection& collection);
 	void disposeCollection(VkRScollection& collection);
