@@ -20,6 +20,9 @@
 
 #include <chrono>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 class HelloTriangleApplication {
 private:
 	
@@ -1159,6 +1162,11 @@ private:
 		}
 	}
 
+
+	void createTextureImage() {
+
+	}
+
 	void initVulkan() {
 		createInstance();
 		setupDebugMessenger();
@@ -1172,6 +1180,7 @@ private:
 		createGraphicsPipeline();
 		createFramebuffers();
 		createCommandPool();
+		createTextureImage();
 		createVertexBuffer();
 		createIndexBuffer();
 		createUniformBuffers();
