@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\DrawCommand.h" />
+    <ClInclude Include="src\TextureLoader.h" />
     <ClInclude Include="src\VertexData.h" />
     <ClInclude Include="src\rsenums.h" />
     <ClInclude Include="src\rsids.h" />
@@ -37,6 +38,7 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
+    <ClCompile Include="src\TextureLoader.cpp" />
     <ClCompile Include="src\VkRenderSystemEntry.cpp" />
     <ClCompile Include="src\VkSampleMain1.cpp" />
     <ClCompile Include="src\RSdataTypes.cpp" />
