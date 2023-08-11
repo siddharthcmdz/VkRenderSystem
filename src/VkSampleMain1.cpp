@@ -611,27 +611,6 @@ private:
 
 		for (size_t i = 0; i < iswapChainImages.size(); ++i) {
 			iswapChainImageViews[i] = createImageView(iswapChainImages[i], iswapChainImageFormat);
-			//VkImageViewCreateInfo createInfo{};
-			//createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			//createInfo.image = iswapChainImages[i];
-			//createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			//createInfo.format = iswapChainImageFormat;
-
-			//createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			//createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			//createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			//createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-			//createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			//createInfo.subresourceRange.baseMipLevel = 0;
-			//createInfo.subresourceRange.levelCount = 1;
-			//createInfo.subresourceRange.baseArrayLayer = 0;
-			//createInfo.subresourceRange.layerCount = 1;
-
-			//const VkResult result = vkCreateImageView(idevice, &createInfo, nullptr, &iswapChainImageViews[i]);
-			//if (result != VK_SUCCESS) {
-			//	throw std::runtime_error("failed to create image views!");
-			//}
 		}
 	}
 
@@ -653,10 +632,10 @@ private:
 	void createDescriptorSetLayout() {
 		VkDescriptorSetLayoutBinding uboLayoutBinding{};
 		uboLayoutBinding.binding = 0;
-		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		uboLayoutBinding.descriptorCount = 1;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		uboLayoutBinding.pImmutableSamplers = nullptr;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 		samplerLayoutBinding.binding = 1;
@@ -966,7 +945,7 @@ private:
 		vkFreeMemory(idevice, stagingBufferMemory, nullptr);
 	}
 
-	void createDescriptorSet() {
+	void createDescriptorSets() {
 		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, idescriptorSetLayout);
 
 		VkDescriptorSetAllocateInfo allocInfo{};
@@ -1008,7 +987,6 @@ private:
 			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrites[1].descriptorCount = 1;
 			descriptorWrites[1].pImageInfo = &imageInfo;
-
 
 			vkUpdateDescriptorSets(idevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}
@@ -1249,6 +1227,7 @@ private:
 
 		void* data;
 		vkMapMemory(idevice, stagingBufferMemory, 0, imageSize, 0, &data);
+		//memcpy(data, redimage.data(), static_cast<size_t>(imageSize));
 		memcpy(data, pixels, static_cast<size_t>(imageSize));
 		vkUnmapMemory(idevice, stagingBufferMemory);
 
@@ -1257,6 +1236,7 @@ private:
 		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, itextureImage, itextureImageMemory);
 
 		transitionImageLayout(itextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		copyBufferToImage(stagingBuffer, itextureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 		transitionImageLayout(itextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		vkDestroyBuffer(idevice, stagingBuffer, nullptr);
@@ -1387,6 +1367,9 @@ private:
 	}
 
 	void createTextureSampler() {
+		VkPhysicalDeviceProperties properties{};
+		vkGetPhysicalDeviceProperties(iphysicalDevice, &properties);
+		
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -1395,8 +1378,6 @@ private:
 		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerInfo.anisotropyEnable = VK_TRUE;
-		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(iphysicalDevice, &properties);
 		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 		samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -1433,7 +1414,7 @@ private:
 		createIndexBuffer();
 		createUniformBuffers();
 		createDescriptorPool();
-		createDescriptorSet();
+		createDescriptorSets();
 		createCommandBuffers();
 		createSyncObjects();
 	}
