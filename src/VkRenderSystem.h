@@ -82,7 +82,7 @@ private:
 	void createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass);
 	void createDescriptorSetLayout(VkRSview& view);
 	void createDescriptorPool(VkRSview& view);
-	void createDescriptorSet(VkRSview& view);
+	void createDescriptorSets(VkRSview& view);
 	void createUniformBuffers(VkRSview& view);
 	void updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint32_t currentFrame);
 	void disposeView(VkRSview& view);
@@ -95,11 +95,13 @@ private:
 	std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
 
 	//texture related
-	void createTextureImage(VkRStexture& vkrstex);
-	void createTextureImageView();
-	void createTextureSampler();
+	bool createTextureImage(VkRStexture& vkrstex);
+	void createTextureImageView(VkRStexture& vkrstex);
+	void createTextureSampler(VkRStexture& vkrstex);
 	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	VkImageView createImageView(VkImage image, VkFormat format);
 
 public:
 	static VkRenderSystem& getInstance() {

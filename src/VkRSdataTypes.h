@@ -145,10 +145,10 @@ struct VkRSswapChainSupportDetails {
 struct VkRStexture {
 	RStextureInfo texinfo;
 	std::string absPath;
-	VkImage itextureImage;
-	VkDeviceMemory itextureImageMemory;
-	VkImageView itextureImageView;
-	VkSampler itextureSampler;
+	VkImage textureImage = VK_NULL_HANDLE;
+	VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
+	VkImageView textureImageView = VK_NULL_HANDLE;
+	VkSampler textureSampler = VK_NULL_HANDLE;
 };
 
 struct VkRSappearance {

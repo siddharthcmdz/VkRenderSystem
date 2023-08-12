@@ -14,7 +14,7 @@
 #include "VertexData.h"
 
 
-const std::vector<rsvd::Vertex> ivertices = {
+const std::vector<rsvd::VertexPC> ivertices = {
 	{{-0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
 	{{0.5f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
 	{{0.5f, 0.5f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
@@ -73,6 +73,15 @@ int RSmain() {
 	RSinstanceInfo instInfo;
 	instInfo.gdataID = gdataID;
 	instInfo.geomID = geomID;
+	
+	RStextureID texID;
+	vkrs.textureCreate(texID, "C:\\Projects\\VkRenderSystem\\x64\\Debug\\texture.jpg");
+
+	RSappearanceID appID;
+	RSappearanceInfo appInfo;
+	appInfo.diffuseTexture = texID;
+	vkrs.appearanceCreate(appID, appInfo);
+
 	vkrs.collectionInstanceCreate(collID, instID, instInfo);
 	vkrs.collectionFinalize(collID, ctxID, viewID);
 	

@@ -124,6 +124,7 @@
     <None Include="src\shaders\spv\passthroughVert.spv">
       <Filter>Shaders\spv</Filter>
     </None>
+    <None Include="ToDoList.md" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\textures\texture.jpg">
