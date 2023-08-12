@@ -59,3 +59,7 @@ struct RSinstanceInfo {
 	//RSstateID stateID;
 	//RSspatialID spatialID;
 };
+
+struct RSappearanceInfo {
+	RStextureID diffuseTexture;
+};

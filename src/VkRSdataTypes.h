@@ -9,6 +9,7 @@
 #include <optional>
 #include "rsenums.h"
 #include "DrawCommand.h"
+#include "TextureLoader.h"
 
 #define VK_CHECK_RESULT(f)																				\
 {																										\
@@ -139,4 +140,17 @@ struct VkRSswapChainSupportDetails {
 	VkSurfaceCapabilitiesKHR capabilities;
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
+};
+
+struct VkRStexture {
+	RStextureInfo texinfo;
+	std::string absPath;
+	VkImage itextureImage;
+	VkDeviceMemory itextureImageMemory;
+	VkImageView itextureImageView;
+	VkSampler itextureSampler;
+};
+
+struct VkRSappearance {
+	RSappearanceInfo appInfo;
 };

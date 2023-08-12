@@ -13,6 +13,8 @@
 #include "RSVkDebugUtils.h"
 #include "VertexData.h"
 
+#include "TextureLoader.h"
+
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -1429,6 +1431,72 @@ void VkRenderSystem::disposeCollection(VkRScollection& collection) {
 		vkDestroyPipelineLayout(device, drawcmd.pipelineLayout, nullptr);
 	}
 	vkDestroyRenderPass(device, collection.renderPass, nullptr);
+}
+
+bool VkRenderSystem::textureAvailable(const RStextureID& texID) {
+	return texID.isValid() && itextureMap.find(texID) != itextureMap.end();
+}
+
+RSresult VkRenderSystem::textureCreate(RStextureID& outTexID, const char* absfilepath) {
+	RSuint id;
+	bool success = itextureIDpool.CreateID(id);
+	assert(success && "failed to create a texture ID");
+	if (success) {
+		VkRStexture texture;
+		texture.absPath = absfilepath;
+		texture.texinfo = TextureLoader::readTexture(absfilepath);
+		
+		outTexID.id = id;
+		itextureMap[outTexID] = texture;
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+void VkRenderSystem::createTextureImage(VkRStexture& vkrstex) {
+	const RStextureInfo& texinfo = vkrstex.texinfo;
+	VkDeviceSize imageSize = 
+}
+
+void VkRenderSystem::createTextureImageView() {
+
+}
+
+void VkRenderSystem::createTextureSampler() {
+
+}
+
+void VkRenderSystem::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+
+}
+
+void VkRenderSystem::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+
+}
+
+
+RSresult VkRenderSystem::textureDispsoe(const RStextureID& texID) {
+	if (textureAvailable(texID)) {
+		VkRStexture& vkrstex = itextureMap[texID];
+		vkrstex.texinfo.dispose();
+		itextureMap.erase(texID);
+
+		return RSresult::SUCCESS;
+	}
+	return RSresult::FAILURE;
+}
+
+bool VkRenderSystem::appearanceAvailable(const RSappearanceID& appID) {
+
+}
+
+RSresult VkRenderSystem::appearanceCreate(RSappearanceID& outAppID, const RSappearanceInfo& appInfo) {
+
+}
+
+RSresult VkRenderSystem::appearanceDispose(const RSappearanceID& appID) {
+
 }
 
 uint32_t VkRenderSystem::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {

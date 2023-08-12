@@ -40,4 +40,5 @@ MAKEID_TYPE(RSviewID);
 MAKEID_TYPE(RScontextID);
 MAKEID_TYPE(RScollectionID);
 MAKEID_TYPE(RSinstanceID);
-
+MAKEID_TYPE(RStextureID);
+MAKEID_TYPE(RSappearanceID);

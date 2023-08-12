@@ -18,7 +18,8 @@ private:
 	using RScollections = std::unordered_map<RScollectionID, VkRScollection, IDHasher<RScollectionID>> ;
 	using RSgeometryDataMaps = std::unordered_map<RSgeometryDataID, VkRSgeometryData, IDHasher<RSgeometryDataID>> ;
 	using RSgeometries = std::unordered_map<RSgeometryID, VkRSgeometry, IDHasher<RSgeometryID>>;
-
+	using RStextures = std::unordered_map<RStextureID, VkRStexture, IDHasher<RStextureID>>;
+	using RSappearances = std::unordered_map<RSappearanceID, VkRSappearance, IDHasher<RSappearanceID>>;
 
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
@@ -26,6 +27,8 @@ private:
 	MakeID igeomDataIDpool = MakeID(MAX_IDS);
 	MakeID iinstanceIDpool = MakeID(MAX_IDS);
 	MakeID igeometryIDpool = MakeID(MAX_IDS);
+	MakeID itextureIDpool = MakeID(MAX_IDS);
+	MakeID istateIDpool = MakeID(MAX_IDS);
 
 	bool iisRSinited = false;
 
@@ -34,6 +37,8 @@ private:
 	RScollections icollectionMap;
 	RSgeometryDataMaps igeometryDataMap;
 	RSgeometries igeometryMap;
+	RStextures itextureMap;
+	RSappearances iappearanceMap;
 
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
@@ -59,6 +64,8 @@ private:
 	void setupDebugMessenger();
 	void recreateSwapchain(VkRScontext& ctx, VkRSview& view, const VkRenderPass& renderpass);
 	static void framebufferResizeCallback(GLFWwindow* window, int widht, int height);
+	VkCommandBuffer beginSingleTimeCommands();
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 	//collection related helpers
 	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
@@ -86,6 +93,13 @@ private:
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	VkVertexInputBindingDescription getBindingDescription();
 	std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+
+	//texture related
+	void createTextureImage(VkRStexture& vkrstex);
+	void createTextureImageView();
+	void createTextureSampler();
+	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 public:
 	static VkRenderSystem& getInstance() {
@@ -131,5 +145,12 @@ public:
 	RSresult geometryCreate(RSgeometryID& outgeomID, const RSgeometryInfo& geomInfo);
 	RSresult geometryDispose(const RSgeometryID& geomID);
 
+	bool textureAvailable(const RStextureID& texID);
+	RSresult textureCreate(RStextureID& outTexID, const char* absfilepath);
+	RSresult textureDispsoe(const RStextureID& texID); 
 
+	bool appearanceAvailable(const RSappearanceID& appID);
+	RSresult appearanceCreate(RSappearanceID& outAppID, const RSappearanceInfo& appInfo);
+	RSresult appearanceDispose(const RSappearanceID& appID);
+	
 };
