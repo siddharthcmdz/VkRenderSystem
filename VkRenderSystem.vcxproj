@@ -46,6 +46,8 @@
     <ClCompile Include="src\VkRendersystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\scripts\driver.py" />
+    <None Include="src\scripts\shadercompile.py" />
     <None Include="src\shaders\compile.bat" />
     <None Include="src\shaders\passthrough.frag" />
     <None Include="src\shaders\passthrough.vert" />
@@ -55,6 +57,8 @@
     <None Include="src\shaders\spv\passthroughVert.spv" />
     <None Include="src\shaders\spv\sampleshaderFrag.spv" />
     <None Include="src\shaders\spv\sampleshaderVert.spv" />
+    <None Include="src\shaders\textured.frag" />
+    <None Include="src\shaders\textured.vert" />
     <None Include="ToDoList.md" />
   </ItemGroup>
   <ItemGroup>
