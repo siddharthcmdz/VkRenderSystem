@@ -22,6 +22,9 @@
     <Filter Include="textures">
       <UniqueIdentifier>{4811bd2c-5740-4c07-97e5-1ea3526ef8d8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scripts">
+      <UniqueIdentifier>{e0ce16a9-09cb-49a6-b95a-5cd0d4fb41cf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VkRenderSystem.h">
@@ -128,13 +131,17 @@
       <Filter>Shaders\spv</Filter>
     </None>
     <None Include="ToDoList.md" />
-    <None Include="src\scripts\driver.py" />
-    <None Include="src\scripts\shadercompile.py" />
     <None Include="src\shaders\textured.vert">
       <Filter>Shaders</Filter>
     </None>
     <None Include="src\shaders\textured.frag">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="src\scripts\driver.py">
+      <Filter>Scripts</Filter>
+    </None>
+    <None Include="src\scripts\trials.py">
+      <Filter>Scripts</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
