@@ -11,16 +11,20 @@ class ShaderCompiler:
   def build(self):
     shader_files = os.listdir(self.shader_dir)
     for file in shader_files:
-      if file.find('.vert') or file.find('.frag'):
+      if '.vert' in file or '.frag' in file:
         postfix = 'Vert'
         if '.frag' in file:
           postfix = 'Frag'
       
-        dstfile = self.spv_dir+file+postfix+'.spv'
-        print(self.glsl_compiler_path + ' ' + file + ' -o ' + self.spv_dir+file+postfix+'.spv')
-        # subprocess.call([self.glsl_compiler_path, file, '-o', self.spv_dir+file+postfix+'.spv'] )
-      
-    print(shader_files)
+        dstfile = self.spv_dir+file
+        if '.vert' in dstfile:
+          dstfile = dstfile.replace('.vert', 'Vert.spv')
+        if '.frag' in dstfile:
+          dstfile = dstfile.replace('.frag', 'Frag.spv')
+        
+        srcfile = self.shader_dir + '/' + file
+        #print(self.glsl_compiler_path + ' ' + srcfile + ' -o ' + dstfile)
+        subprocess.call([self.glsl_compiler_path, srcfile, '-o', dstfile] )
 
 class BuildDriver:
   
