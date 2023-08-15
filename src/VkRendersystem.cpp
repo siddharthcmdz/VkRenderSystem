@@ -404,6 +404,9 @@ void VkRenderSystem::printPhysicalDeviceInfo(VkPhysicalDevice device) {
 	VkPhysicalDeviceProperties props;
 	vkGetPhysicalDeviceFeatures(device, &features);
 	vkGetPhysicalDeviceProperties(device, &props);
+	iinstance.maxBoundDescriptorSets = props.limits.maxBoundDescriptorSets;
+	iinstance.maxCombinedSamplerDescriptorSets = props.limits.maxDescriptorSetSampledImages;
+	iinstance.maxUniformDescriptorSets = props.limits.maxDescriptorSetUniformBuffers;
 	std::cout << "\n" << "Device properties" << std::endl;
 	std::cout << "=================" << std::endl;
 	std::cout << "\tDevice name: " << props.deviceName << std::endl;
@@ -414,6 +417,9 @@ void VkRenderSystem::printPhysicalDeviceInfo(VkPhysicalDevice device) {
 	std::cout << "\tmultiDrawIndirect: " << features.multiDrawIndirect << std::endl;
 	std::cout << "\tshaderInt64: " << features.shaderInt64 << std::endl;
 	std::cout << "\tfragmentStoresAndAtomics: " << features.fragmentStoresAndAtomics << std::endl;
+	std::cout << "\tmaxBoundDescriptorSets: " << iinstance.maxBoundDescriptorSets << std::endl;
+	std::cout << "\tmaxCombinedSamplerDescriptorSets: "<< iinstance.maxCombinedSamplerDescriptorSets << std::endl;
+	std::cout << "\tmaxUniformDescriptorSets: " << iinstance.maxUniformDescriptorSets << std::endl;
 }
 
 void VkRenderSystem::setPhysicalDevice(VkRScontext& ctx) {
@@ -605,6 +611,7 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 	}
 	createInstance(info);
 	setupDebugMessenger();
+	createDescriptorPool();
 
 	iisRSinited = true;
 	
@@ -718,27 +725,18 @@ RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 	return RSresult::FAILURE;
 }
 
-void VkRenderSystem::createDescriptorSetLayout(VkRSview& view) {
+void VkRenderSystem::viewCreateDescriptorSetLayout(VkRSview& view) {
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
 	uboLayoutBinding.binding = 0;
 	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.descriptorCount = 1;
+	uboLayoutBinding.descriptorCount = 1; //all view related parameters\data are sourced by one buffer
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.pImmutableSamplers = nullptr;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	layoutInfo.pBindings = bindings.data();
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &uboLayoutBinding;
 
 	VkResult res = vkCreateDescriptorSetLayout(iinstance.device, &layoutInfo, nullptr, &view.descriptorSetLayout);
 	if (res != VK_SUCCESS) {
@@ -746,24 +744,36 @@ void VkRenderSystem::createDescriptorSetLayout(VkRSview& view) {
 	}
 }
 
-void VkRenderSystem::createDescriptorPool(VkRSview& view) {
-	VkDescriptorPoolSize poolSize{};
-	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+void VkRenderSystem::createDescriptorPool() {
+	// counted number of individual variables in the shader. update this if we want more
+	const uint32_t MAX_FRAMES_IN_FLIGHT = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	const uint32_t maxUniformDescriptors = 4 * MAX_FRAMES_IN_FLIGHT;
+	const uint32_t maxSamplerDescriptors = 1 * MAX_FRAMES_IN_FLIGHT;
+	const uint32_t maxDescriptorSets = 3 * MAX_FRAMES_IN_FLIGHT;
+
+	VkDescriptorPoolSize uniformPoolSize{};
+	uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uniformPoolSize.descriptorCount = maxUniformDescriptors;
+
+	VkDescriptorPoolSize samplerPoolSize{};
+	samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerPoolSize.descriptorCount = maxSamplerDescriptors;
+		
+	std::array<VkDescriptorPoolSize, 2> poolSizes = { uniformPoolSize, samplerPoolSize };
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes = &poolSize;
-	poolInfo.maxSets = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	poolInfo.pPoolSizes = poolSizes.data();
+	poolInfo.maxSets = maxDescriptorSets;
 
-	VkResult res = vkCreateDescriptorPool(iinstance.device, &poolInfo, nullptr, &view.descriptorPool);
+	VkResult res = vkCreateDescriptorPool(iinstance.device, &poolInfo, nullptr, &iinstance.descriptorPool);
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool");
 	}
 }
 
-void VkRenderSystem::createDescriptorSets(VkRSview& view) {
+void VkRenderSystem::viewCreateDescriptorSets(VkRSview& view) {
 	std::vector<VkDescriptorSetLayout> layouts(VkRScontext::MAX_FRAMES_IN_FLIGHT, view.descriptorSetLayout);
 
 	VkDescriptorSetAllocateInfo allocInfo{};
@@ -783,11 +793,6 @@ void VkRenderSystem::createDescriptorSets(VkRSview& view) {
 		bufferInfo.buffer = view.uniformBuffers[i];
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(VkRSviewDescriptor);
-
-		//TODO: how do i access the textures views ans samplers here?
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		
 
 		VkWriteDescriptorSet descriptorWrite{};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -825,7 +830,7 @@ void VkRenderSystem::updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint3
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	VkRSviewDescriptor ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), ((float)ctx.swapChainExtent.width / (float)ctx.swapChainExtent.height), 0.0f, 1.0f);
 	ubo.proj[1][1] *= -1;
@@ -845,10 +850,9 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 	if (success) {
 		VkRSview vkrsview;
 		vkrsview.view = view;
-		createDescriptorSetLayout(vkrsview);
+		viewCreateDescriptorSetLayout(vkrsview);
 		createUniformBuffers(vkrsview);
-		createDescriptorPool(vkrsview);
-		createDescriptorSets(vkrsview);
+		viewCreateDescriptorSets(vkrsview);
 
 		viewID.id = id;
 		iviewMap[viewID] = vkrsview;
@@ -1021,9 +1025,11 @@ RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinst
 		outInstID.id = id;
 		VkRScollection& coll = icollectionMap[collID];
 
-		VkRSinstanceData inst;
+		VkRScollectionInstance inst;
 		inst.instInfo = instInfo;
 
+		collectionInstanceCreateDescriptorSetLayout(inst);
+		collectionInstanceCreateDescriptorSet(inst);
 		coll.instanceMap[outInstID] = inst;
 
 		return RSresult::SUCCESS;
@@ -1073,9 +1079,27 @@ VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code)
 	return shaderModule;
 }
 
-void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view, VkRSdrawCommand& drawcmd) {
-	auto vertShaderCode = readFile("./src/shaders/spv/passthroughVert.spv");
-	auto fragShaderCode = readFile("./src/shaders/spv/passthroughFrag.spv");
+void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSview& view, VkRScollection& collection, VkRScollectionInstance& collinst, VkRSdrawCommand& drawcmd) {
+	const RSappearanceID& appID = collinst.instInfo.appID;
+	if (!appearanceAvailable(appID)) {
+		throw std::runtime_error("invalid appearance");
+	}
+	const VkRSappearance& vkrsapp = iappearanceMap[appID];
+
+	std::string vertSPV, fragSPV;
+	switch (vkrsapp.appInfo.shaderTemplate) {
+	case RSshaderTemplate::stPassthrough:
+		vertSPV = "./src/shaders/spv/passthroughVert.spv";
+		fragSPV = "./src/shaders/spv/passthroughFrag.spv";
+		break;
+
+	case RSshaderTemplate::stTextured:
+		vertSPV = "./src/shaders/spv/texturedVert.spv";
+		fragSPV = "./src/shaders/spv/texturedFrag.spv";
+		break;
+	}
+	auto vertShaderCode = readFile(vertSPV);
+	auto fragShaderCode = readFile(fragSPV);
 	
 	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -1104,8 +1128,10 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 	dynamicState.pDynamicStates = dynamicStates.data();
 
-	auto bindingDescription = getBindingDescription();
-	auto attributeDescriptions = getAttributeDescriptions();
+	VkRSgeometryData& gdata = igeometryDataMap[collinst.instInfo.gdataID];
+	
+	auto bindingDescription = getBindingDescription(gdata.attributesInfo);
+	auto attributeDescriptions = getAttributeDescriptions(gdata.attributesInfo);
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -1182,9 +1208,10 @@ void VkRenderSystem::createGraphicsPipeline(VkRScollection& collection, const Vk
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts {view.descriptorSetLayout, collinst.descriptorSetLayout};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &view.descriptorSetLayout;
+	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -1363,6 +1390,68 @@ VkPrimitiveTopology getPrimitiveType(const RSprimitiveType& ptype) {
 	return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
 
+void VkRenderSystem::collectionInstanceCreateDescriptorSetLayout(VkRScollectionInstance& inst) {
+	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers = nullptr;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &samplerLayoutBinding;
+
+	VkResult res = vkCreateDescriptorSetLayout(iinstance.device, &layoutInfo, nullptr, &inst.descriptorSetLayout);
+	(res);
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor set layout!");
+	}
+}
+
+void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstance& inst) {
+	if (appearanceAvailable(inst.instInfo.appID)) {
+		VkRSappearance& vksrsapp = iappearanceMap[inst.instInfo.appID];
+		const RStextureID difftexID = vksrsapp.appInfo.diffuseTexture;
+		if (textureAvailable(difftexID)) {
+			VkRStexture& vkrstex = itextureMap[difftexID];
+
+			std::vector<VkDescriptorSetLayout> layouts(VkRScontext::MAX_FRAMES_IN_FLIGHT, inst.descriptorSetLayout);
+
+			VkDescriptorSetAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			allocInfo.descriptorPool = iinstance.descriptorPool;
+			allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+			allocInfo.pSetLayouts = layouts.data();
+
+			inst.descriptorSets.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+			VkResult res = vkAllocateDescriptorSets(iinstance.device, &allocInfo, inst.descriptorSets.data());
+			if (res != VK_SUCCESS) {
+				throw std::runtime_error("failed to allocate descriptor sets!");
+			}
+
+			for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; i++) {
+				VkDescriptorImageInfo imageInfo{};
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = vkrstex.textureImageView;
+				imageInfo.sampler = vkrstex.textureSampler;
+
+				VkWriteDescriptorSet descriptorWrites{};
+				descriptorWrites.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites.dstSet = inst.descriptorSets[i];
+				descriptorWrites.dstBinding = 0;
+				descriptorWrites.dstArrayElement = 0;
+				descriptorWrites.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrites.descriptorCount = 1;
+				descriptorWrites.pImageInfo = &imageInfo;
+
+				vkUpdateDescriptorSets(iinstance.device, 1, &descriptorWrites, 0, nullptr);
+			}
+		}
+	}
+}
+
 RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID, const RSviewID& viewID) {
 	if (collectionAvailable(colID) && contextAvailable(ctxID) && viewAvailable(viewID)) {
 		VkRScollection& collection = icollectionMap[colID];
@@ -1376,9 +1465,9 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 
 			//create drawcommands
 			for (auto& iter : collection.instanceMap) {
-				const VkRSinstanceData& inst = iter.second;
-				const RSgeometryDataID& gdataID = inst.instInfo.gdataID;
-				const RSgeometryID& geomID = inst.instInfo.geomID;
+				VkRScollectionInstance& collinst = iter.second;
+				const RSgeometryDataID& gdataID = collinst.instInfo.gdataID;
+				const RSgeometryID& geomID = collinst.instInfo.geomID;
 				if (geometryDataAvailable(gdataID) && geometryAvailable(geomID)) {
 					const VkRSgeometryData& gdata = igeometryDataMap[gdataID];
 					const VkRSgeometry& geom = igeometryMap[geomID];
@@ -1389,7 +1478,10 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					cmd.numVertices = gdata.numVertices;
 					cmd.vertexBuffer = gdata.vaBuffer;
 					cmd.primTopology = getPrimitiveType(geom.geomInfo.primType);
-					createGraphicsPipeline(collection, ctx, view, cmd);
+
+					//create descriptorsets for instances
+					collectionInstanceCreateDescriptorSetLayout(collinst);
+					createGraphicsPipeline(ctx, view, collection, collinst, cmd);
 
 					collection.drawCommands.push_back(cmd);
 				}
@@ -1573,7 +1665,7 @@ void VkRenderSystem::createTextureImageView(VkRStexture& vkrstex) {
 void VkRenderSystem::createTextureSampler(VkRStexture& vkrstex) {
 	VkPhysicalDeviceProperties properties{};
 	vkGetPhysicalDeviceProperties(iinstance.physicalDevice, &properties);
-
+	
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -1776,26 +1868,24 @@ void VkRenderSystem::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevice
 /**
 * vertex input binding description describes what rate to load data from memory throughout the vertices.
 */
-VkVertexInputBindingDescription VkRenderSystem::getBindingDescription() {
+VkVertexInputBindingDescription VkRenderSystem::getBindingDescription(const RSvertexAttribsInfo& attribInfo) {
 	VkVertexInputBindingDescription bindingDescription{};
 	bindingDescription.binding = 0;
-	bindingDescription.stride = sizeof(rsvd::VertexPC);
+	bindingDescription.stride = attribInfo.sizeOfAttrib();//sizeof(rsvd::VertexPC);
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
+	
 	return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 2> VkRenderSystem::getAttributeDescriptions() {
-	std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
-	attributeDescriptions[0].binding = 0;
-	attributeDescriptions[0].location = 0;
-	attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[0].offset = offsetof(rsvd::VertexPC, pos);
-
-	attributeDescriptions[1].binding = 0;
-	attributeDescriptions[1].location = 1;
-	attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-	attributeDescriptions[1].offset = offsetof(rsvd::VertexPC, color);
+std::vector<VkVertexInputAttributeDescription> VkRenderSystem::getAttributeDescriptions(const RSvertexAttribsInfo& attribInfo) {
+	std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+	attributeDescriptions.resize(attribInfo.numVertexAttribs);
+	for (size_t i = 0; i < attribInfo.numVertexAttribs; i++) {
+		attributeDescriptions[i].binding = 0;
+		attributeDescriptions[i].location = i;
+		attributeDescriptions[i].format = getVkFormat(attribInfo.attributes[i]);
+		attributeDescriptions[i].offset = getOffset(attribInfo.numVertexAttribs, i);
+	}
 
 	return attributeDescriptions;
 }

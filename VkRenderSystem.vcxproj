@@ -40,6 +40,7 @@
     <ClCompile Include="src\stb_image.cpp" />
     <ClCompile Include="src\TextureLoader.cpp" />
     <ClCompile Include="src\VkRenderSystemEntry.cpp" />
+    <ClCompile Include="src\VkRSdataTypes.cpp" />
     <ClCompile Include="src\VkSampleMain1.cpp" />
     <ClCompile Include="src\RSdataTypes.cpp" />
     <ClCompile Include="src\VkSampleMain0.cpp" />

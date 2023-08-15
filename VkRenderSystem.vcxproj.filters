@@ -95,6 +95,9 @@
     <ClCompile Include="src\TextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\VkRSdataTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\sampleshader.vert">
@@ -125,6 +128,14 @@
       <Filter>Shaders\spv</Filter>
     </None>
     <None Include="ToDoList.md" />
+    <None Include="src\scripts\driver.py" />
+    <None Include="src\scripts\shadercompile.py" />
+    <None Include="src\shaders\textured.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="src\shaders\textured.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\textures\texture.jpg">

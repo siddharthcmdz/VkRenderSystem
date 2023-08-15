@@ -28,4 +28,5 @@ namespace rsvd {
 		glm::vec4 normal;
 		glm::vec2 texcoord;
 	};
+
 }

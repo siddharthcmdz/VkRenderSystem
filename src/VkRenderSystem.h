@@ -66,10 +66,11 @@ private:
 	static void framebufferResizeCallback(GLFWwindow* window, int widht, int height);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	void createDescriptorPool();
 
 	//collection related helpers
 	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
-	void createGraphicsPipeline(VkRScollection& collection, const VkRScontext& ctx, const VkRSview& view, VkRSdrawCommand& drawcmd);
+	void createGraphicsPipeline(const VkRScontext& ctx, const VkRSview& view, VkRScollection& collection, VkRScollectionInstance& collinst, VkRSdrawCommand& drawcmd);
 	void createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx);
 	void createSyncObjects(VkRScollection& collection, const VkRScontext& ctx);
 	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
@@ -78,11 +79,14 @@ private:
 	void contextDrawCollection(VkRScontext& context, VkRSview& view, const VkRScollection& collection);
 	void disposeCollection(VkRScollection& collection);
 
+	//collection instance related helpers
+	void collectionInstanceCreateDescriptorSetLayout(VkRScollectionInstance& inst);
+	void collectionInstanceCreateDescriptorSet(VkRScollectionInstance& inst);
+	
 	//view related helpers
 	void createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass);
-	void createDescriptorSetLayout(VkRSview& view);
-	void createDescriptorPool(VkRSview& view);
-	void createDescriptorSets(VkRSview& view);
+	void viewCreateDescriptorSetLayout(VkRSview& view);
+	void viewCreateDescriptorSets(VkRSview& view);
 	void createUniformBuffers(VkRSview& view);
 	void updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint32_t currentFrame);
 	void disposeView(VkRSview& view);
@@ -91,8 +95,8 @@ private:
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memProperties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	VkVertexInputBindingDescription getBindingDescription();
-	std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+	VkVertexInputBindingDescription getBindingDescription(const RSvertexAttribsInfo& attribInfo);
+	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(const RSvertexAttribsInfo& attribInfo);
 
 	//texture related
 	bool createTextureImage(VkRStexture& vkrstex);
@@ -154,5 +158,9 @@ public:
 	bool appearanceAvailable(const RSappearanceID& appID);
 	RSresult appearanceCreate(RSappearanceID& outAppID, const RSappearanceInfo& appInfo);
 	RSresult appearanceDispose(const RSappearanceID& appID);
+
+	//bool spatialAvailable(const RSspatialID& spatialID);
+	//RSresult spatialCreate(RSspatialID& outSplID, const RSspatial& splInfo);
+	//RSresult spatialDispose(const RSspatialID& spatialID);
 	
 };

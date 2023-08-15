@@ -81,6 +81,8 @@ int RSmain() {
 	RSappearanceInfo appInfo;
 	appInfo.diffuseTexture = texID;
 	vkrs.appearanceCreate(appID, appInfo);
+	instInfo.appID = appID;
+	//TODO: add spatialID to instinfo
 
 	vkrs.collectionInstanceCreate(collID, instID, instInfo);
 	vkrs.collectionFinalize(collID, ctxID, viewID);

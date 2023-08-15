@@ -34,3 +34,4 @@ uint32_t RSvertexAttribsInfo::sizeOfAttrib() const {
 
 	return sum;
 }
+

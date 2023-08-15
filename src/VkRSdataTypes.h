@@ -37,10 +37,15 @@ struct VkRSinstance {
 	VkQueue graphicsQueue{};
 	VkQueue presentQueue{};
 	VkCommandPool commandPool{}; //manages the memory where command buffers are allocated from them
+	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 	uint32_t majorVersion = ~0;
 	uint32_t minorVersion = ~0;
 	uint32_t patchVersion = ~0;
 	uint32_t variantVersion = ~0;
+	uint32_t maxUniformDescriptorSets = ~0;
+	uint32_t maxCombinedSamplerDescriptorSets = ~0;
+	uint32_t maxBoundDescriptorSets = ~0;
+
 };
 
 
@@ -87,22 +92,23 @@ struct VkRSgeometry {
 	RSgeometryInfo geomInfo;
 };
 
-struct VkRSinstanceData {
+struct VkRScollectionInstance {
 	RSinstanceInfo instInfo;
+	//std::vector<VkDescriptorSet> uniformDescriptorSets;
+	VkDescriptorSetLayout descriptorSetLayout;
+	std::vector<VkDescriptorSet> descriptorSets;
 };
 
 struct VkRScollection {
 	RScollectionInfo info;
 	VkRenderPass renderPass{};
-	//VkPipelineLayout pipelineLayout{};
-	//VkPipeline graphicsPipeline{};
 	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
 
 	using DrawCommands = std::vector<VkRSdrawCommand>;
-	using RSinstances = std::unordered_map<RSinstanceID, VkRSinstanceData, IDHasher<RSinstanceID>>;
+	using RSinstances = std::unordered_map<RSinstanceID, VkRScollectionInstance, IDHasher<RSinstanceID>>;
 
 	DrawCommands drawCommands;
 	RSinstances instanceMap;
@@ -110,9 +116,12 @@ struct VkRScollection {
 };
 
 struct VkRSviewDescriptor {
-	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
+};
+
+struct VkRSspatialDescriptor {
+	glm::mat4 model;
 };
 
 struct VkRSview {
@@ -151,6 +160,15 @@ struct VkRStexture {
 	VkSampler textureSampler = VK_NULL_HANDLE;
 };
 
+struct VkRSspatial {
+	std::vector<VkBuffer> uniformBuffers; //spatial matrices
+	std::vector<VkDeviceMemory> uniformBufferMemory; //spatial matrices
+	std::vector<void*> uniformBuffersMapped;
+};
+
 struct VkRSappearance {
 	RSappearanceInfo appInfo;
 };
+
+VkFormat getVkFormat(const RSvertexAttribute& va);
+uint32_t getOffset(uint32_t numAttribs, uint32_t idx);

@@ -27,3 +27,8 @@ enum RSprimitiveType {
 	ptLine,
 	ptLineStrip
 };
+
+enum RSshaderTemplate {
+	stPassthrough,
+	stTextured
+};
