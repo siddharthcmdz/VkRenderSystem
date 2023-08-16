@@ -14,11 +14,11 @@
 #include "VertexData.h"
 
 
-const std::vector<rsvd::VertexPC> ivertices = {
-	{{-0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-	{{0.5f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-	{{0.5f, 0.5f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-	{{-0.5f, 0.5f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
+const std::vector<rsvd::VertexPCT> ivertices = {
+	{{-0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+	{{0.5f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 
 const std::vector<uint32_t> iindices = {
@@ -49,7 +49,7 @@ int RSmain() {
 	vkrs.viewCreate(viewID, rsview);
 
 	RSgeometryDataID gdataID;
-	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor };
+	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
 	RSvertexAttribsInfo attribInfo;
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
 	attribInfo.attributes = attribs.data();
@@ -80,6 +80,7 @@ int RSmain() {
 	RSappearanceID appID;
 	RSappearanceInfo appInfo;
 	appInfo.diffuseTexture = texID;
+	appInfo.shaderTemplate = RSshaderTemplate::stTextured;
 	vkrs.appearanceCreate(appID, appInfo);
 	instInfo.appID = appID;
 	//TODO: add spatialID to instinfo

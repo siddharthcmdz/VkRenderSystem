@@ -5,14 +5,16 @@ VkFormat getVkFormat(const RSvertexAttribute& va) {
 	case RSvertexAttribute::vaPosition:
 	case RSvertexAttribute::vaColor:
 	case RSvertexAttribute::vaNormal:
-	case RSvertexAttribute::vaTexCoord:
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
+
+	case RSvertexAttribute::vaTexCoord:
+		return VK_FORMAT_R32G32_SFLOAT;
 
 	default:
 		break;
 	}
 
-	VkFormat::VK_FORMAT_MAX_ENUM;
+	return VkFormat::VK_FORMAT_MAX_ENUM;
 }
 
 uint32_t getOffset(uint32_t numAttribs, uint32_t idx) {
@@ -24,4 +26,6 @@ uint32_t getOffset(uint32_t numAttribs, uint32_t idx) {
 
 		curroffset += sizeof(glm::vec4);
 	}
+
+	return curroffset;
 }

@@ -58,6 +58,8 @@
     <None Include="src\shaders\spv\passthroughVert.spv" />
     <None Include="src\shaders\spv\sampleshaderFrag.spv" />
     <None Include="src\shaders\spv\sampleshaderVert.spv" />
+    <None Include="src\shaders\spv\texturedFrag.spv" />
+    <None Include="src\shaders\spv\texturedVert.spv" />
     <None Include="src\shaders\textured.frag" />
     <None Include="src\shaders\textured.vert" />
     <None Include="ToDoList.md" />

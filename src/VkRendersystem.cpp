@@ -320,7 +320,7 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 	return RSresult::SUCCESS;
 }
 
-VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(const VkPhysicalDevice device, const VkRScontext& ctx) {
+VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR& surface) {
 	VkRSqueueFamilyIndices indices;
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -334,7 +334,7 @@ VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(const VkPhysicalDevice 
 		}
 
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, ctx.surface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 		if (presentSupport) {
 			indices.presentFamily = i;
 		}
@@ -347,34 +347,34 @@ VkRSqueueFamilyIndices VkRenderSystem::findQueueFamilies(const VkPhysicalDevice 
 	return indices;
 }
 
-VkRSswapChainSupportDetails VkRenderSystem::querySwapChainSupport(VkPhysicalDevice device, VkRScontext& ctx) {
+VkRSswapChainSupportDetails VkRenderSystem::querySwapChainSupport(VkPhysicalDevice device, const VkSurfaceKHR& vksurface) {
 	VkRSswapChainSupportDetails details;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, ctx.surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vksurface, &details.capabilities);
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, ctx.surface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, vksurface, &formatCount, nullptr);
 	if (formatCount != 0) {
 		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, ctx.surface, &formatCount, details.formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, vksurface, &formatCount, details.formats.data());
 	}
 
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, ctx.surface, &presentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, vksurface, &presentModeCount, nullptr);
 	if (presentModeCount) {
 		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, ctx.surface, &presentModeCount, details.presentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, vksurface, &presentModeCount, details.presentModes.data());
 	}
 
 	return details;
 }
 
-bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx) {
+bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& surface) {
 	bool extensionsSupported = checkDeviceExtensionSupport(device);
-	VkRSqueueFamilyIndices indices = findQueueFamilies(device, ctx);
+	VkRSqueueFamilyIndices indices = findQueueFamilies(device, surface);
 
 	bool swapChainAdequate = false;
 	if (extensionsSupported) {
-		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, ctx);
+		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
@@ -422,13 +422,13 @@ void VkRenderSystem::printPhysicalDeviceInfo(VkPhysicalDevice device) {
 	std::cout << "\tmaxUniformDescriptorSets: " << iinstance.maxUniformDescriptorSets << std::endl;
 }
 
-void VkRenderSystem::setPhysicalDevice(VkRScontext& ctx) {
+void VkRenderSystem::setPhysicalDevice(const VkSurfaceKHR& vksurface) {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(iinstance.instance, &deviceCount, nullptr);
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(iinstance.instance, &deviceCount, devices.data());
 	for (const auto& device : devices) {
-		if (isDeviceSuitable(device, ctx)) {
+		if (isDeviceSuitable(device, vksurface)) {
 			iinstance.physicalDevice = device;
 			printPhysicalDeviceInfo(device);
 			break;
@@ -440,9 +440,9 @@ void VkRenderSystem::setPhysicalDevice(VkRScontext& ctx) {
 	}
 }
 
-void VkRenderSystem::createLogicalDevice(VkRScontext& ctx) {
+void VkRenderSystem::createLogicalDevice(const VkSurfaceKHR& vksurface) {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	VkRSqueueFamilyIndices indices = findQueueFamilies(iinstance.physicalDevice, ctx);
+	VkRSqueueFamilyIndices indices = findQueueFamilies(iinstance.physicalDevice, vksurface);
 	std::set<uint32_t> uniqueQueueFamiles = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 	float queuePriority = 1.f;
@@ -541,7 +541,7 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwi
 }
 
 void VkRenderSystem::createSwapChain(VkRScontext& ctx) {
-	VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(iinstance.physicalDevice, ctx);
+	VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(iinstance.physicalDevice, ctx.surface);
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -564,7 +564,7 @@ void VkRenderSystem::createSwapChain(VkRScontext& ctx) {
 	createInfo.imageArrayLayers = 1; //this is to specify if you're using a stereoscropic 3D application or not.
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; //this means that swap chain is treated like a bunch of attachments. if we want to post process, then use VK_IMAGE_USAGE_TRANSFER_DST_BIT  and perform a memory operation to transfer the rendered image to a swap chain image.
 
-	VkRSqueueFamilyIndices indices = findQueueFamilies(iinstance.physicalDevice, ctx);
+	VkRSqueueFamilyIndices indices = findQueueFamilies(iinstance.physicalDevice, ctx.surface);
 	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 	if (indices.graphicsFamily != indices.presentFamily) {
@@ -606,11 +606,21 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 	if (info.onScreenCanvas) {
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
 	}
+
 	createInstance(info);
 	setupDebugMessenger();
+
+	//GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+	GLFWwindow* dummyWindow = glfwCreateWindow(100, 100, "dummywnd", nullptr/*primaryMonitor*/, nullptr);
+	VkSurfaceKHR dummySurface;
+	const VkResult result = glfwCreateWindowSurface(iinstance.instance, dummyWindow, nullptr, &dummySurface);
+	setPhysicalDevice(dummySurface);
+	createLogicalDevice(dummySurface);
+	vkDestroySurfaceKHR(iinstance.instance, dummySurface, nullptr);
+
+	glfwDestroyWindow(dummyWindow);
+
 	createDescriptorPool();
 
 	iisRSinited = true;
@@ -626,10 +636,12 @@ bool VkRenderSystem::isRenderSystemInit()
 RSresult VkRenderSystem::renderSystemDispose()
 {
 	vkDestroyCommandPool(iinstance.device, iinstance.commandPool, nullptr);
+	vkDestroyDescriptorPool(iinstance.device, iinstance.descriptorPool, nullptr);
 	vkDestroyDevice(iinstance.device, nullptr);
 	if (iinstance.enableValidation) {
 		DestroyDebugUtilsMessengerEXT(iinstance.instance, iinstance.debugMessenger, nullptr);
 	}
+
 	vkDestroyInstance(iinstance.instance, nullptr);
 	
 	if (iinitInfo.onScreenCanvas) {
@@ -676,8 +688,8 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 			glfwSetFramebufferSizeCallback(vkrsctx.window, framebufferResizeCallback);
 		}
 		createSurface(vkrsctx);
-		setPhysicalDevice(vkrsctx);
-		createLogicalDevice(vkrsctx);
+		//setPhysicalDevice(vkrsctx);
+		//createLogicalDevice(vkrsctx);
 		createSwapChain(vkrsctx);
 		createImageViews(vkrsctx);
 		createCommandPool(vkrsctx);
@@ -778,7 +790,7 @@ void VkRenderSystem::viewCreateDescriptorSets(VkRSview& view) {
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = view.descriptorPool;
+	allocInfo.descriptorPool = iinstance.descriptorPool;
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
 	allocInfo.pSetLayouts = layouts.data();
 
@@ -934,7 +946,6 @@ void VkRenderSystem::disposeView(VkRSview& view) {
 		vkDestroyBuffer(iinstance.device, view.uniformBuffers[i], nullptr);
 		vkFreeMemory(iinstance.device, view.uniformBuffersMemory[i], nullptr);
 	}
-	vkDestroyDescriptorPool(iinstance.device, view.descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(iinstance.device, view.descriptorSetLayout, nullptr);
 
 	for (auto framebuffer : view.swapChainFramebuffers) {
@@ -1298,7 +1309,11 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 			if (drawcmd.isIndexed) {
 				vkCmdBindIndexBuffer(collection.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
 			}
-			vkCmdBindDescriptorSets(collection.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, 1, &view.descriptorSets[currentFrame], 0, nullptr);
+
+			//bind the descriptor sets
+			std::array<VkDescriptorSet, 2> descriptorSets = { drawcmd.viewDescriptors[currentFrame], drawcmd.materialDescriptors[currentFrame]};
+			uint32_t numDescriptorSets = static_cast<uint32_t>(descriptorSets.size());
+			vkCmdBindDescriptorSets(collection.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, numDescriptorSets, descriptorSets.data(), 0, nullptr);
 
 			if (drawcmd.isIndexed) {
 				
@@ -1318,7 +1333,7 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 }
 
 void VkRenderSystem::createCommandPool(const VkRScontext& ctx) {
-	VkRSqueueFamilyIndices queueFamilyIndices = findQueueFamilies(iinstance.physicalDevice, ctx);
+	VkRSqueueFamilyIndices queueFamilyIndices = findQueueFamilies(iinstance.physicalDevice, ctx.surface);
 
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1392,7 +1407,7 @@ VkPrimitiveTopology getPrimitiveType(const RSprimitiveType& ptype) {
 
 void VkRenderSystem::collectionInstanceCreateDescriptorSetLayout(VkRScollectionInstance& inst) {
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.binding = 0;
 	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -1478,9 +1493,14 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					cmd.numVertices = gdata.numVertices;
 					cmd.vertexBuffer = gdata.vaBuffer;
 					cmd.primTopology = getPrimitiveType(geom.geomInfo.primType);
-
+					for (uint32_t i = 0; i < view.descriptorSets.size(); i++) {
+						cmd.viewDescriptors[i] = view.descriptorSets[i];
+					}
+					for (uint32_t i = 0; i < collinst.descriptorSets.size(); i++) {
+						cmd.materialDescriptors[i] = collinst.descriptorSets[i];
+					}
+					
 					//create descriptorsets for instances
-					collectionInstanceCreateDescriptorSetLayout(collinst);
 					createGraphicsPipeline(ctx, view, collection, collinst, cmd);
 
 					collection.drawCommands.push_back(cmd);
@@ -1797,14 +1817,31 @@ RSresult VkRenderSystem::textureDispsoe(const RStextureID& texID) {
 }
 
 bool VkRenderSystem::appearanceAvailable(const RSappearanceID& appID) {
-	return false;
+	return appID.isValid() && iappearanceMap.find(appID) != iappearanceMap.end();
 }
 
 RSresult VkRenderSystem::appearanceCreate(RSappearanceID& outAppID, const RSappearanceInfo& appInfo) {
+	RSuint id;
+	bool success = iappearanceIDpool.CreateID(id);
+	assert(success && "failed to create a appearance ID");
+	if (success) {
+		VkRSappearance vkrsapp;
+		vkrsapp.appInfo = appInfo;
+
+		outAppID.id = id;
+		iappearanceMap[outAppID] = vkrsapp;
+
+		return RSresult::SUCCESS;
+	}
+
 	return RSresult::FAILURE;
 }
 
 RSresult VkRenderSystem::appearanceDispose(const RSappearanceID& appID) {
+	if (appearanceAvailable(appID)) {
+		iappearanceMap.erase(appID);
+		return RSresult::SUCCESS;
+	}
 	return RSresult::FAILURE;
 }
 
@@ -1880,7 +1917,7 @@ VkVertexInputBindingDescription VkRenderSystem::getBindingDescription(const RSve
 std::vector<VkVertexInputAttributeDescription> VkRenderSystem::getAttributeDescriptions(const RSvertexAttribsInfo& attribInfo) {
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 	attributeDescriptions.resize(attribInfo.numVertexAttribs);
-	for (size_t i = 0; i < attribInfo.numVertexAttribs; i++) {
+	for (uint32_t i = 0; i < attribInfo.numVertexAttribs; i++) {
 		attributeDescriptions[i].binding = 0;
 		attributeDescriptions[i].location = i;
 		attributeDescriptions[i].format = getVkFormat(attribInfo.attributes[i]);

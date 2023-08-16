@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <array>
 
 struct VkRSdrawCommand {
 	VkBuffer vertexBuffer = VK_NULL_HANDLE;
@@ -12,4 +13,7 @@ struct VkRSdrawCommand {
 	VkPrimitiveTopology primTopology;
 	VkPipelineLayout pipelineLayout{};
 	VkPipeline graphicsPipeline{};
+	std::array<VkDescriptorSet, 2> viewDescriptors;
+	std::array<VkDescriptorSet, 2> materialDescriptors;
+	std::array<VkDescriptorSet, 2> spatialDescriptors;
 };

@@ -29,6 +29,7 @@ private:
 	MakeID igeometryIDpool = MakeID(MAX_IDS);
 	MakeID itextureIDpool = MakeID(MAX_IDS);
 	MakeID istateIDpool = MakeID(MAX_IDS);
+	MakeID iappearanceIDpool = MakeID(MAX_IDS);
 
 	bool iisRSinited = false;
 
@@ -41,12 +42,12 @@ private:
 	RSappearances iappearanceMap;
 
 	//context related helpers
-	bool isDeviceSuitable(VkPhysicalDevice device, VkRScontext& ctx);
-	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkRScontext& ctx);
-	VkRSqueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkRScontext& ctx);
+	bool isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
+	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
+	VkRSqueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
+	void setPhysicalDevice(const VkSurfaceKHR& vksurface);
+	void createLogicalDevice(const VkSurfaceKHR& vksurface);
 	void createSurface(VkRScontext& vkrsctx);
-	void setPhysicalDevice(VkRScontext& ctx);
-	void createLogicalDevice(VkRScontext& ctx);
 	void createSwapChain(VkRScontext& ctx);
 	void createImageViews(VkRScontext& ctx);
 	void createCommandPool(const VkRScontext& ctx);

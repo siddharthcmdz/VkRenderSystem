@@ -143,6 +143,12 @@
     <None Include="src\scripts\trials.py">
       <Filter>Scripts</Filter>
     </None>
+    <None Include="src\shaders\spv\texturedFrag.spv">
+      <Filter>Shaders\spv</Filter>
+    </None>
+    <None Include="src\shaders\spv\texturedVert.spv">
+      <Filter>Shaders\spv</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\textures\texture.jpg">

@@ -127,7 +127,7 @@ struct VkRSspatialDescriptor {
 struct VkRSview {
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorPool descriptorPool;
+	//VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
