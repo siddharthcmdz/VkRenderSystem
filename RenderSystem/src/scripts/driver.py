@@ -63,7 +63,7 @@ class BuildDriver:
   def __init__(self):
     self.vulkan_sdk_path = os.environ["VULKAN_SDK"]
     self.glsl_compiler_path = self.vulkan_sdk_path + '/Bin/glslc.exe'
-    self.current_dir = os.getcwd()
+    self.current_dir = os.getcwd()+'/..'
     self.shader_dir = self.current_dir + '/src/shaders'
     self.texture_dir = self.current_dir + '/src/textures'
     self.target_dir = self.current_dir + '/x64/Debug'
