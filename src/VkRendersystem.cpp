@@ -842,8 +842,8 @@ void VkRenderSystem::updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint3
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	VkRSviewDescriptor ubo{};
-	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * model;
 	ubo.proj = glm::perspective(glm::radians(45.0f), ((float)ctx.swapChainExtent.width / (float)ctx.swapChainExtent.height), 0.0f, 1.0f);
 	ubo.proj[1][1] *= -1;
 
@@ -947,7 +947,7 @@ void VkRenderSystem::disposeView(VkRSview& view) {
 		vkFreeMemory(iinstance.device, view.uniformBuffersMemory[i], nullptr);
 	}
 	vkDestroyDescriptorSetLayout(iinstance.device, view.descriptorSetLayout, nullptr);
-
+	
 	for (auto framebuffer : view.swapChainFramebuffers) {
 		vkDestroyFramebuffer(iinstance.device, framebuffer, nullptr);
 	}
@@ -1029,8 +1029,11 @@ bool VkRenderSystem::collectionInstanceAvailable(const RScollectionID& collID, c
 }
 
 RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinstanceID& outInstID, const RSinstanceInfo& instInfo) {
-	if (collectionAvailable(collID)) {
+	if (!appearanceAvailable(instInfo.appID) || !geometryDataAvailable(instInfo.gdataID) || !geometryAvailable(instInfo.geomID) || !spatialAvailable(instInfo.spatialID)) {
+		return RSresult::FAILURE;
+	}
 
+	if (collectionAvailable(collID)) {
 		uint32_t id;
 		iinstanceIDpool.CreateID(id);
 		outInstID.id = id;
@@ -1051,6 +1054,9 @@ RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinst
 RSresult VkRenderSystem::collectionInstanceDispose(RScollectionID& collID, RSinstanceID& instID) {
 	if (collectionInstanceAvailable(collID, instID)) {
 		VkRScollection& coll = icollectionMap[collID];
+		VkRScollectionInstance& vkrsinst = coll.instanceMap[instID];
+		vkDestroyDescriptorSetLayout(iinstance.device, vkrsinst.descriptorSetLayout, nullptr);
+
 		coll.instanceMap.erase(instID);
 		return RSresult::SUCCESS;
 	}
@@ -1226,6 +1232,17 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
+	const RSspatialID& spatialID = collinst.instInfo.spatialID;
+	if (spatialAvailable(spatialID)) {
+		VkPushConstantRange pushConstant;
+		pushConstant.offset = 0;
+		pushConstant.size = sizeof(RSspatial);
+		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		pipelineLayoutInfo.pushConstantRangeCount = 1;
+		pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+	}
+
 	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(iinstance.device, &pipelineLayoutInfo, nullptr, &drawcmd.pipelineLayout);
 	if (pipelineLayoutResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
@@ -1314,9 +1331,9 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 			std::array<VkDescriptorSet, 2> descriptorSets = { drawcmd.viewDescriptors[currentFrame], drawcmd.materialDescriptors[currentFrame]};
 			uint32_t numDescriptorSets = static_cast<uint32_t>(descriptorSets.size());
 			vkCmdBindDescriptorSets(collection.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, numDescriptorSets, descriptorSets.data(), 0, nullptr);
+			vkCmdPushConstants(collection.commandBuffers[currentFrame], drawcmd.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(RSspatial), &drawcmd.spatial);
 
 			if (drawcmd.isIndexed) {
-				
 				vkCmdDrawIndexed(collection.commandBuffers[currentFrame], drawcmd.numIndices, 1, 0, 0, 0);
 			}
 			else {
@@ -1478,7 +1495,7 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 			createCommandBuffers(collection, ctx);
 			createSyncObjects(collection, ctx);
 
-			//create drawcommands
+			//create drawcommands for each collection instance
 			for (auto& iter : collection.instanceMap) {
 				VkRScollectionInstance& collinst = iter.second;
 				const RSgeometryDataID& gdataID = collinst.instInfo.gdataID;
@@ -1499,7 +1516,8 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					for (uint32_t i = 0; i < collinst.descriptorSets.size(); i++) {
 						cmd.materialDescriptors[i] = collinst.descriptorSets[i];
 					}
-					
+					const VkRSspatial& vkrsspatial = ispatialMap[collinst.instInfo.spatialID];
+					cmd.spatial = vkrsspatial.spatial;
 					//create descriptorsets for instances
 					createGraphicsPipeline(ctx, view, collection, collinst, cmd);
 
@@ -1662,9 +1680,6 @@ bool VkRenderSystem::createTextureImage(VkRStexture& vkrstex) {
 	memcpy(data, texinfo.texels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(iinstance.device, stagingBufferMemory);
 
-	//TODO: need to clone the texels.
-	texinfo.dispose();
-
 	createImage(texinfo.texWidth, texinfo.texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vkrstex.textureImage, vkrstex.textureImageMemory);
 
 	transitionImageLayout(vkrstex.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -1805,10 +1820,16 @@ void VkRenderSystem::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t 
 }
 
 
-RSresult VkRenderSystem::textureDispsoe(const RStextureID& texID) {
+RSresult VkRenderSystem::textureDispose(const RStextureID& texID) {
 	if (textureAvailable(texID)) {
 		VkRStexture& vkrstex = itextureMap[texID];
 		vkrstex.texinfo.dispose();
+		
+		vkDestroyImage(iinstance.device, vkrstex.textureImage, nullptr);
+		vkFreeMemory(iinstance.device, vkrstex.textureImageMemory, nullptr);
+		vkDestroySampler(iinstance.device, vkrstex.textureSampler, nullptr);
+		vkDestroyImageView(iinstance.device, vkrstex.textureImageView, nullptr);
+
 		itextureMap.erase(texID);
 
 		return RSresult::SUCCESS;
@@ -2071,7 +2092,6 @@ RSresult VkRenderSystem::geometryCreate(RSgeometryID& outgeomID, const RSgeometr
 	}
 
 	return RSresult::FAILURE;
-
 }
 
 RSresult VkRenderSystem::geometryDispose(const RSgeometryID& geomID) {
@@ -2084,3 +2104,33 @@ RSresult VkRenderSystem::geometryDispose(const RSgeometryID& geomID) {
 	return RSresult::FAILURE;
 }
 
+bool VkRenderSystem::spatialAvailable(const RSspatialID& spatialID) {
+	return spatialID.isValid() && ispatialMap.find(spatialID) != ispatialMap.end();
+}
+
+RSresult VkRenderSystem::spatialCreate(RSspatialID& outSplID, const RSspatial& splInfo) {
+	RSuint id;
+	bool success = ispatialIDpool.CreateID(id);
+	assert(success && "failed to create a spatial ID");
+	if (success) {
+		VkRSspatial vkrsspatial;
+		vkrsspatial.spatial = splInfo;
+
+		outSplID.id = id;
+		ispatialMap[outSplID] = vkrsspatial;
+
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::spatialDispose(const RSspatialID& spatialID) {
+	if (spatialAvailable(spatialID)) {
+		ispatialMap.erase(spatialID);
+
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}

@@ -12,18 +12,17 @@ layout(set = 0, binding = 0) uniform View {
     
 } view;
 
-/*
-layout(set = 2, binding = 0) uniform Spatial {
-  mat4 modelMat;  
+layout(push_constant) uniform Spatial {
+  mat4 modelMat;
+  mat4 modelInvMat;
 } spatial;
-*/
 
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
-    //gl_Position = view.projMat * view.viewMat * spatial.modelMat * inPosition;
-    gl_Position = view.projMat * view.viewMat * inPosition;
+    gl_Position = view.projMat * view.viewMat * spatial.modelMat * inPosition;
+    //gl_Position = view.projMat * view.viewMat * inPosition;
     fragColor = inColor;
     fragTexCoord = inTexCoord;
 }

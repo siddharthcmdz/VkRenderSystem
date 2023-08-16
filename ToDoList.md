@@ -1,4 +1,6 @@
 # Rendering Engine
+* Separate windowing system from rendersystem
+* Remove usage of glfw
 * Make VkRenderSystem a dll and export only needed functions
 * Support rendering luminance texture
 * Support buffer naming to see in renderdoc and nsight
@@ -23,5 +25,5 @@
 # Rendering examples
 * Render primitives like - triangle strip, triangles, line, line strip etc
 * Render one quad sold, textured, points, lines
-* 
+
 

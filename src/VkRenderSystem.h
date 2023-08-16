@@ -20,6 +20,7 @@ private:
 	using RSgeometries = std::unordered_map<RSgeometryID, VkRSgeometry, IDHasher<RSgeometryID>>;
 	using RStextures = std::unordered_map<RStextureID, VkRStexture, IDHasher<RStextureID>>;
 	using RSappearances = std::unordered_map<RSappearanceID, VkRSappearance, IDHasher<RSappearanceID>>;
+	using RSspatials = std::unordered_map<RSspatialID, VkRSspatial, IDHasher<RSspatialID>>;
 
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
@@ -30,6 +31,7 @@ private:
 	MakeID itextureIDpool = MakeID(MAX_IDS);
 	MakeID istateIDpool = MakeID(MAX_IDS);
 	MakeID iappearanceIDpool = MakeID(MAX_IDS);
+	MakeID ispatialIDpool = MakeID(MAX_IDS);
 
 	bool iisRSinited = false;
 
@@ -40,6 +42,7 @@ private:
 	RSgeometries igeometryMap;
 	RStextures itextureMap;
 	RSappearances iappearanceMap;
+	RSspatials ispatialMap;
 
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
@@ -154,14 +157,14 @@ public:
 
 	bool textureAvailable(const RStextureID& texID);
 	RSresult textureCreate(RStextureID& outTexID, const char* absfilepath);
-	RSresult textureDispsoe(const RStextureID& texID); 
+	RSresult textureDispose(const RStextureID& texID); 
 
 	bool appearanceAvailable(const RSappearanceID& appID);
 	RSresult appearanceCreate(RSappearanceID& outAppID, const RSappearanceInfo& appInfo);
 	RSresult appearanceDispose(const RSappearanceID& appID);
 
-	//bool spatialAvailable(const RSspatialID& spatialID);
-	//RSresult spatialCreate(RSspatialID& outSplID, const RSspatial& splInfo);
-	//RSresult spatialDispose(const RSspatialID& spatialID);
+	bool spatialAvailable(const RSspatialID& spatialID);
+	RSresult spatialCreate(RSspatialID& outSplID, const RSspatial& splInfo);
+	RSresult spatialDispose(const RSspatialID& spatialID);
 	
 };

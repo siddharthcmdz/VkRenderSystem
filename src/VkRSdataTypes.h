@@ -94,7 +94,6 @@ struct VkRSgeometry {
 
 struct VkRScollectionInstance {
 	RSinstanceInfo instInfo;
-	//std::vector<VkDescriptorSet> uniformDescriptorSets;
 	VkDescriptorSetLayout descriptorSetLayout;
 	std::vector<VkDescriptorSet> descriptorSets;
 };
@@ -127,7 +126,6 @@ struct VkRSspatialDescriptor {
 struct VkRSview {
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 	VkDescriptorSetLayout descriptorSetLayout;
-	//VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -161,9 +159,7 @@ struct VkRStexture {
 };
 
 struct VkRSspatial {
-	std::vector<VkBuffer> uniformBuffers; //spatial matrices
-	std::vector<VkDeviceMemory> uniformBufferMemory; //spatial matrices
-	std::vector<void*> uniformBuffersMapped;
+	RSspatial spatial;
 };
 
 struct VkRSappearance {

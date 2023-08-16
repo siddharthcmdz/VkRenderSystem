@@ -12,7 +12,8 @@
 #include <algorithm>         //for std::clamp
 #include <fstream>           //for file reading
 #include "VertexData.h"
-
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 const std::vector<rsvd::VertexPCT> ivertices = {
 	{{-0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
@@ -83,7 +84,12 @@ int RSmain() {
 	appInfo.shaderTemplate = RSshaderTemplate::stTextured;
 	vkrs.appearanceCreate(appID, appInfo);
 	instInfo.appID = appID;
-	//TODO: add spatialID to instinfo
+	RSspatialID splID;
+	RSspatial spl;
+	spl.model = glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
+	spl.modelInv = glm::inverse(spl.model);
+	vkrs.spatialCreate(splID, spl);
+	instInfo.spatialID = splID;
 
 	vkrs.collectionInstanceCreate(collID, instID, instInfo);
 	vkrs.collectionFinalize(collID, ctxID, viewID);
@@ -95,6 +101,9 @@ int RSmain() {
 	vkrs.geometryDataDispose(gdataID);
 	vkrs.contextDispose(ctxID);
 	vkrs.viewDispose(viewID);
+	vkrs.textureDispose(texID);
+	vkrs.appearanceDispose(appID);
+	vkrs.spatialDispose(splID);
 	vkrs.collectionInstanceDispose(collID, instID);
 	vkrs.collectionDispose(collID);
 	vkrs.renderSystemDispose();
