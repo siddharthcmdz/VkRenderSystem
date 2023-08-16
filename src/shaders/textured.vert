@@ -3,7 +3,7 @@
 //vertex attributes
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec4 inColor;
-layout(location = 2) in vec4 inTexCoord;
+layout(location = 2) in vec2 inTexCoord;
 
 //descriptor sets
 layout(set = 0, binding = 0) uniform View {
@@ -25,5 +25,5 @@ void main() {
     //gl_Position = view.projMat * view.viewMat * spatial.modelMat * inPosition;
     gl_Position = view.projMat * view.viewMat * inPosition;
     fragColor = inColor;
-    fragTexCoord = inTexCoord.xy;
+    fragTexCoord = inTexCoord;
 }
