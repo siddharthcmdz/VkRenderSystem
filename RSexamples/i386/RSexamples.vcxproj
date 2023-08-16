@@ -19,52 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\scripts\postbuild.py" />
-    <None Include="..\src\scripts\trials.py" />
-    <None Include="..\src\shaders\passthrough.frag" />
-    <None Include="..\src\shaders\passthrough.vert" />
-    <None Include="..\src\shaders\sampleshader.frag" />
-    <None Include="..\src\shaders\sampleshader.vert" />
-    <None Include="..\src\shaders\textured.frag" />
-    <None Include="..\src\shaders\textured.vert" />
-    <None Include="ToDoList.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\src\DrawCommand.h" />
-    <ClInclude Include="..\src\MakeID.h" />
-    <ClInclude Include="..\src\RSdataTypes.h" />
-    <ClInclude Include="..\src\rsenums.h" />
-    <ClInclude Include="..\src\rsexporter.h" />
-    <ClInclude Include="..\src\rsids.h" />
-    <ClInclude Include="..\src\RStypes.h" />
-    <ClInclude Include="..\src\RSVkDebugUtils.h" />
-    <ClInclude Include="..\src\TextureLoader.h" />
-    <ClInclude Include="..\src\VertexData.h" />
-    <ClInclude Include="..\src\VkRenderSystem.h" />
-    <ClInclude Include="..\src\VkRenderSystemEntry.h" />
-    <ClInclude Include="..\src\VkRSdataTypes.h" />
-    <ClInclude Include="..\src\VkSampleMain0.h" />
-    <ClInclude Include="..\src\VkSampleMain1.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\RSdataTypes.cpp" />
-    <ClCompile Include="..\src\stb_image.cpp" />
-    <ClCompile Include="..\src\TextureLoader.cpp" />
-    <ClCompile Include="..\src\VkRendersystem.cpp" />
-    <ClCompile Include="..\src\VkRenderSystemEntry.cpp" />
-    <ClCompile Include="..\src\VkRSdataTypes.cpp" />
-    <ClCompile Include="..\src\VkSampleMain0.cpp" />
-    <ClCompile Include="..\src\VkSampleMain1.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\src\textures\texture.jpg" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
+    <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{3582fb3f-57c5-4319-84c0-09c341cfa030}</ProjectGuid>
-    <RootNamespace>VkRenderSystem</RootNamespace>
+    <ProjectGuid>{fc583844-bba0-4bf5-aa6e-edd4409058f4}</ProjectGuid>
+    <RootNamespace>RSexamples</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -82,7 +43,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -148,20 +109,17 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;STB_IMAGE_IMPLEMENTATION;RS_FILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(ProjectDir)/../../thirdparty\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)/../../thirdparty\stb_image;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Projects\FSI\thirdparty\vkrs\includes;$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(ProjectDir)/../../thirdparty\glfw-3.3.8.bin.WIN64\include;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)/../../thirdparty\glfw-3.3.8.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Projects\FSI\RenderSystem\i386\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>VkRenderSystem.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>python "../src/scripts/postbuild.py"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>

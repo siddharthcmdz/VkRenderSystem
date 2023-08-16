@@ -3,7 +3,7 @@ import os
 import subprocess
 import shutil
 
-debug_mode = False
+print_mode = False
 
 class ShaderCompiler:
   def __init__(self, shader_dir, glslcompiler_path):
@@ -27,7 +27,7 @@ class ShaderCompiler:
           dstfile = dstfile.replace('.frag', 'Frag.spv')
         
         srcfile = self.shader_dir + '/' + file
-        if debug_mode:
+        if print_mode:
           print(self.glsl_compiler_path + ' ' + srcfile + ' -o ' + dstfile)
         else:
           subprocess.call([self.glsl_compiler_path, srcfile, '-o', dstfile] )
@@ -36,7 +36,7 @@ class ShaderCompiler:
         
 
 
-class ResourceCopier:
+class RenderSystemResourceCopier:
   def __init__(self, current_dir, resource_dirs, target_dir, dst_sub_dir):
     print('Copying resources to build folder...')
     #make the folder if it doesnt exist
@@ -51,13 +51,17 @@ class ResourceCopier:
       for src_file in src_files:
         final_dst_file = target_dir+'/'+dst_sub_dir[idx]+'/'+src_file
         final_src_file = src_folder + '/' + src_file
-        if debug_mode:
+        if print_mode:
           print('copy '+final_src_file+' to '+final_dst_file)
         else:
           shutil.copy(final_src_file, final_dst_file)
           print('copied '+final_src_file+' to '+final_dst_file)
     print('\n')
 
+
+class ProjectsArtifactCopier:
+  def __init__(self):
+    pass
 
 class BuildDriver:
   def __init__(self):
@@ -72,20 +76,26 @@ class BuildDriver:
     shaderCompiler = ShaderCompiler(self.shader_dir, self.glsl_compiler_path)
     shaderCompiler.build()
 
-  def copyResources(self):
+  def copyRSresources(self):
     src_dirs = [self.shader_dir+'/spv', self.texture_dir]
     dst_sub_dirs = ['shaders', 'textures']
-    copier = ResourceCopier(self.current_dir, src_dirs, self.target_dir, dst_sub_dirs)
+    copier = RenderSystemResourceCopier(self.current_dir, src_dirs, self.target_dir, dst_sub_dirs)
+    
+  def copyProjectArtifacts(self):
+    #copy header files
+    #copy libs and dlls
+    pass
     
   def printData(self):
-    print('\nPreparing build directory..')
+    print('\nPost build directories..')
     print('Found Vulkan SDK path: ', self.vulkan_sdk_path)
     print('Found current directory: ', self.current_dir)
     print('Found shader directory: ', self.shader_dir)
     print('Found texture directory: ', self.texture_dir)
     
-    
+
 driver = BuildDriver()
-#driver.printData()
+driver.printData()
 driver.compileShaders()
-driver.copyResources()
+driver.copyRSresources()
+driver.copyProjectArtifacts()
