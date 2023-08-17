@@ -1,7 +1,7 @@
 # Rendering Engine
 * Separate windowing system from rendersystem
 * Remove usage of glfw
-* Make VkRenderSystem a dll and export only needed functions
+~~* Make VkRenderSystem a dll and export only needed functions~~
 * Support rendering luminance texture
 * Support buffer naming to see in renderdoc and nsight
 
