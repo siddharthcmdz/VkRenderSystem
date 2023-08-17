@@ -15,6 +15,7 @@
 * Implement 3D text rendering
 
 # Scene Management
+* Create architecture for running multiple examples
 * Create a construct to render a 3D box grid
 * Create constructs to render analytical geometry - cyclinder and cone
 * Create a construct to render arrows representing X, Y and Z.
