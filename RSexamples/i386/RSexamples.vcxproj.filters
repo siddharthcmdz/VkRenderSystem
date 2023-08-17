@@ -22,4 +22,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\Scripts\dependency_importer.py">
+      <Filter>Scripts</Filter>
+    </None>
+  </ItemGroup>
 </Project>
