@@ -16,6 +16,7 @@ struct RSinitInfo {
 	bool enableValidation = true;
 	bool onScreenCanvas = true;
 	char appName[256]; //name of the engine or application
+	char shaderPath[256];
 };
 
 struct RScontextInfo {

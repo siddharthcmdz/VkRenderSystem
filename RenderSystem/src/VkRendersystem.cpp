@@ -1104,17 +1104,21 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	const VkRSappearance& vkrsapp = iappearanceMap[appID];
 
 	std::string vertSPV, fragSPV;
+	std::string shaderPath(iinitInfo.shaderPath);
 	switch (vkrsapp.appInfo.shaderTemplate) {
 	case RSshaderTemplate::stPassthrough:
-		vertSPV = "./shaders/spv/passthroughVert.spv";
-		fragSPV = "./shaders/spv/passthroughFrag.spv";
+		vertSPV = shaderPath + "/passthroughVert.spv";
+		fragSPV = shaderPath + "/passthroughFrag.spv";
 		break;
 
 	case RSshaderTemplate::stTextured:
-		vertSPV = "./shaders/spv/texturedVert.spv";
-		fragSPV = "./shaders/spv/texturedFrag.spv";
+		vertSPV = shaderPath + "/texturedVert.spv";
+		fragSPV = shaderPath + "/texturedFrag.spv";
 		break;
 	}
+
+	std::cout << "vert shader path: " << vertSPV << std::endl;
+	std::cout << "frag shader path: " << fragSPV << std::endl;
 	auto vertShaderCode = readFile(vertSPV);
 	auto fragShaderCode = readFile(fragSPV);
 	

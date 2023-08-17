@@ -98,7 +98,7 @@ class Deployer:
     # dst_sub_dirs = ['includes']
     # copier = ArtifactCopier(src_dirs, self.deploy_dirs.target_dir, dst_sub_dirs)
     
-    #deploy .lib and .dll
+    #deploy .lib, .dll and .pdb
     src_dll_file = self.deploy_dirs.project_root_dir+'/i386/x64/Debug/VkRenderSystem.dll'
     dst_dll_file = self.deploy_dirs.target_dir+'/bin/Debug64/VkRenderSystem.dll'
     shutil.copy(src_dll_file, dst_dll_file)
@@ -108,6 +108,11 @@ class Deployer:
     dst_lib_file = self.deploy_dirs.target_dir+'/bin/Debug64/VkRenderSystem.lib'
     shutil.copy(src_lib_file, dst_lib_file)
     print('Copied '+src_lib_file+' to '+dst_lib_file)
+    
+    src_pdb_file = self.deploy_dirs.project_root_dir+'/i386/x64/Debug/VkRenderSystem.pdb'
+    dst_pdb_file = self.deploy_dirs.target_dir+'/bin/Debug64/VkRenderSystem.pdb'
+    shutil.copy(src_pdb_file, dst_pdb_file)
+    print('Copied '+src_pdb_file+' to '+dst_pdb_file)
     
     
   def printData(self):

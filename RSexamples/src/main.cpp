@@ -7,6 +7,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include <cstdint>
+#include <windows.h>
+
+std::wstring getCurrentDir() {
+	TCHAR buffer[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+	return std::wstring(buffer).substr(0, pos);
+}
 
 
 const std::vector<rsvd::VertexPCT> ivertices = {
@@ -20,6 +28,14 @@ const std::vector<uint32_t> iindices = {
 	0, 1, 2, 2, 3, 0
 };
 
+void getShaderPath(RSinitInfo& initInfo) {
+	std::wstring currDirW = getCurrentDir();
+	std::string currDir(currDirW.begin(), currDirW.end());
+	std::cout << "current dir: " << currDir << std::endl;
+	currDir += "\\shaders";
+	strcpy_s(initInfo.shaderPath, currDir.c_str());
+}
+
 int main() {
 	std::cout << "Hello world!" << std::endl;
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
@@ -27,6 +43,7 @@ int main() {
 	sprintf_s(info.appName, "RenderSystem");
 	info.enableValidation = true;
 	info.onScreenCanvas = true;
+	getShaderPath(info);
 	vkrs.renderSystemInit(info);
 
 	RScontextID ctxID;
@@ -35,7 +52,7 @@ int main() {
 	ctxInfo.height = 600;
 	sprintf_s(ctxInfo.title, "Hello Triangle");
 	vkrs.contextCreate(ctxID, ctxInfo);
-
+	
 	RSviewID viewID;
 	RSview rsview;
 	rsview.clearColor = glm::vec4(0, 0, 0, 1);
@@ -70,7 +87,7 @@ int main() {
 	instInfo.geomID = geomID;
 	
 	RStextureID texID;
-	vkrs.textureCreate(texID, "C:\\Projects\\FSI\\RenderSystem\\src\\textures\\texture.jpg");
+	vkrs.textureCreate(texID, "C:\\Projects\\FSI\\RSexamples\\i386\\x64\\Debug\\textures\\texture.jpg");
 
 	RSappearanceID appID;
 	RSappearanceInfo appInfo;

@@ -15,7 +15,6 @@ class ArtifactCopier:
     
     # copy the folders
     for idx, src_folder in enumerate(src_dirs):
-      print('src_folder: ', src_folder)
       src_files = os.listdir(src_folder)
       for src_file in src_files:
         if len(dst_sub_dir) != 0:
@@ -54,13 +53,22 @@ class Ingestor:
   
   def ingestRSbinaries(self):
     rs_debug64_dll_src = self.ingest_directory.rs_bin_debug64_folder+'/VkRenderSystem.dll'
-    rs_debug64_lib_src = self.ingest_directory.rs_bin_debug64_folder+'/VkRenderSystem.lib'
-    
     rs_debug64_dll_dst = self.ingest_directory.target_dir+'/VkRenderSystem.dll'
+    
+    rs_debug64_lib_src = self.ingest_directory.rs_bin_debug64_folder+'/VkRenderSystem.lib'
     rs_debug64_lib_dst = self.ingest_directory.target_dir+'/VkRenderSystem.lib'
     
+    rs_debug64_pdb_src = self.ingest_directory.rs_bin_debug64_folder+'/VkRenderSystem.pdb'
+    rs_debug64_pdb_dst = self.ingest_directory.target_dir+'/VkRenderSystem.pdb'
+    
     shutil.copy(rs_debug64_dll_src, rs_debug64_dll_dst)
+    print('Copied '+rs_debug64_dll_src+' to '+rs_debug64_dll_dst+'\n')
+    
     shutil.copy(rs_debug64_lib_src, rs_debug64_lib_dst)
+    print('Copied '+rs_debug64_lib_src+' to '+ rs_debug64_lib_dst+'\n')
+    
+    shutil.copy(rs_debug64_pdb_src, rs_debug64_pdb_dst)
+    print('Copied '+rs_debug64_pdb_src+' to '+ rs_debug64_pdb_dst+'\n')
     
   def ingestAssets(self):
     #ingest shaders
@@ -68,7 +76,7 @@ class Ingestor:
     
     #ingest textures
     texture_copier = ArtifactCopier([self.ingest_directory.rs_assets_texture_dir], self.ingest_directory.target_dir, ['textures'])
-
+        
 
 ingestor = Ingestor()
 ingestor.ingestRSbinaries()
