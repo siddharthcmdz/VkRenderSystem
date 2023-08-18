@@ -3,12 +3,24 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <VertexData.h>
+#include <rsids.h>
 
 class PrimitiveExample : public RSexample {
 private:
-	std::vector<rsvd::VertexPC> icirclePoints;
-	std::vector<rsvd::VertexPC> icircleLineStrip;
-	std::vector<rsvd::VertexPC> icircleFilled;
+	RSviewID iviewID;
+	RScollectionID icollectionID;
+
+	struct CircleData {
+		std::vector<rsvd::VertexPC> vertices;
+		uint32_t radius;
+		RSgeometryDataID pcGeomDataID;
+		RSgeometryID pcGeomID;
+		RSappearanceID pcAppID;
+		RSspatialID pcSpatialID;
+		RSinstanceID pcInstanceID;
+	};
+
+	CircleData icd;
 
 public:
 	PrimitiveExample();
