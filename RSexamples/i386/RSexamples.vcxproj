@@ -20,9 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\PrimitiveExample.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Scripts\dependency_importer.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\PrimitiveExample.h" />
+    <ClInclude Include="..\src\RSexample.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

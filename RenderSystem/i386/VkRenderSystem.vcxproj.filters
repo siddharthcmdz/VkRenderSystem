@@ -24,7 +24,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ToDoList.md" />
     <None Include="..\src\scripts\deploy.py">
       <Filter>Scripts</Filter>
     </None>
@@ -49,6 +48,7 @@
     <None Include="..\src\shaders\textured.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\..\ToDoList.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h">

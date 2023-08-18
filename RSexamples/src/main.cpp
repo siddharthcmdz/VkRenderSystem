@@ -37,7 +37,6 @@ void getShaderPath(RSinitInfo& initInfo) {
 }
 
 int main() {
-	std::cout << "Hello world!" << std::endl;
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 	RSinitInfo info;
 	sprintf_s(info.appName, "RenderSystem");

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\ToDoList.md" />
     <None Include="..\src\scripts\deploy.py" />
     <None Include="..\src\scripts\trials.py" />
     <None Include="..\src\shaders\passthrough.frag" />
@@ -27,7 +28,6 @@
     <None Include="..\src\shaders\sampleshader.vert" />
     <None Include="..\src\shaders\textured.frag" />
     <None Include="..\src\shaders\textured.vert" />
-    <None Include="ToDoList.md" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h" />

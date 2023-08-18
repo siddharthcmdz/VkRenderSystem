@@ -688,8 +688,6 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 			glfwSetFramebufferSizeCallback(vkrsctx.window, framebufferResizeCallback);
 		}
 		createSurface(vkrsctx);
-		//setPhysicalDevice(vkrsctx);
-		//createLogicalDevice(vkrsctx);
 		createSwapChain(vkrsctx);
 		createImageViews(vkrsctx);
 		createCommandPool(vkrsctx);
