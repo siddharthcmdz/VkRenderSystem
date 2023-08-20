@@ -25,6 +25,7 @@
 
 # Rendering examples
 * Render primitives like - triangle strip, triangles, line, line strip etc - in-progress
+** fix primitive example - use descriptors only for valid material, move command pool creation to iinstance 
 * Render one quad sold, textured, points, lines
 
 
