@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\HelloVulkanExample.cpp" />
+    <ClCompile Include="..\src\helper.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\PrimitiveExample.cpp" />
   </ItemGroup>
@@ -26,6 +28,8 @@
     <None Include="..\src\Scripts\dependency_importer.py" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\HelloVulkanExample.h" />
+    <ClInclude Include="..\src\helper.h" />
     <ClInclude Include="..\src\PrimitiveExample.h" />
     <ClInclude Include="..\src\RSexample.h" />
   </ItemGroup>

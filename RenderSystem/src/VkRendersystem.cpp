@@ -223,9 +223,9 @@ void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view, const V
 void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, const VkRScollection& collection) {
 	const VkDevice& device = iinstance.device;
 	uint32_t currentFrame = view.currentFrame;
-	const VkFence inflightFence = collection.inFlightFences[currentFrame];
-	const VkSemaphore imageAvailableSemaphore = collection.imageAvailableSemaphores[currentFrame];
-	const VkSemaphore renderFinishedSemaphore = collection.renderFinishedSemaphores[currentFrame];
+	const VkFence inflightFence = ctx.inFlightFences[currentFrame];
+	const VkSemaphore imageAvailableSemaphore = ctx.imageAvailableSemaphores[currentFrame];
+	const VkSemaphore renderFinishedSemaphore = ctx.renderFinishedSemaphores[currentFrame];
 	const VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
 
 	vkWaitForFences(device, 1, &inflightFence, VK_TRUE, UINT64_MAX);
@@ -691,6 +691,7 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 		createSwapChain(vkrsctx);
 		createImageViews(vkrsctx);
 		createCommandPool(vkrsctx);
+		createSyncObjects(vkrsctx);
 		outCtxID.id = id;
 		ictxMap[outCtxID] = vkrsctx;
 		return RSresult::SUCCESS;
@@ -714,6 +715,12 @@ void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 	ctx.swapChain = nullptr;
 	vkDestroySurfaceKHR(iinstance.instance, ctx.surface, nullptr);
 	ctx.surface = nullptr;
+
+	for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; ++i) {
+		vkDestroySemaphore(device, ctx.imageAvailableSemaphores[i], nullptr);
+		vkDestroySemaphore(device, ctx.renderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(device, ctx.inFlightFences[i], nullptr);
+	}
 
 	glfwDestroyWindow(ctx.window);
 	ctx.window = nullptr;
@@ -1379,10 +1386,10 @@ void VkRenderSystem::createCommandBuffers(VkRScollection& collection, const VkRS
 	}
 }
 
-void VkRenderSystem::createSyncObjects(VkRScollection& collection, const VkRScontext& ctx) {
-	collection.imageAvailableSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
-	collection.renderFinishedSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
-	collection.inFlightFences.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+void VkRenderSystem::createSyncObjects(VkRScontext& ctx) {
+	ctx.imageAvailableSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+	ctx.renderFinishedSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+	ctx.inFlightFences.resize(ctx.MAX_FRAMES_IN_FLIGHT);
 
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1393,9 +1400,9 @@ void VkRenderSystem::createSyncObjects(VkRScollection& collection, const VkRScon
 
 	const VkDevice& device = iinstance.device;
 	for (size_t i = 0; i < ctx.MAX_FRAMES_IN_FLIGHT; ++i) {
-		VkResult imgAvailSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &collection.imageAvailableSemaphores[i]);
-		VkResult renderFinishedSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &collection.renderFinishedSemaphores[i]);
-		VkResult fenceRes = vkCreateFence(device, &fenceInfo, nullptr, &collection.inFlightFences[i]);
+		VkResult imgAvailSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &ctx.imageAvailableSemaphores[i]);
+		VkResult renderFinishedSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &ctx.renderFinishedSemaphores[i]);
+		VkResult fenceRes = vkCreateFence(device, &fenceInfo, nullptr, &ctx.inFlightFences[i]);
 
 		if (imgAvailSemaphoreRes != VK_SUCCESS || renderFinishedSemaphoreRes != VK_SUCCESS || fenceRes != VK_SUCCESS) {
 			throw std::runtime_error("failed to create semaphores");
@@ -1495,7 +1502,7 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 		if (collection.dirty) {
 			createRenderpass(collection, ctx);
 			createCommandBuffers(collection, ctx);
-			createSyncObjects(collection, ctx);
+			
 
 			//create drawcommands for each collection instance
 			for (auto& iter : collection.instanceMap) {
@@ -1548,12 +1555,6 @@ RSresult VkRenderSystem::collectionDispose(const RScollectionID& colID) {
 
 void VkRenderSystem::disposeCollection(VkRScollection& collection) {
 	const VkDevice& device = iinstance.device;
-	for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; ++i) {
-		vkDestroySemaphore(device, collection.imageAvailableSemaphores[i], nullptr);
-		vkDestroySemaphore(device, collection.renderFinishedSemaphores[i], nullptr);
-		vkDestroyFence(device, collection.inFlightFences[i], nullptr);
-	}
-
 
 	for (size_t i = 0; i < collection.drawCommands.size(); i++) {
 		VkRSdrawCommand& drawcmd = collection.drawCommands[i];

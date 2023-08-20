@@ -4,23 +4,34 @@
 #include <glm/glm.hpp>
 #include <VertexData.h>
 #include <rsids.h>
+#include <RSdataTypes.h>
+#include "helper.h"
+#include <array>
+
+struct CircleEntity : public helper::RSsingleEntity {
+	std::vector<rsvd::VertexPC> vertices;
+	float radius = 0.25f;
+
+	void dispose();
+};
 
 class PrimitiveExample : public RSexample {
 private:
-	RSviewID iviewID;
-	RScollectionID icollectionID;
-
-	struct CircleData {
-		std::vector<rsvd::VertexPC> vertices;
-		uint32_t radius;
-		RSgeometryDataID pcGeomDataID;
-		RSgeometryID pcGeomID;
-		RSappearanceID pcAppID;
-		RSspatialID pcSpatialID;
-		RSinstanceID pcInstanceID;
+	static const int POINT_CIRCLE = 0;
+	static const int LINE_CIRCLE = 1;
+	enum PrimitiveType {
+		Points,
+		Lines
 	};
 
-	CircleData icd;
+	RSviewID iviewID;
+	RScontextID ictxID;
+
+
+	std::array<CircleEntity, 2> icircles;
+	
+	void initShaderPath(RSinitInfo& initInfo);
+	void createEntity(CircleEntity& ce);
 
 public:
 	PrimitiveExample();

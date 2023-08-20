@@ -60,6 +60,10 @@ struct VkRScontext {
 	VkSwapchainKHR swapChain{};
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
+
+	std::vector<VkSemaphore> imageAvailableSemaphores;
+	std::vector<VkSemaphore> renderFinishedSemaphores;
+	std::vector<VkFence> inFlightFences;
 };
 
 
@@ -103,9 +107,6 @@ struct VkRScollection {
 	RScollectionInfo info;
 	VkRenderPass renderPass{};
 	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
-	std::vector<VkSemaphore> imageAvailableSemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
 
 	using DrawCommands = std::vector<VkRSdrawCommand>;
 	using RSinstances = std::unordered_map<RSinstanceID, VkRScollectionInstance, IDHasher<RSinstanceID>>;
