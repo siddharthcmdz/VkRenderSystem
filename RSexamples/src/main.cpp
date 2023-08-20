@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
 	example->init();
 	example->render();
 	example->dispose();
+
 	getchar();
 	return 0;
 }

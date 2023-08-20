@@ -1771,7 +1771,7 @@ VkCommandBuffer VkRenderSystem::beginSingleTimeCommands() {
 	allocInfo.commandPool = iinstance.commandPool;
 	allocInfo.commandBufferCount = 1;
 
-	VkCommandBuffer commandBuffer;
+	VkCommandBuffer commandBuffer{};
 	vkAllocateCommandBuffers(iinstance.device, &allocInfo, &commandBuffer);
 
 	VkCommandBufferBeginInfo beginInfo{};

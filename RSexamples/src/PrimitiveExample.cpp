@@ -23,7 +23,7 @@ void PrimitiveExample::initShaderPath(RSinitInfo& initInfo) {
 void PrimitiveExample::createEntity(CircleEntity& ce) {
 	auto& vkrs = VkRenderSystem::getInstance();
 
-	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
+	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor};
 	RSvertexAttribsInfo attribInfo;
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
 	attribInfo.attributes = attribs.data();
@@ -46,6 +46,7 @@ void PrimitiveExample::createEntity(CircleEntity& ce) {
 	instInfo.geomID = ce.geomID;
 
 	RSappearanceInfo appInfo;
+	appInfo.shaderTemplate = RSshaderTemplate::stPassthrough;
 	vkrs.appearanceCreate(ce.appID, appInfo);
 	instInfo.appID = ce.appID;
 	RSspatial spl;
@@ -85,8 +86,6 @@ void PrimitiveExample::init() {
 	icircles[LINE_CIRCLE].vertices = vertexDataList;
 	icircles[LINE_CIRCLE].radius = radius;
 
-	createEntity(icircles[PrimitiveType::Points]);
-	createEntity(icircles[PrimitiveType::Lines]);
 
 	auto& vkrs = VkRenderSystem::getInstance();
 	RSinitInfo info;
@@ -97,19 +96,21 @@ void PrimitiveExample::init() {
 
 	vkrs.renderSystemInit(info);
 	
-	RScontextID ctxID;
+
 	RScontextInfo ctxInfo;
 	ctxInfo.width = 800;
 	ctxInfo.height = 600;
 	sprintf_s(ctxInfo.title, "Hello Triangle");
-	vkrs.contextCreate(ctxID, ctxInfo);
+	vkrs.contextCreate(ictxID, ctxInfo);
 
-	RSviewID viewID;
 	RSview rsview;
 	rsview.clearColor = glm::vec4(0, 0, 0, 1);
 	rsview.cameraType = CameraType::ORBITAL;
 	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	vkrs.viewCreate(viewID, rsview);
+	vkrs.viewCreate(iviewID, rsview);
+
+	createEntity(icircles[PrimitiveType::Points]);
+	createEntity(icircles[PrimitiveType::Lines]);
 }
 
 void PrimitiveExample::render() {
