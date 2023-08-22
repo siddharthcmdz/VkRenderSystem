@@ -18,4 +18,5 @@ struct VkRSdrawCommand {
 	std::array<VkDescriptorSet, 2> spatialDescriptors;
 	bool hasMaterialDescriptors = false;
 	RSspatial spatial;
+	float lineWidth = 1.0f;
 };

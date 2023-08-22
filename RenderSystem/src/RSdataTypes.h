@@ -57,6 +57,7 @@ struct RSinstanceInfo {
 	RSgeometryID geomID;
 	RSspatialID spatialID;
 	RSappearanceID appID;
+	RSstateID stateID;
 };
 
 struct RSappearanceInfo {

@@ -419,6 +419,8 @@ void VkRenderSystem::printPhysicalDeviceInfo(VkPhysicalDevice device) {
 	std::cout << "\tmaxBoundDescriptorSets: " << iinstance.maxBoundDescriptorSets << std::endl;
 	std::cout << "\tmaxCombinedSamplerDescriptorSets: "<< iinstance.maxCombinedSamplerDescriptorSets << std::endl;
 	std::cout << "\tmaxUniformDescriptorSets: " << iinstance.maxUniformDescriptorSets << std::endl;
+	std::cout << "\tfillModeNonSolid: " << features.fillModeNonSolid << std::endl;
+	std::cout << "\twideLines: " << features.wideLines << std::endl;
 }
 
 void VkRenderSystem::setPhysicalDevice(const VkSurfaceKHR& vksurface) {
@@ -464,6 +466,8 @@ void VkRenderSystem::createLogicalDevice(const VkSurfaceKHR& vksurface) {
 	VkPhysicalDeviceFeatures deviceFeatures{};
 	//enable sampler support for anisotropy filtering
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.fillModeNonSolid = VK_TRUE;
+	deviceFeatures.wideLines = VK_TRUE;
 	createInfo.pEnabledFeatures = &deviceFeatures;
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(iinstance.deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = iinstance.deviceExtensions.data();
@@ -1207,9 +1211,22 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	if (drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_STRIP || drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_LINE_LIST) {
+		rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+	}
+	else if (drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+		rasterizer.polygonMode = VK_POLYGON_MODE_POINT;
+	}
+	else {
+		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+	}
+	rasterizer.lineWidth = drawcmd.lineWidth;
+	if (drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN || drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST || drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP) {
+		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	}
+	else {
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
+	}
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f; //optional
@@ -1289,7 +1306,7 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 
 	pipelineInfo.layout = drawcmd.pipelineLayout;
 
-	pipelineInfo.renderPass = view.renderPass; //hack until we find renderpasses are hierarchical.
+	pipelineInfo.renderPass = view.renderPass;
 	pipelineInfo.subpass = 0;
 
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -1541,6 +1558,10 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					cmd.numVertices = gdata.numVertices;
 					cmd.vertexBuffer = gdata.vaBuffer;
 					cmd.primTopology = getPrimitiveType(geom.geomInfo.primType);
+					if (stateAvailable(collinst.instInfo.stateID)) {
+						VkRSstate& state = istateMap[collinst.instInfo.stateID];
+						cmd.lineWidth = state.state.lnstate.lineWidth;
+					}
 					for (uint32_t i = 0; i < view.descriptorSets.size(); i++) {
 						cmd.viewDescriptors[i] = view.descriptorSets[i];
 					}
@@ -2163,13 +2184,31 @@ RSresult VkRenderSystem::spatialDispose(const RSspatialID& spatialID) {
 
 
 bool VkRenderSystem::stateAvailable(const RSstateID& stateID) {
-	return false;
+	return stateID.isValid() && istateMap.find(stateID) != istateMap.end();
 }
 
 RSresult VkRenderSystem::stateCreate(RSstateID& outStateID, const RSstate& state) {
+	RSuint id;
+	bool success = istateIDpool.CreateID(id);
+	assert(success && "failed to create a state ID");
+	if (success) {
+		VkRSstate vkrsstate;
+		vkrsstate.state= state;
+
+		outStateID.id = id;
+		istateMap[outStateID] = vkrsstate;
+
+		return RSresult::SUCCESS;
+	}
+
 	return RSresult::FAILURE;
 }
 
 RSresult VkRenderSystem::stateDispose(const RSstateID& stateID) {
+	if (stateAvailable(stateID)) {
+		istateMap.erase(stateID);
+
+		return RSresult::SUCCESS;
+	}
 	return RSresult::FAILURE;
 }

@@ -43,6 +43,10 @@ void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 	case PrimitiveType::Lines:
 		geomInfo.primType = RSprimitiveType::ptLineStrip;
 		break;
+
+	case PrimitiveType::Solid:
+		geomInfo.primType = RSprimitiveType::ptTriangle;
+		break;
 	}
 	vkrs.geometryCreate(ce.geomID, geomInfo);
 
@@ -54,12 +58,19 @@ void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 	instInfo.gdataID = ce.geomDataID;
 	instInfo.geomID = ce.geomID;
 
+	if (pt == PrimitiveType::Lines) {
+		RSstate state;
+		state.lnstate.lineWidth = 7.0f;
+		vkrs.stateCreate(ce.stateID, state);
+		instInfo.stateID = ce.stateID;
+	}
+
 	RSappearanceInfo appInfo;
 	appInfo.shaderTemplate = RSshaderTemplate::stPassthrough;
 	vkrs.appearanceCreate(ce.appID, appInfo);
 	instInfo.appID = ce.appID;
 	RSspatial spl;
-	spl.model = glm::mat4(1);//glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
+	spl.model = glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
 	spl.modelInv = glm::inverse(spl.model);
 	vkrs.spatialCreate(ce.spatialID, spl);
 	instInfo.spatialID = ce.spatialID;
@@ -68,33 +79,63 @@ void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 	vkrs.collectionFinalize(ce.collectionID, ictxID, iviewID);
 
 }
-
-void PrimitiveExample::init() {
-
+std::vector<rsvd::VertexPC> PrimitiveExample::getVertices(PrimitiveType pt, float radius) {
 	//create the geometry data
 	std::vector<rsvd::VertexPC> vertexDataList;
-	float radius = 0.5f;
-	uint32_t numSamples = 4;
+	uint32_t numSamples = 6;
 	glm::vec4 red(1.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec4 green(0.0f, 1.0f, 0.0f, 1.0f);
 	for (uint32_t i = 0; i < numSamples; i++) {
-		float theta = (float(i + 1) / float(numSamples)) * (float)RS_PI;
+		//float theta = (float(i + 1) / float(numSamples)) * (float)RS_PI;
+		float theta = (2 * (float)RS_PI * i) / numSamples;
 		float x = radius * cos(theta);
+		x = abs(x) < 1e-2 ? 0.0f : x;
 		float y = radius * sin(theta);
+		y = abs(y) < 1e-2 ? 0.0f : y;
 		rsvd::VertexPC vert;
 		vert.pos = glm::vec4(x, y, 0.0, 1.0f);
-		float t = float(i + 1) / float(numSamples);
-		vert.color = glm::mix(red, green, t);
+		std::cout << "theta: " << theta * (180 / RS_PI) << ", (" << x << ", " << y << ")" << std::endl;
+		if (pt == PrimitiveType::Solid) {
+			float t = float(i + 1) / float(numSamples);
+			vert.color = glm::mix(red, green, t);
+		}
+		else if (pt == PrimitiveType::Lines) {
+			vert.color = glm::vec4(0, 0, 1, 1);
+		}
+		else {
+			vert.color = glm::vec4(0, 0, 0, 1);
+		}
 
 		vertexDataList.push_back(vert);
 	}
 
-	icircles[POINT_CIRCLE].vertices = vertexDataList;
-	icircles[POINT_CIRCLE].radius = radius;
+	return vertexDataList;
+}
 
-	icircles[LINE_CIRCLE].vertices = vertexDataList;
-	icircles[LINE_CIRCLE].radius = radius;
+void PrimitiveExample::init() {
 
+
+	int pointidx = PrimitiveType::Points;
+	int lineidx = PrimitiveType::Lines;
+	int solididx = PrimitiveType::Solid;
+	float radius = 0.5f;
+	icircles[pointidx].vertices = getVertices(PrimitiveType::Points, radius);
+	icircles[pointidx].radius = 0.5;
+	icircles[lineidx].vertices = getVertices(PrimitiveType::Lines, radius);
+	icircles[lineidx].vertices.push_back(icircles[lineidx].vertices[0]);
+	icircles[lineidx].radius = radius;
+
+	std::vector<rsvd::VertexPC> solidVerts = getVertices(PrimitiveType::Solid, radius);
+	for (uint32_t i = 0; i < solidVerts.size() - 2; i++) {
+		rsvd::VertexPC vert0, vert1, vert2;
+		vert0 = solidVerts[0];
+		vert1 = solidVerts[i+1];
+		vert2 = solidVerts[i+2];
+		icircles[solididx].vertices.push_back(vert0);
+		icircles[solididx].vertices.push_back(vert1);
+		icircles[solididx].vertices.push_back(vert2);
+	}
+	icircles[solididx].radius = radius;
 
 	auto& vkrs = VkRenderSystem::getInstance();
 	RSinitInfo info;
@@ -109,7 +150,7 @@ void PrimitiveExample::init() {
 	RScontextInfo ctxInfo;
 	ctxInfo.width = 800;
 	ctxInfo.height = 600;
-	sprintf_s(ctxInfo.title, "Hello Triangle");
+	sprintf_s(ctxInfo.title, "Primitive example");
 	vkrs.contextCreate(ictxID, ctxInfo);
 
 	RSview rsview;
@@ -119,6 +160,7 @@ void PrimitiveExample::init() {
 
 	createEntity(icircles[PrimitiveType::Points], PrimitiveType::Points);
 	createEntity(icircles[PrimitiveType::Lines], PrimitiveType::Lines);
+	createEntity(icircles[PrimitiveType::Solid], PrimitiveType::Solid);
 }
 
 void PrimitiveExample::render() {
@@ -143,6 +185,7 @@ void CircleEntity::dispose() {
 	vkrs.geometryDataDispose(this->geomDataID);
 	vkrs.appearanceDispose(this->appID);
 	vkrs.spatialDispose(this->spatialID);
+	vkrs.stateDispose(this->stateID);
 	vkrs.collectionInstanceDispose(this->collectionID, this->instanceID);
 	vkrs.collectionDispose(this->collectionID);
 }

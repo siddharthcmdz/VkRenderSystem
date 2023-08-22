@@ -17,19 +17,19 @@ struct CircleEntity : public helper::RSsingleEntity {
 
 class PrimitiveExample : public RSexample {
 private:
-	static const int POINT_CIRCLE = 0;
-	static const int LINE_CIRCLE = 1;
 	enum PrimitiveType {
 		Points,
-		Lines
+		Lines,
+		Solid
 	};
 
 	RSviewID iviewID;
 	RScontextID ictxID;
 
 
-	std::array<CircleEntity, 2> icircles;
-	
+	std::array<CircleEntity, 3> icircles;
+	std::vector<rsvd::VertexPC> getVertices(PrimitiveType pt, float radius);
+
 	void initShaderPath(RSinitInfo& initInfo);
 	void createEntity(CircleEntity& ce, PrimitiveType pt);
 

@@ -13,6 +13,7 @@ namespace helper {
 		RStextureID textureID;
 		RSinstanceID instanceID;
 		RScollectionID collectionID;
+		RSstateID stateID;
 		RSprimitiveType primType;
 	};
 
