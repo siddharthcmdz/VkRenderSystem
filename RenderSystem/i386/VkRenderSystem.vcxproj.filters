@@ -90,17 +90,8 @@
     <ClInclude Include="..\src\VkRSdataTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\VkSampleMain0.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\VkSampleMain1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\RSdataTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -113,16 +104,7 @@
     <ClCompile Include="..\src\VkRendersystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\VkRenderSystemEntry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\VkRSdataTypes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\VkSampleMain0.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\VkSampleMain1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

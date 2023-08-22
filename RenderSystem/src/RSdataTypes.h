@@ -28,7 +28,7 @@ struct RScontextInfo {
 struct RSview {
 	glm::vec4 clearColor = glm::vec4(0.f, 0.f, 0.f, 1.f);
 	CameraType cameraType = CameraType::ORBITAL;
-	std::vector<uint32_t> collectionList;
+	std::vector<RScollectionID> collectionIDlist;
 	glm::mat4 modelmat;
 	glm::mat4 viewmat;
 	glm::mat4 projmat;
@@ -48,8 +48,8 @@ struct RSvertexAttribsInfo {
 
 struct RSgeometryInfo {
 	RSprimitiveType primType = RSprimitiveType::ptTriangleStrip;
-	uint32_t offset = 0;
-	uint32_t numElements = 0;
+	//uint32_t offset = 0;
+	//uint32_t numElements = 0;
 };
 
 struct RSinstanceInfo {
@@ -67,4 +67,17 @@ struct RSappearanceInfo {
 struct RSspatial {
 	glm::mat4 model;
 	glm::mat4 modelInv;
+};
+
+struct RSpointState {
+	float pointSize = 1.0f;
+};
+
+struct RSlineState {
+	float lineWidth = 1.0f;
+};
+
+struct RSstate {
+	RSpointState ptstate;
+	RSlineState lnstate;
 };

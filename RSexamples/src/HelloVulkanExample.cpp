@@ -30,7 +30,6 @@ void HelloVulkanExample::init() {
 	vkrs.contextCreate(ictxID, ctxInfo);
 
 	RSview rsview;
-	rsview.clearColor = glm::vec4(0, 0, 0, 1);
 	rsview.cameraType = CameraType::ORBITAL;
 	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	vkrs.viewCreate(iviewID, rsview);
@@ -57,21 +56,19 @@ void HelloVulkanExample::init() {
 	instInfo.gdataID = ientity.geomDataID;
 	instInfo.geomID = ientity.geomID;
 
-	RStextureID texID;
-	vkrs.textureCreate(texID, "C:\\Projects\\FSI\\RSexamples\\i386\\x64\\Debug\\textures\\texture.jpg");
+	vkrs.textureCreate(ientity.textureID, "C:\\Projects\\FSI\\RSexamples\\i386\\x64\\Debug\\textures\\texture.jpg");
 
 	RSappearanceID appID;
 	RSappearanceInfo appInfo;
-	appInfo.diffuseTexture = texID;
+	appInfo.diffuseTexture = ientity.textureID;
 	appInfo.shaderTemplate = RSshaderTemplate::stTextured;
 	vkrs.appearanceCreate(appID, appInfo);
 	instInfo.appID = appID;
-	RSspatialID splID;
 	RSspatial spl;
 	spl.model = glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
 	spl.modelInv = glm::inverse(spl.model);
-	vkrs.spatialCreate(splID, spl);
-	instInfo.spatialID = splID;
+	vkrs.spatialCreate(ientity.spatialID, spl);
+	instInfo.spatialID = ientity.spatialID;
 
 	vkrs.collectionInstanceCreate(ientity.collectionID, ientity.instanceID, instInfo);
 	vkrs.collectionFinalize(ientity.collectionID, ictxID, iviewID);

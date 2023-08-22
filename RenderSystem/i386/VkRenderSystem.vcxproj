@@ -43,19 +43,13 @@
     <ClInclude Include="..\src\VkRenderSystem.h" />
     <ClInclude Include="..\src\VkRenderSystemEntry.h" />
     <ClInclude Include="..\src\VkRSdataTypes.h" />
-    <ClInclude Include="..\src\VkSampleMain0.h" />
-    <ClInclude Include="..\src\VkSampleMain1.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\RSdataTypes.cpp" />
     <ClCompile Include="..\src\stb_image.cpp" />
     <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VkRendersystem.cpp" />
-    <ClCompile Include="..\src\VkRenderSystemEntry.cpp" />
     <ClCompile Include="..\src\VkRSdataTypes.cpp" />
-    <ClCompile Include="..\src\VkSampleMain0.cpp" />
-    <ClCompile Include="..\src\VkSampleMain1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\src\textures\texture.jpg" />

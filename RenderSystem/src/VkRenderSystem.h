@@ -22,6 +22,7 @@ private:
 	using RStextures = std::unordered_map<RStextureID, VkRStexture, IDHasher<RStextureID>>;
 	using RSappearances = std::unordered_map<RSappearanceID, VkRSappearance, IDHasher<RSappearanceID>>;
 	using RSspatials = std::unordered_map<RSspatialID, VkRSspatial, IDHasher<RSspatialID>>;
+	using RSstates = std::unordered_map<RSstateID, VkRSstate, IDHasher<RSstateID>>;
 
 	MakeID iviewIDpool = MakeID(MAX_IDS);
 	MakeID ictxIDpool = MakeID(MAX_IDS);
@@ -44,6 +45,7 @@ private:
 	RStextures itextureMap;
 	RSappearances iappearanceMap;
 	RSspatials ispatialMap;
+	RSstates istateMap;
 
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
@@ -68,32 +70,33 @@ private:
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
 	void createInstance(const RSinitInfo& info);
 	void setupDebugMessenger();
-	void recreateSwapchain(VkRScontext& ctx, VkRSview& view, const VkRenderPass& renderpass);
+	void recreateSwapchain(VkRScontext& ctx, VkRSview& view/*, const VkRenderPass& renderpass*/);
 	static void framebufferResizeCallback(GLFWwindow* window, int widht, int height);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void createDescriptorPool();
 
 	//collection related helpers
-	void createRenderpass(VkRScollection& collection, const VkRScontext& ctx);
+	void createRenderpass(VkRSview& view, const VkRScontext& ctx);
 	void createGraphicsPipeline(const VkRScontext& ctx, const VkRSview& view, VkRScollection& collection, VkRScollectionInstance& collinst, VkRSdrawCommand& drawcmd);
-	void createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx);
-	void recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
+	void recordCommandBuffer(const VkRScollection* collections, uint32_t numCollections, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 	static std::vector<char> readFile(const std::string& filename);
-	void contextDrawCollection(VkRScontext& context, VkRSview& view, const VkRScollection& collection);
+	void contextDrawCollections(VkRScontext& context, VkRSview& view, const VkRScollection* collections, uint32_t numCollections);
 	void disposeCollection(VkRScollection& collection);
 
 	//collection instance related helpers
 	void collectionInstanceCreateDescriptorSetLayout(VkRScollectionInstance& inst);
 	void collectionInstanceCreateDescriptorSet(VkRScollectionInstance& inst);
+	bool needsMaterialDescriptor(VkRScollectionInstance& inst);
 	
 	//view related helpers
-	void createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass);
+	void createFramebuffers(VkRSview& view, const VkRScontext& ctx/*, const VkRenderPass& renderPass*/);
 	void viewCreateDescriptorSetLayout(VkRSview& view);
 	void viewCreateDescriptorSets(VkRSview& view);
 	void createUniformBuffers(VkRSview& view);
 	void updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint32_t currentFrame);
+	void createCommandBuffers(VkRSview& view);
 	void disposeView(VkRSview& view);
 
 	//geometry data related helpers
@@ -160,12 +163,16 @@ public:
 	RS_EXPORT RSresult textureCreate(RStextureID& outTexID, const char* absfilepath);
 	RS_EXPORT RSresult textureDispose(const RStextureID& texID);
 
-	RS_EXPORT bool appearanceAvailable(const RSappearanceID& appID);
+	RS_EXPORT bool appearanceAvailable(const RSappearanceID& appID) const;
 	RS_EXPORT RSresult appearanceCreate(RSappearanceID& outAppID, const RSappearanceInfo& appInfo);
 	RS_EXPORT RSresult appearanceDispose(const RSappearanceID& appID);
 
 	RS_EXPORT bool spatialAvailable(const RSspatialID& spatialID);
 	RS_EXPORT RSresult spatialCreate(RSspatialID& outSplID, const RSspatial& splInfo);
 	RS_EXPORT RSresult spatialDispose(const RSspatialID& spatialID);
+
+	RS_EXPORT bool stateAvailable(const RSstateID& stateID);
+	RS_EXPORT RSresult stateCreate(RSstateID& outStateID, const RSstate& state);
+	RS_EXPORT RSresult stateDispose(const RSstateID& stateID);
 	
 };

@@ -31,7 +31,7 @@ private:
 	std::array<CircleEntity, 2> icircles;
 	
 	void initShaderPath(RSinitInfo& initInfo);
-	void createEntity(CircleEntity& ce);
+	void createEntity(CircleEntity& ce, PrimitiveType pt);
 
 public:
 	PrimitiveExample();

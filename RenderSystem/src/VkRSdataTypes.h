@@ -99,14 +99,13 @@ struct VkRSgeometry {
 
 struct VkRScollectionInstance {
 	RSinstanceInfo instInfo;
-	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSetLayout descriptorSetLayout{};
 	std::vector<VkDescriptorSet> descriptorSets;
 };
 
 struct VkRScollection {
 	RScollectionInfo info;
-	VkRenderPass renderPass{};
-	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
+	
 
 	using DrawCommands = std::vector<VkRSdrawCommand>;
 	using RSinstances = std::unordered_map<RSinstanceID, VkRScollectionInstance, IDHasher<RSinstanceID>>;
@@ -126,8 +125,10 @@ struct VkRSspatialDescriptor {
 };
 
 struct VkRSview {
+	VkRenderPass renderPass{};
 	std::vector<VkFramebuffer> swapChainFramebuffers;
-	VkDescriptorSetLayout descriptorSetLayout;
+	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
+	VkDescriptorSetLayout descriptorSetLayout{};
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -162,6 +163,10 @@ struct VkRStexture {
 
 struct VkRSspatial {
 	RSspatial spatial;
+};
+
+struct VkRSstate {
+	RSstate state;
 };
 
 struct VkRSappearance {

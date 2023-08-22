@@ -20,7 +20,7 @@ struct RSexampleOptions {
 	RSexampleName example;
 };
 
-const RSexampleOptions& processArgs(int argc, char** argv) {
+const RSexampleOptions processArgs(int argc, char** argv) {
 	RSexampleOptions exopts;
 	for (int i = 1; i < argc; i++) {
 		std::string mode = argv[i];

@@ -20,7 +20,7 @@ void PrimitiveExample::initShaderPath(RSinitInfo& initInfo) {
 	strcpy_s(initInfo.shaderPath, shaderDir.c_str());
 }
 
-void PrimitiveExample::createEntity(CircleEntity& ce) {
+void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 	auto& vkrs = VkRenderSystem::getInstance();
 
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor};
@@ -34,7 +34,16 @@ void PrimitiveExample::createEntity(CircleEntity& ce) {
 	vkrs.geometryDataFinalize(ce.geomDataID);
 
 	RSgeometryInfo geomInfo;
-	geomInfo.primType = RSprimitiveType::ptTriangle;
+	geomInfo.primType = RSprimitiveType::ptPoint;
+	switch (pt) {
+	case PrimitiveType::Points:
+		geomInfo.primType = RSprimitiveType::ptPoint;
+		break;
+
+	case PrimitiveType::Lines:
+		geomInfo.primType = RSprimitiveType::ptLineStrip;
+		break;
+	}
 	vkrs.geometryCreate(ce.geomID, geomInfo);
 
 	RScollectionInfo collInfo;
@@ -50,7 +59,7 @@ void PrimitiveExample::createEntity(CircleEntity& ce) {
 	vkrs.appearanceCreate(ce.appID, appInfo);
 	instInfo.appID = ce.appID;
 	RSspatial spl;
-	spl.model = glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
+	spl.model = glm::mat4(1);//glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
 	spl.modelInv = glm::inverse(spl.model);
 	vkrs.spatialCreate(ce.spatialID, spl);
 	instInfo.spatialID = ce.spatialID;
@@ -64,8 +73,8 @@ void PrimitiveExample::init() {
 
 	//create the geometry data
 	std::vector<rsvd::VertexPC> vertexDataList;
-	float radius = 0.25f;
-	uint32_t numSamples = 32;
+	float radius = 0.5f;
+	uint32_t numSamples = 4;
 	glm::vec4 red(1.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec4 green(0.0f, 1.0f, 0.0f, 1.0f);
 	for (uint32_t i = 0; i < numSamples; i++) {
@@ -73,7 +82,7 @@ void PrimitiveExample::init() {
 		float x = radius * cos(theta);
 		float y = radius * sin(theta);
 		rsvd::VertexPC vert;
-		vert.pos = glm::vec4(x, y, 0.0f, 1.0f);
+		vert.pos = glm::vec4(x, y, 0.0, 1.0f);
 		float t = float(i + 1) / float(numSamples);
 		vert.color = glm::mix(red, green, t);
 
@@ -104,13 +113,12 @@ void PrimitiveExample::init() {
 	vkrs.contextCreate(ictxID, ctxInfo);
 
 	RSview rsview;
-	rsview.clearColor = glm::vec4(0, 0, 0, 1);
 	rsview.cameraType = CameraType::ORBITAL;
 	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
 	vkrs.viewCreate(iviewID, rsview);
 
-	createEntity(icircles[PrimitiveType::Points]);
-	createEntity(icircles[PrimitiveType::Lines]);
+	createEntity(icircles[PrimitiveType::Points], PrimitiveType::Points);
+	createEntity(icircles[PrimitiveType::Lines], PrimitiveType::Lines);
 }
 
 void PrimitiveExample::render() {
@@ -120,6 +128,9 @@ void PrimitiveExample::render() {
 
 void PrimitiveExample::dispose() {
 	auto& vkrs = VkRenderSystem::getInstance();
+	for (auto& ent : icircles) {
+		ent.dispose();
+	}
 	vkrs.contextDispose(ictxID);
 	vkrs.viewDispose(iviewID);
 

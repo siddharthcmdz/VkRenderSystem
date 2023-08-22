@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VkRenderSystem", "RenderSystem\i386\VkRenderSystem.vcxproj", "{3582FB3F-57C5-4319-84C0-09C341CFA030}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RSexamples", "RSexamples\i386\RSexamples.vcxproj", "{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3582FB3F-57C5-4319-84C0-09C341CFA030} = {3582FB3F-57C5-4319-84C0-09C341CFA030}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

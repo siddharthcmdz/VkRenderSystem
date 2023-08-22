@@ -16,5 +16,6 @@ struct VkRSdrawCommand {
 	std::array<VkDescriptorSet, 2> viewDescriptors;
 	std::array<VkDescriptorSet, 2> materialDescriptors;
 	std::array<VkDescriptorSet, 2> spatialDescriptors;
+	bool hasMaterialDescriptors = false;
 	RSspatial spatial;
 };

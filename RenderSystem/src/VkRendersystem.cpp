@@ -170,7 +170,7 @@ void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
 	}
 }
 
-void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx, const VkRenderPass& renderPass) {
+void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx) {
 	view.swapChainFramebuffers.resize(ctx.swapChainImageViews.size());
 
 	for (size_t i = 0; i < ctx.swapChainImageViews.size(); ++i) {
@@ -178,7 +178,7 @@ void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx, 
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = renderPass;
+		framebufferInfo.renderPass = view.renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
 		framebufferInfo.width = ctx.swapChainExtent.width;
@@ -203,7 +203,7 @@ void VkRenderSystem::cleanupSwapChain(VkRScontext& ctx, VkRSview& view) {
 	vkDestroySwapchainKHR(iinstance.device, ctx.swapChain, nullptr);
 }
 
-void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view, const VkRenderPass& renderpass) {
+void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view) {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(ctx.window, &width, &height);
 	while (width == 0 || height == 0) {
@@ -217,23 +217,22 @@ void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view, const V
 
 	createSwapChain(ctx);
 	createImageViews(ctx);
-	createFramebuffers(view, ctx, renderpass);
+	createFramebuffers(view, ctx);
 }
 
-void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, const VkRScollection& collection) {
+void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, const VkRScollection* collections, uint32_t numCollections) {
 	const VkDevice& device = iinstance.device;
 	uint32_t currentFrame = view.currentFrame;
 	const VkFence inflightFence = ctx.inFlightFences[currentFrame];
 	const VkSemaphore imageAvailableSemaphore = ctx.imageAvailableSemaphores[currentFrame];
 	const VkSemaphore renderFinishedSemaphore = ctx.renderFinishedSemaphores[currentFrame];
-	const VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
 
 	vkWaitForFences(device, 1, &inflightFence, VK_TRUE, UINT64_MAX);
 
 	uint32_t imageIndex;
 	VkResult res = vkAcquireNextImageKHR(device, ctx.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-		recreateSwapchain(ctx, view, collection.renderPass);
+		recreateSwapchain(ctx, view);
 		return;
 	}
 	else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
@@ -244,10 +243,11 @@ void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, con
 	
 	updateUniformBuffer(view, ctx, currentFrame);
 	
+	const VkCommandBuffer commandBuffer = view.commandBuffers[currentFrame];
 	vkResetCommandBuffer(commandBuffer, 0);
 
-	recordCommandBuffer(collection, view, ctx, imageIndex, currentFrame);
-
+	recordCommandBuffer(collections, numCollections, view, ctx, imageIndex, currentFrame);
+		
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -283,7 +283,7 @@ void VkRenderSystem::contextDrawCollection(VkRScontext& ctx, VkRSview& view, con
 	res = vkQueuePresentKHR(iinstance.presentQueue, &presentInfo);
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || ctx.framebufferResized) {
 		ctx.framebufferResized = false;
-		recreateSwapchain(ctx, view, collection.renderPass);
+		recreateSwapchain(ctx, view);
 	}
 	else if (res != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
@@ -297,21 +297,20 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 		if (contextAvailable(ctxID) && viewAvailable(viewID)) {
 			VkRScontext& ctx = ictxMap[ctxID.id];
 			VkRSview& view = iviewMap[viewID];
-			for (const uint32_t colID : view.view.collectionList) {
-				if (collectionAvailable(RScollectionID(colID))) {
-					VkRScollection& coll = icollectionMap[colID];
-					if (view.swapChainFramebuffers.empty()) {
-						createFramebuffers(view, ctx, coll.renderPass); //hacky renderpass. need to move this to viewCreate(..)
-					}
-				}
+			if (view.swapChainFramebuffers.empty()) {
+				createFramebuffers(view, ctx);
 			}
 
 
 			while (!glfwWindowShouldClose(ctx.window)) {
 				glfwPollEvents();
-				RScollectionID collID0(view.view.collectionList[0]);
-				const VkRScollection& coll = icollectionMap[collID0];
-				contextDrawCollection(ctx, view, coll);
+				std::vector<VkRScollection> collections;
+				for (const auto& collID : view.view.collectionIDlist) {
+					const VkRScollection& coll = icollectionMap[collID];
+					collections.push_back(coll);
+				}
+
+				contextDrawCollections(ctx, view, collections.data(), static_cast<uint32_t>(collections.size()));
 			}
 			vkDeviceWaitIdle(iinstance.device);
 		}
@@ -870,6 +869,7 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 		viewCreateDescriptorSetLayout(vkrsview);
 		createUniformBuffers(vkrsview);
 		viewCreateDescriptorSets(vkrsview);
+		createCommandBuffers(vkrsview);
 
 		viewID.id = id;
 		iviewMap[viewID] = vkrsview;
@@ -896,10 +896,7 @@ RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
 RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
-		//for now support only one collection
-		if (vkrsview.view.collectionList.empty()) {
-			vkrsview.view.collectionList.push_back(colID.id);
-		}
+		vkrsview.view.collectionIDlist.push_back(colID);
 		vkrsview.view.dirty = true;
 		return RSresult::SUCCESS;
 	}
@@ -910,7 +907,7 @@ RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScolle
 RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
-		vkrsview.view.collectionList.erase(std::remove(vkrsview.view.collectionList.begin(), vkrsview.view.collectionList.end(), colID.id));
+		vkrsview.view.collectionIDlist.erase(std::remove(vkrsview.view.collectionIDlist.begin(), vkrsview.view.collectionIDlist.end(), colID.id));
 		vkrsview.view.dirty = true;
 
 		return RSresult::SUCCESS;
@@ -952,13 +949,14 @@ void VkRenderSystem::disposeView(VkRSview& view) {
 		vkFreeMemory(iinstance.device, view.uniformBuffersMemory[i], nullptr);
 	}
 	vkDestroyDescriptorSetLayout(iinstance.device, view.descriptorSetLayout, nullptr);
+	vkDestroyRenderPass(iinstance.device, view.renderPass, nullptr);
 	
 	for (auto framebuffer : view.swapChainFramebuffers) {
 		vkDestroyFramebuffer(iinstance.device, framebuffer, nullptr);
 	}
 }
 
-void VkRenderSystem::createRenderpass(VkRScollection& collection, const VkRScontext& ctx) {
+void VkRenderSystem::createRenderpass(VkRSview& view, const VkRScontext& ctx) {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = ctx.swapChainImageFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -995,7 +993,7 @@ void VkRenderSystem::createRenderpass(VkRScollection& collection, const VkRScont
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	const VkResult result = vkCreateRenderPass(iinstance.device, &renderPassInfo, nullptr, &collection.renderPass);
+	const VkResult result = vkCreateRenderPass(iinstance.device, &renderPassInfo, nullptr, &view.renderPass);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
 	}
@@ -1033,6 +1031,18 @@ bool VkRenderSystem::collectionInstanceAvailable(const RScollectionID& collID, c
 	return false;
 }
 
+bool VkRenderSystem::needsMaterialDescriptor(VkRScollectionInstance& inst) {
+	if (appearanceAvailable(inst.instInfo.appID)) {
+		const VkRSappearance& app = iappearanceMap[inst.instInfo.appID];
+		//put in the list of shaders that dont need a discriptor set here.
+		if (app.appInfo.shaderTemplate == stPassthrough) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinstanceID& outInstID, const RSinstanceInfo& instInfo) {
 	if (!appearanceAvailable(instInfo.appID) || !geometryDataAvailable(instInfo.gdataID) || !geometryAvailable(instInfo.geomID) || !spatialAvailable(instInfo.spatialID)) {
 		return RSresult::FAILURE;
@@ -1047,8 +1057,10 @@ RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinst
 		VkRScollectionInstance inst;
 		inst.instInfo = instInfo;
 
-		collectionInstanceCreateDescriptorSetLayout(inst);
-		collectionInstanceCreateDescriptorSet(inst);
+		if (needsMaterialDescriptor(inst)) {
+			collectionInstanceCreateDescriptorSetLayout(inst);
+			collectionInstanceCreateDescriptorSet(inst);
+		}
 		coll.instanceMap[outInstID] = inst;
 
 		return RSresult::SUCCESS;
@@ -1170,6 +1182,7 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = drawcmd.primTopology;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
+	
 
 	VkViewport viewport{};
 	viewport.x = 0.0f;
@@ -1234,7 +1247,11 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	std::vector<VkDescriptorSetLayout> descriptorSetLayouts {view.descriptorSetLayout, collinst.descriptorSetLayout};
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+	descriptorSetLayouts.push_back(view.descriptorSetLayout);
+	if (collinst.descriptorSetLayout != VK_NULL_HANDLE) {
+		descriptorSetLayouts.push_back(collinst.descriptorSetLayout);
+	}
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
 	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
@@ -1272,7 +1289,7 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 
 	pipelineInfo.layout = drawcmd.pipelineLayout;
 
-	pipelineInfo.renderPass = collection.renderPass; //hack until we find renderpasses are hierarchical.
+	pipelineInfo.renderPass = view.renderPass; //hack until we find renderpasses are hierarchical.
 	pipelineInfo.subpass = 0;
 
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -1287,13 +1304,13 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	vkDestroyShaderModule(iinstance.device, fragShaderModule, nullptr);
 }
 
-void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame) {
+void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint32_t numCollections, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame) {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0;
 	beginInfo.pInheritanceInfo = nullptr;
 
-	const VkCommandBuffer commandBuffer = collection.commandBuffers[currentFrame];
+	const VkCommandBuffer commandBuffer = view.commandBuffers[currentFrame];
 	const VkResult beginRes = vkBeginCommandBuffer(commandBuffer, &beginInfo);
 	if (beginRes != VK_SUCCESS) {
 		throw std::runtime_error("failed to begin recording command buffers!");
@@ -1301,7 +1318,7 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = collection.renderPass;
+	renderPassInfo.renderPass = view.renderPass;
 	renderPassInfo.framebuffer = view.swapChainFramebuffers[imageIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = ctx.swapChainExtent;
@@ -1324,33 +1341,39 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection& collection, const
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
 		scissor.extent = ctx.swapChainExtent;
-		vkCmdSetScissor(collection.commandBuffers[currentFrame], 0, 1, &scissor);
-		
-		for (const VkRSdrawCommand& drawcmd : collection.drawCommands) {
-			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.graphicsPipeline);
+		vkCmdSetScissor(view.commandBuffers[currentFrame], 0, 1, &scissor);
+		for (uint32_t i = 0; i < numCollections; i++) {
+			const VkRScollection& collection = collections[i];
+			for (const VkRSdrawCommand& drawcmd : collection.drawCommands) {
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.graphicsPipeline);
 
-			VkBuffer vertexBuffers[]{ drawcmd.vertexBuffer };
-			VkDeviceSize offsets[]{ drawcmd.vertexOffset };
-			vkCmdBindVertexBuffers(collection.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-			if (drawcmd.isIndexed) {
-				vkCmdBindIndexBuffer(collection.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
-			}
+				VkBuffer vertexBuffers[]{ drawcmd.vertexBuffer };
+				VkDeviceSize offsets[]{ drawcmd.vertexOffset };
+				vkCmdBindVertexBuffers(view.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+				if (drawcmd.isIndexed) {
+					vkCmdBindIndexBuffer(view.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
+				}
 
-			//bind the descriptor sets
-			std::array<VkDescriptorSet, 2> descriptorSets = { drawcmd.viewDescriptors[currentFrame], drawcmd.materialDescriptors[currentFrame]};
-			uint32_t numDescriptorSets = static_cast<uint32_t>(descriptorSets.size());
-			vkCmdBindDescriptorSets(collection.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, numDescriptorSets, descriptorSets.data(), 0, nullptr);
-			vkCmdPushConstants(collection.commandBuffers[currentFrame], drawcmd.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(RSspatial), &drawcmd.spatial);
+				//bind the descriptor sets
+				std::vector<VkDescriptorSet> descriptorSets;
+				descriptorSets.push_back(drawcmd.viewDescriptors[currentFrame]);
+				if (drawcmd.hasMaterialDescriptors) {
+					descriptorSets.push_back(drawcmd.materialDescriptors[currentFrame]);
+				}
+				uint32_t numDescriptorSets = static_cast<uint32_t>(descriptorSets.size());
+				vkCmdBindDescriptorSets(view.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, numDescriptorSets, descriptorSets.data(), 0, nullptr);
+				vkCmdPushConstants(view.commandBuffers[currentFrame], drawcmd.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(RSspatial), &drawcmd.spatial);
 
-			if (drawcmd.isIndexed) {
-				vkCmdDrawIndexed(collection.commandBuffers[currentFrame], drawcmd.numIndices, 1, 0, 0, 0);
-			}
-			else {
-				vkCmdDraw(collection.commandBuffers[currentFrame], drawcmd.numVertices, 1, 0, 0);
+				if (drawcmd.isIndexed) {
+					vkCmdDrawIndexed(view.commandBuffers[currentFrame], drawcmd.numIndices, 1, 0, 0, 0);
+				}
+				else {
+					vkCmdDraw(view.commandBuffers[currentFrame], drawcmd.numVertices, 1, 0, 0);
+				}
 			}
 		}
 	}
-	vkCmdEndRenderPass(collection.commandBuffers[currentFrame]);
+	vkCmdEndRenderPass(view.commandBuffers[currentFrame]);
 
 	const VkResult endCmdBuffRes = vkEndCommandBuffer(commandBuffer);
 	if (endCmdBuffRes != VK_SUCCESS) {
@@ -1371,16 +1394,16 @@ void VkRenderSystem::createCommandPool(const VkRScontext& ctx) {
 	}
 }
 
-void VkRenderSystem::createCommandBuffers(VkRScollection& collection, const VkRScontext& ctx) {
-	collection.commandBuffers.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+void VkRenderSystem::createCommandBuffers(VkRSview& view) {
+	view.commandBuffers.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = iinstance.commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t)collection.commandBuffers.size();
+	allocInfo.commandBufferCount = (uint32_t)view.commandBuffers.size();
 
-	const VkResult allocCmdBufferRes = vkAllocateCommandBuffers(iinstance.device, &allocInfo, collection.commandBuffers.data());
+	const VkResult allocCmdBufferRes = vkAllocateCommandBuffers(iinstance.device, &allocInfo, view.commandBuffers.data());
 	if (allocCmdBufferRes != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocated command buffers");
 	}
@@ -1497,12 +1520,11 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 	if (collectionAvailable(colID) && contextAvailable(ctxID) && viewAvailable(viewID)) {
 		VkRScollection& collection = icollectionMap[colID];
 		const VkRScontext& ctx = ictxMap[ctxID];
-		const VkRSview& view = iviewMap[viewID];
+		VkRSview& view = iviewMap[viewID];
 		//finalize the collection
 		if (collection.dirty) {
-			createRenderpass(collection, ctx);
-			createCommandBuffers(collection, ctx);
-			
+			createRenderpass(view, ctx);
+
 
 			//create drawcommands for each collection instance
 			for (auto& iter : collection.instanceMap) {
@@ -1525,6 +1547,7 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					for (uint32_t i = 0; i < collinst.descriptorSets.size(); i++) {
 						cmd.materialDescriptors[i] = collinst.descriptorSets[i];
 					}
+					cmd.hasMaterialDescriptors = !collinst.descriptorSets.empty();
 					const VkRSspatial& vkrsspatial = ispatialMap[collinst.instInfo.spatialID];
 					cmd.spatial = vkrsspatial.spatial;
 					//create descriptorsets for instances
@@ -1561,7 +1584,7 @@ void VkRenderSystem::disposeCollection(VkRScollection& collection) {
 		vkDestroyPipeline(device, drawcmd.graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(device, drawcmd.pipelineLayout, nullptr);
 	}
-	vkDestroyRenderPass(device, collection.renderPass, nullptr);
+	
 }
 
 bool VkRenderSystem::textureAvailable(const RStextureID& texID) {
@@ -1840,7 +1863,7 @@ RSresult VkRenderSystem::textureDispose(const RStextureID& texID) {
 	return RSresult::FAILURE;
 }
 
-bool VkRenderSystem::appearanceAvailable(const RSappearanceID& appID) {
+bool VkRenderSystem::appearanceAvailable(const RSappearanceID& appID) const {
 	return appID.isValid() && iappearanceMap.find(appID) != iappearanceMap.end();
 }
 
@@ -2135,5 +2158,18 @@ RSresult VkRenderSystem::spatialDispose(const RSspatialID& spatialID) {
 		return RSresult::SUCCESS;
 	}
 
+	return RSresult::FAILURE;
+}
+
+
+bool VkRenderSystem::stateAvailable(const RSstateID& stateID) {
+	return false;
+}
+
+RSresult VkRenderSystem::stateCreate(RSstateID& outStateID, const RSstate& state) {
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::stateDispose(const RSstateID& stateID) {
 	return RSresult::FAILURE;
 }

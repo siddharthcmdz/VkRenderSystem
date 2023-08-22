@@ -2,6 +2,7 @@
 #include <rsids.h>
 #include <Windows.h>
 #include <string>
+#include <rsenums.h>
 
 namespace helper {
 	struct RSsingleEntity {
@@ -12,6 +13,7 @@ namespace helper {
 		RStextureID textureID;
 		RSinstanceID instanceID;
 		RScollectionID collectionID;
+		RSprimitiveType primType;
 	};
 
 

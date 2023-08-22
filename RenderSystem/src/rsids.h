@@ -43,3 +43,4 @@ MAKEID_TYPE(RSinstanceID);
 MAKEID_TYPE(RStextureID);
 MAKEID_TYPE(RSappearanceID);
 MAKEID_TYPE(RSspatialID);
+MAKEID_TYPE(RSstateID);
