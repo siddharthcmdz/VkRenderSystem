@@ -27,9 +27,6 @@
     <None Include="..\src\scripts\deploy.py">
       <Filter>Scripts</Filter>
     </None>
-    <None Include="..\src\scripts\trials.py">
-      <Filter>Scripts</Filter>
-    </None>
     <None Include="..\src\shaders\passthrough.frag">
       <Filter>Shaders</Filter>
     </None>

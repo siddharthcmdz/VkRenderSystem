@@ -21,7 +21,6 @@
   <ItemGroup>
     <None Include="..\..\ToDoList.md" />
     <None Include="..\src\scripts\deploy.py" />
-    <None Include="..\src\scripts\trials.py" />
     <None Include="..\src\shaders\passthrough.frag" />
     <None Include="..\src\shaders\passthrough.vert" />
     <None Include="..\src\shaders\sampleshader.frag" />

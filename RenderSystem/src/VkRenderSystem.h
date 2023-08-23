@@ -54,12 +54,11 @@ private:
 	void setPhysicalDevice(const VkSurfaceKHR& vksurface);
 	void createLogicalDevice(const VkSurfaceKHR& vksurface);
 	void createSurface(VkRScontext& vkrsctx);
-	void createSwapChain(VkRScontext& ctx);
-	void createImageViews(VkRScontext& ctx);
+	void createSwapChain(VkRSview& view, VkRScontext& ctx);
 	void createCommandPool(const VkRScontext& ctx);
 	void createSyncObjects(VkRScontext& ctx);
 	void disposeContext(VkRScontext& ctx);
-	void cleanupSwapChain(VkRScontext& ctx, VkRSview& view);
+	
 
 	//rs global helpers
 	void printPhysicalDeviceInfo(VkPhysicalDevice device);
@@ -77,7 +76,7 @@ private:
 	void createDescriptorPool();
 
 	//collection related helpers
-	void createRenderpass(VkRSview& view, const VkRScontext& ctx);
+	void createRenderpass(VkRSview& view);
 	void createGraphicsPipeline(const VkRScontext& ctx, const VkRSview& view, VkRScollection& collection, VkRScollectionInstance& collinst, VkRSdrawCommand& drawcmd);
 	void recordCommandBuffer(const VkRScollection* collections, uint32_t numCollections, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
 	VkShaderModule createShaderModule(const std::vector<char>& code);
@@ -91,12 +90,14 @@ private:
 	bool needsMaterialDescriptor(VkRScollectionInstance& inst);
 	
 	//view related helpers
-	void createFramebuffers(VkRSview& view, const VkRScontext& ctx/*, const VkRenderPass& renderPass*/);
+	void createFramebuffers(VkRSview& view);
 	void viewCreateDescriptorSetLayout(VkRSview& view);
 	void viewCreateDescriptorSets(VkRSview& view);
 	void createUniformBuffers(VkRSview& view);
-	void updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint32_t currentFrame);
+	void updateUniformBuffer(VkRSview& view, uint32_t currentFrame);
 	void createCommandBuffers(VkRSview& view);
+	void cleanupSwapChain(VkRSview& view);
+	void createImageViews(VkRSview& view);
 	void disposeView(VkRSview& view);
 
 	//geometry data related helpers
@@ -133,7 +134,7 @@ public:
 	RS_EXPORT void contextResizeSet(const RScontextID& ctxID, bool onOff);
 	
 	RS_EXPORT bool viewAvailable(const RSviewID& viewID) const;
-	RS_EXPORT RSresult viewCreate(RSviewID& viewID, const RSview& view);
+	RS_EXPORT RSresult viewCreate(RSviewID& viewID, const RSview& view, const RScontextID& ctxID);
 	//RS_EXPORT RSresult viewUpdate(const RSviewID& viewID, const RSview& view);
 	RS_EXPORT RSresult viewAddCollection(const RSviewID& viewID, const RScollectionID& colID);
 	RS_EXPORT RSresult viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID);

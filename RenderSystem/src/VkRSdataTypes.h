@@ -55,11 +55,6 @@ struct VkRScontext {
 	bool framebufferResized = false;
 	GLFWwindow* window = nullptr;
 	VkSurfaceKHR surface{};
-	std::vector<VkImage> swapChainImages;
-	std::vector<VkImageView> swapChainImageViews;
-	VkSwapchainKHR swapChain{};
-	VkFormat swapChainImageFormat{};
-	VkExtent2D swapChainExtent{};
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -105,7 +100,6 @@ struct VkRScollectionInstance {
 
 struct VkRScollection {
 	RScollectionInfo info;
-	
 
 	using DrawCommands = std::vector<VkRSdrawCommand>;
 	using RSinstances = std::unordered_map<RSinstanceID, VkRScollectionInstance, IDHasher<RSinstanceID>>;
@@ -133,6 +127,13 @@ struct VkRSview {
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
 	std::vector<void*> uniformBuffersMapped;
+
+	std::vector<VkImage> swapChainImages;
+	std::vector<VkImageView> swapChainImageViews;
+	VkSwapchainKHR swapChain{};
+	VkFormat swapChainImageFormat{};
+	VkExtent2D swapChainExtent{};
+
 	uint32_t currentFrame = 0;
 	RSview view;
 };

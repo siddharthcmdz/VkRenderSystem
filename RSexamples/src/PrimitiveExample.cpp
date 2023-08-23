@@ -156,7 +156,7 @@ void PrimitiveExample::init() {
 	RSview rsview;
 	rsview.cameraType = CameraType::ORBITAL;
 	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	vkrs.viewCreate(iviewID, rsview);
+	vkrs.viewCreate(iviewID, rsview, ictxID);
 
 	createEntity(icircles[PrimitiveType::Points], PrimitiveType::Points);
 	createEntity(icircles[PrimitiveType::Lines], PrimitiveType::Lines);
@@ -173,8 +173,8 @@ void PrimitiveExample::dispose() {
 	for (auto& ent : icircles) {
 		ent.dispose();
 	}
-	vkrs.contextDispose(ictxID);
 	vkrs.viewDispose(iviewID);
+	vkrs.contextDispose(ictxID);
 
 	vkrs.renderSystemDispose();
 }

@@ -32,7 +32,7 @@ void HelloVulkanExample::init() {
 	RSview rsview;
 	rsview.cameraType = CameraType::ORBITAL;
 	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	vkrs.viewCreate(iviewID, rsview);
+	vkrs.viewCreate(iviewID, rsview, ictxID);
 
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
 	RSvertexAttribsInfo attribInfo;
@@ -82,8 +82,8 @@ void HelloVulkanExample::render() {
 void HelloVulkanExample::dispose() {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 	vkrs.geometryDataDispose(ientity.geomDataID);
-	vkrs.contextDispose(ictxID);
 	vkrs.viewDispose(iviewID);
+	vkrs.contextDispose(ictxID);
 	vkrs.textureDispose(ientity.textureID);
 	vkrs.appearanceDispose(ientity.appID);
 	vkrs.spatialDispose(ientity.spatialID);

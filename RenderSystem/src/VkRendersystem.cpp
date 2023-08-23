@@ -170,19 +170,19 @@ void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
 	}
 }
 
-void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx) {
-	view.swapChainFramebuffers.resize(ctx.swapChainImageViews.size());
+void VkRenderSystem::createFramebuffers(VkRSview& view) {
+	view.swapChainFramebuffers.resize(view.swapChainImageViews.size());
 
-	for (size_t i = 0; i < ctx.swapChainImageViews.size(); ++i) {
-		VkImageView attachments[] = { ctx.swapChainImageViews[i] };
+	for (size_t i = 0; i < view.swapChainImageViews.size(); ++i) {
+		VkImageView attachments[] = { view.swapChainImageViews[i] };
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferInfo.renderPass = view.renderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = ctx.swapChainExtent.width;
-		framebufferInfo.height = ctx.swapChainExtent.height;
+		framebufferInfo.width = view.swapChainExtent.width;
+		framebufferInfo.height = view.swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
 		const VkResult fboresult = vkCreateFramebuffer(iinstance.device, &framebufferInfo, nullptr, &view.swapChainFramebuffers[i]);
@@ -192,15 +192,15 @@ void VkRenderSystem::createFramebuffers(VkRSview& view, const VkRScontext& ctx) 
 	}
 }
 
-void VkRenderSystem::cleanupSwapChain(VkRScontext& ctx, VkRSview& view) {
+void VkRenderSystem::cleanupSwapChain(VkRSview& view) {
 	for (auto framebuffer : view.swapChainFramebuffers) {
 		vkDestroyFramebuffer(iinstance.device, framebuffer, nullptr);
 	}
 
-	for (const auto& imageView : ctx.swapChainImageViews) {
+	for (const auto& imageView : view.swapChainImageViews) {
 		vkDestroyImageView(iinstance.device, imageView, nullptr);
 	}
-	vkDestroySwapchainKHR(iinstance.device, ctx.swapChain, nullptr);
+	vkDestroySwapchainKHR(iinstance.device, view.swapChain, nullptr);
 }
 
 void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view) {
@@ -213,11 +213,11 @@ void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view) {
 
 	vkDeviceWaitIdle(iinstance.device);
 
-	cleanupSwapChain(ctx, view);
+	cleanupSwapChain(view);
 
-	createSwapChain(ctx);
-	createImageViews(ctx);
-	createFramebuffers(view, ctx);
+	createSwapChain(view, ctx);
+	createImageViews(view);
+	createFramebuffers(view);
 }
 
 void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, const VkRScollection* collections, uint32_t numCollections) {
@@ -230,7 +230,7 @@ void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, co
 	vkWaitForFences(device, 1, &inflightFence, VK_TRUE, UINT64_MAX);
 
 	uint32_t imageIndex;
-	VkResult res = vkAcquireNextImageKHR(device, ctx.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	VkResult res = vkAcquireNextImageKHR(device, view.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	if (res == VK_ERROR_OUT_OF_DATE_KHR) {
 		recreateSwapchain(ctx, view);
 		return;
@@ -241,7 +241,7 @@ void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, co
 	//only reset the fence if we are submitting work.
 	vkResetFences(device, 1, &inflightFence);
 	
-	updateUniformBuffer(view, ctx, currentFrame);
+	updateUniformBuffer(view, currentFrame);
 	
 	const VkCommandBuffer commandBuffer = view.commandBuffers[currentFrame];
 	vkResetCommandBuffer(commandBuffer, 0);
@@ -274,7 +274,7 @@ void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, co
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = signalSemaphores;
 
-	VkSwapchainKHR swapChains[] = { ctx.swapChain };
+	VkSwapchainKHR swapChains[] = { view.swapChain };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
@@ -298,7 +298,7 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 			VkRScontext& ctx = ictxMap[ctxID.id];
 			VkRSview& view = iviewMap[viewID];
 			if (view.swapChainFramebuffers.empty()) {
-				createFramebuffers(view, ctx);
+				createFramebuffers(view);
 			}
 
 
@@ -543,7 +543,8 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwi
 	}
 }
 
-void VkRenderSystem::createSwapChain(VkRScontext& ctx) {
+//TODO: pass in VkSurface instead of ctx
+void VkRenderSystem::createSwapChain(VkRSview& view, VkRScontext& ctx) {
 	VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(iinstance.physicalDevice, ctx.surface);
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -589,17 +590,17 @@ void VkRenderSystem::createSwapChain(VkRScontext& ctx) {
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
 	const VkDevice& device = iinstance.device;
-	const VkResult result = vkCreateSwapchainKHR(device, &createInfo, nullptr, &ctx.swapChain);
+	const VkResult result = vkCreateSwapchainKHR(device, &createInfo, nullptr, &view.swapChain);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create swapchain!");
 	}
 
-	vkGetSwapchainImagesKHR(device, ctx.swapChain, &imageCount, nullptr);
-	ctx.swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device, ctx.swapChain, &imageCount, ctx.swapChainImages.data());
+	vkGetSwapchainImagesKHR(device, view.swapChain, &imageCount, nullptr);
+	view.swapChainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(device, view.swapChain, &imageCount, view.swapChainImages.data());
 
-	ctx.swapChainImageFormat = surfaceFormat.format;
-	ctx.swapChainExtent = extent;
+	view.swapChainImageFormat = surfaceFormat.format;
+	view.swapChainExtent = extent;
 }
 
 RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
@@ -654,11 +655,11 @@ RSresult VkRenderSystem::renderSystemDispose()
 	return RSresult::FAILURE;
 }
 
-void VkRenderSystem::createImageViews(VkRScontext& ctx) {
-	ctx.swapChainImageViews.resize(ctx.swapChainImages.size());
+void VkRenderSystem::createImageViews(VkRSview& view) {
+	view.swapChainImageViews.resize(view.swapChainImages.size());
 
-	for (size_t i = 0; i < ctx.swapChainImages.size(); ++i) {
-		ctx.swapChainImageViews[i] = createImageView(ctx.swapChainImages[i], ctx.swapChainImageFormat);
+	for (size_t i = 0; i < view.swapChainImages.size(); ++i) {
+		view.swapChainImageViews[i] = createImageView(view.swapChainImages[i], view.swapChainImageFormat);
 	}
 }
 
@@ -691,8 +692,6 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 			glfwSetFramebufferSizeCallback(vkrsctx.window, framebufferResizeCallback);
 		}
 		createSurface(vkrsctx);
-		createSwapChain(vkrsctx);
-		createImageViews(vkrsctx);
 		createCommandPool(vkrsctx);
 		createSyncObjects(vkrsctx);
 		outCtxID.id = id;
@@ -710,12 +709,6 @@ bool VkRenderSystem::contextAvailable(const RScontextID& ctxID) const {
 void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 	
 	const VkDevice& device = iinstance.device;
-	for (const auto& imageView : ctx.swapChainImageViews) {
-		vkDestroyImageView(device, imageView, nullptr);
-	}
-	ctx.swapChainImageViews.clear();
-	vkDestroySwapchainKHR(device, ctx.swapChain, nullptr);
-	ctx.swapChain = nullptr;
 	vkDestroySurfaceKHR(iinstance.instance, ctx.surface, nullptr);
 	ctx.surface = nullptr;
 
@@ -843,7 +836,7 @@ void VkRenderSystem::createUniformBuffers(VkRSview& view) {
 	}
 }
 
-void VkRenderSystem::updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint32_t currentFrame) {
+void VkRenderSystem::updateUniformBuffer(VkRSview& view, uint32_t currentFrame) {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 
 	auto currentTime = std::chrono::high_resolution_clock::now();
@@ -852,7 +845,7 @@ void VkRenderSystem::updateUniformBuffer(VkRSview& view, VkRScontext& ctx, uint3
 	VkRSviewDescriptor ubo{};
 	glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * model;
-	ubo.proj = glm::perspective(glm::radians(45.0f), ((float)ctx.swapChainExtent.width / (float)ctx.swapChainExtent.height), 0.0f, 1.0f);
+	ubo.proj = glm::perspective(glm::radians(45.0f), ((float)view.swapChainExtent.width / (float)view.swapChainExtent.height), 0.0f, 1.0f);
 	ubo.proj[1][1] *= -1;
 
 	memcpy(view.uniformBuffersMapped[currentFrame], &ubo, sizeof(VkRSviewDescriptor));
@@ -862,21 +855,27 @@ bool VkRenderSystem::viewAvailable(const RSviewID& viewID) const {
 	return viewID.isValid() && iviewMap.find(viewID) != iviewMap.end();
 }
 
-RSresult VkRenderSystem::viewCreate(RSviewID& viewID, const RSview& view)
-{
+RSresult VkRenderSystem::viewCreate(RSviewID& outViewID, const RSview& view, const RScontextID& ctxID) {
 	RSuint id;
 	bool success = iviewIDpool.CreateID(id);
 	assert(success && "failed to create a view ID");
 	if (success) {
 		VkRSview vkrsview;
 		vkrsview.view = view;
+		
+		assert(contextAvailable(ctxID) && "invalid context ID");
+		VkRScontext& vkrsctx = ictxMap[ctxID];
+		createSwapChain(vkrsview, vkrsctx);
+		createImageViews(vkrsview);
+		createRenderpass(vkrsview);
+
 		viewCreateDescriptorSetLayout(vkrsview);
 		createUniformBuffers(vkrsview);
 		viewCreateDescriptorSets(vkrsview);
 		createCommandBuffers(vkrsview);
 
-		viewID.id = id;
-		iviewMap[viewID] = vkrsview;
+		outViewID.id = id;
+		iviewMap[outViewID] = vkrsview;
 		return RSresult::SUCCESS;
 	}
 
@@ -955,14 +954,21 @@ void VkRenderSystem::disposeView(VkRSview& view) {
 	vkDestroyDescriptorSetLayout(iinstance.device, view.descriptorSetLayout, nullptr);
 	vkDestroyRenderPass(iinstance.device, view.renderPass, nullptr);
 	
+	for (const auto& imageView : view.swapChainImageViews) {
+		vkDestroyImageView(iinstance.device, imageView, nullptr);
+	}
+	view.swapChainImageViews.clear();
+	vkDestroySwapchainKHR(iinstance.device, view.swapChain, nullptr);
+	view.swapChain = nullptr;
+
 	for (auto framebuffer : view.swapChainFramebuffers) {
 		vkDestroyFramebuffer(iinstance.device, framebuffer, nullptr);
 	}
 }
 
-void VkRenderSystem::createRenderpass(VkRSview& view, const VkRScontext& ctx) {
+void VkRenderSystem::createRenderpass(VkRSview& view) {
 	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = ctx.swapChainImageFormat;
+	colorAttachment.format = view.swapChainImageFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1191,14 +1197,14 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (float)ctx.swapChainExtent.width;
-	viewport.height = (float)ctx.swapChainExtent.height;
+	viewport.width = (float)view.swapChainExtent.width;
+	viewport.height = (float)view.swapChainExtent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
-	scissor.extent = ctx.swapChainExtent;
+	scissor.extent = view.swapChainExtent;
 
 	VkPipelineViewportStateCreateInfo viewportState{};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -1338,7 +1344,7 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint
 	renderPassInfo.renderPass = view.renderPass;
 	renderPassInfo.framebuffer = view.swapChainFramebuffers[imageIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = ctx.swapChainExtent;
+	renderPassInfo.renderArea.extent = view.swapChainExtent;
 
 	VkClearValue clearColor = { {{view.view.clearColor.r, view.view.clearColor.r, view.view.clearColor.r, view.view.clearColor.r}} };
 	renderPassInfo.clearValueCount = 1;
@@ -1349,15 +1355,15 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(ctx.swapChainExtent.width);
-		viewport.height = static_cast<float>(ctx.swapChainExtent.height);
+		viewport.width = static_cast<float>(view.swapChainExtent.width);
+		viewport.height = static_cast<float>(view.swapChainExtent.height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = ctx.swapChainExtent;
+		scissor.extent = view.swapChainExtent;
 		vkCmdSetScissor(view.commandBuffers[currentFrame], 0, 1, &scissor);
 		for (uint32_t i = 0; i < numCollections; i++) {
 			const VkRScollection& collection = collections[i];
@@ -1536,11 +1542,10 @@ void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstanc
 RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID, const RSviewID& viewID) {
 	if (collectionAvailable(colID) && contextAvailable(ctxID) && viewAvailable(viewID)) {
 		VkRScollection& collection = icollectionMap[colID];
-		const VkRScontext& ctx = ictxMap[ctxID];
+		VkRScontext& ctx = ictxMap[ctxID];
 		VkRSview& view = iviewMap[viewID];
 		//finalize the collection
 		if (collection.dirty) {
-			createRenderpass(view, ctx);
 
 
 			//create drawcommands for each collection instance
