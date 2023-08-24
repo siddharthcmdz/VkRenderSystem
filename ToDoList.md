@@ -1,5 +1,7 @@
 # Rendering Engine
-* Separate windowing system from rendersystem
+* Separate windowing system from rendersystem -- in progress
+* * send hwnd and hinstance to vkrs - done
+  * create API to resize a context
 * Remove usage of glfw
 ~~* Make VkRenderSystem a dll and export only needed functions~~ **DONE**
 * Support rendering luminance texture
@@ -24,7 +26,7 @@
 
 
 # Rendering examples
-* Render primitives like - triangle strip, triangles, line, line strip etc - in-progress
+~~* Render primitives like - triangle strip, triangles, line, line strip etc~~ **DONE**
 ** fix primitive example - use descriptors only for valid material, move command pool creation to iinstance 
 * Render one quad sold, textured, points, lines
 

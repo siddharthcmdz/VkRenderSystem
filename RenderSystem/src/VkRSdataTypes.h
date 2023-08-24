@@ -3,8 +3,13 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "RSdataTypes.h"
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+//#define GLFW_INCLUDE_VULKAN
+//#include <GLFW/glfw3.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include <string>
 #include <optional>
 #include <unordered_map>
@@ -53,8 +58,11 @@ struct VkRSinstance {
 struct VkRScontext {
 	static const int MAX_FRAMES_IN_FLIGHT = 2;
 	bool framebufferResized = false;
-	GLFWwindow* window = nullptr;
 	VkSurfaceKHR surface{};
+	bool resized = false;
+	uint32_t width = 0;
+	uint32_t height = 0;
+	RScontextInfo info;
 
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;

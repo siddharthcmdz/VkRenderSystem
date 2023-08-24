@@ -7,32 +7,8 @@
 
 HelloVulkanExample::HelloVulkanExample() {}
 
-void getShaderPath(RSinitInfo& initInfo) {
-	std::string currDir = helper::getCurrentDir();
-	std::cout << "current dir: " << currDir << std::endl;
-	currDir += "\\shaders";
-	strcpy_s(initInfo.shaderPath, currDir.c_str());
-}
-
-void HelloVulkanExample::init() {
+void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
-	RSinitInfo info;
-	sprintf_s(info.appName, "RenderSystem");
-	info.enableValidation = true;
-	info.onScreenCanvas = true;
-	getShaderPath(info);
-	vkrs.renderSystemInit(info);
-
-	RScontextInfo ctxInfo;
-	ctxInfo.width = 800;
-	ctxInfo.height = 600;
-	sprintf_s(ctxInfo.title, "Hello Triangle");
-	vkrs.contextCreate(ictxID, ctxInfo);
-
-	RSview rsview;
-	rsview.cameraType = CameraType::ORBITAL;
-	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	vkrs.viewCreate(iviewID, rsview, ictxID);
 
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
 	RSvertexAttribsInfo attribInfo;
@@ -74,21 +50,21 @@ void HelloVulkanExample::init() {
 	vkrs.collectionFinalize(ientity.collectionID, ictxID, iviewID);
 }
 
-void HelloVulkanExample::render() {
+void HelloVulkanExample::render(const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 	vkrs.contextDrawCollections(ictxID, iviewID);
 }
 
-void HelloVulkanExample::dispose() {
+void HelloVulkanExample::dispose(const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 	vkrs.geometryDataDispose(ientity.geomDataID);
-	vkrs.viewDispose(iviewID);
-	vkrs.contextDispose(ictxID);
 	vkrs.textureDispose(ientity.textureID);
 	vkrs.appearanceDispose(ientity.appID);
 	vkrs.spatialDispose(ientity.spatialID);
 	vkrs.collectionInstanceDispose(ientity.collectionID, ientity.instanceID);
 	vkrs.collectionDispose(ientity.collectionID);
+}
 
-	vkrs.renderSystemDispose();
+std::string HelloVulkanExample::getExampleName() const {
+	return "HelloVulkanExample";
 }

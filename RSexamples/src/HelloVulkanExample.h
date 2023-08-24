@@ -22,7 +22,8 @@ class HelloVulkanExample : public RSexample {
 
 public:
 	HelloVulkanExample();
-	void init() override;
-	void render() override;
-	void dispose() override;
+	void init(const RSexampleOptions& eo, const RSexampleGlobal& globals) override;
+	void render(const RSexampleGlobal& globals) override;
+	void dispose(const RSexampleGlobal& globals) override;
+	std::string getExampleName() const override;
 };

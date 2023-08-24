@@ -46,12 +46,10 @@ bool VkRenderSystem::checkValidationLayerSupport() const {
 
 std::vector<const char*> VkRenderSystem::getRequiredExtensions(const RSinitInfo& info) const {
 
-	std::vector<const char*> extensions;
-	if (info.onScreenCanvas) {
-		uint32_t glfwExtensionCount = 0;
-		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-		extensions = std::vector(glfwExtensions, glfwExtensions + glfwExtensionCount);
-	}
+	std::vector<const char*> extensions = {
+		"VK_KHR_Surface",
+		"VK_KHR_win32_surface"
+	};
 
 	if (info.enableValidation) {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -164,8 +162,13 @@ void VkRenderSystem::setupDebugMessenger() {
 
 void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
 	
-	const VkResult result = glfwCreateWindowSurface(iinstance.instance, vkrsctx.window, nullptr, &vkrsctx.surface);
-	if (result != VK_SUCCESS) {
+	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
+	surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	surfaceCreateInfo.hinstance = vkrsctx.info.hinst;
+	surfaceCreateInfo.hwnd = vkrsctx.info.hwnd;
+	VkResult res = vkCreateWin32SurfaceKHR(iinstance.instance, &surfaceCreateInfo, nullptr, &vkrsctx.surface);
+
+	if (res!= VK_SUCCESS) {
 		throw std::runtime_error("failed to create a window surface!");
 	}
 }
@@ -204,20 +207,17 @@ void VkRenderSystem::cleanupSwapChain(VkRSview& view) {
 }
 
 void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view) {
-	int width = 0, height = 0;
-	glfwGetFramebufferSize(ctx.window, &width, &height);
-	while (width == 0 || height == 0) {
-		glfwGetFramebufferSize(ctx.window, &width, &height);
-		glfwWaitEvents();
+	if (ctx.resized) {
+		vkDeviceWaitIdle(iinstance.device);
+
+		cleanupSwapChain(view);
+
+		createSwapChain(view, ctx);
+		createImageViews(view);
+		createFramebuffers(view);
+		
+		ctx.resized = false;
 	}
-
-	vkDeviceWaitIdle(iinstance.device);
-
-	cleanupSwapChain(view);
-
-	createSwapChain(view, ctx);
-	createImageViews(view);
-	createFramebuffers(view);
 }
 
 void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, const VkRScollection* collections, uint32_t numCollections) {
@@ -302,8 +302,8 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 			}
 
 
-			while (!glfwWindowShouldClose(ctx.window)) {
-				glfwPollEvents();
+			//while (!glfwWindowShouldClose(ctx.window)) {
+			//	glfwPollEvents();
 				std::vector<VkRScollection> collections;
 				for (const auto& collID : view.view.collectionIDlist) {
 					const VkRScollection& coll = icollectionMap[collID];
@@ -311,7 +311,7 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 				}
 
 				contextDrawCollections(ctx, view, collections.data(), static_cast<uint32_t>(collections.size()));
-			}
+			//}
 			vkDeviceWaitIdle(iinstance.device);
 		}
 	}
@@ -367,20 +367,23 @@ VkRSswapChainSupportDetails VkRenderSystem::querySwapChainSupport(VkPhysicalDevi
 	return details;
 }
 
-bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& surface) {
+bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& vksurface) {
 	bool extensionsSupported = checkDeviceExtensionSupport(device);
-	VkRSqueueFamilyIndices indices = findQueueFamilies(device, surface);
+	VkRSqueueFamilyIndices indices = findQueueFamilies(device, vksurface);
 
 	bool swapChainAdequate = false;
 	if (extensionsSupported) {
-		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
+		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, vksurface);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
 	VkPhysicalDeviceFeatures supportedFeatures;
 	vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-	return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+	return indices.isComplete() && extensionsSupported && swapChainAdequate && 
+		supportedFeatures.samplerAnisotropy && 
+		supportedFeatures.wideLines && 
+		supportedFeatures.fillModeNonSolid ;
 }
 
 bool VkRenderSystem::checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -423,17 +426,16 @@ void VkRenderSystem::printPhysicalDeviceInfo(VkPhysicalDevice device) {
 	std::cout << "\twideLines: " << features.wideLines << std::endl;
 }
 
-void VkRenderSystem::setPhysicalDevice(const VkSurfaceKHR& vksurface) {
+void VkRenderSystem::pickPhysicalDevice() {
+	//pick just the first device. TODO: if this fails, we need to allow users to pick the GPU for us.
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(iinstance.instance, &deviceCount, nullptr);
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(iinstance.instance, &deviceCount, devices.data());
-	for (const auto& device : devices) {
-		if (isDeviceSuitable(device, vksurface)) {
-			iinstance.physicalDevice = device;
-			printPhysicalDeviceInfo(device);
-			break;
-		}
+	if (!devices.empty()) {
+		const VkPhysicalDevice device = devices[0];
+		iinstance.physicalDevice = device;
+		printPhysicalDeviceInfo(device);
 	}
 
 	if (iinstance.physicalDevice == VK_NULL_HANDLE) {
@@ -523,13 +525,17 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avai
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* wnd) {
+VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, HWND wnd) {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
 	}
 	else {
 		int width, height;
-		glfwGetFramebufferSize(wnd, &width, &height);
+		RECT rect;
+		if (GetWindowRect(wnd, &rect)) {
+			width = rect.right - rect.left;
+			height = rect.bottom - rect.top;
+		}
 
 		VkExtent2D actualExtent = {
 			static_cast<uint32_t>(width),
@@ -549,7 +555,7 @@ void VkRenderSystem::createSwapChain(VkRSview& view, VkRScontext& ctx) {
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, ctx.window);
+	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, ctx.info.hwnd);
 
 	//TODO: perhaps use std::clamp here
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -603,27 +609,39 @@ void VkRenderSystem::createSwapChain(VkRSview& view, VkRScontext& ctx) {
 	view.swapChainExtent = extent;
 }
 
+VkSurfaceKHR VkRenderSystem::createDummySurface(const HWND hwnd, const HINSTANCE hinst) {
+	VkSurfaceKHR surface;
+	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
+	surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	surfaceCreateInfo.hinstance = hinst;
+	surfaceCreateInfo.hwnd = hwnd;
+	VkResult res = vkCreateWin32SurfaceKHR(iinstance.instance, &surfaceCreateInfo, nullptr, &surface);
+
+	if (res != VK_SUCCESS) {
+		throw std::runtime_error("failed to create a dummy surface!");
+	}
+
+	return surface;
+}
+
+void VkRenderSystem::disposeDummySurface(const VkSurfaceKHR surface) {
+	if (surface != VK_NULL_HANDLE) {
+		vkDestroySurfaceKHR(iinstance.instance, surface, nullptr);
+	}
+}
+
 RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 {
 	iinitInfo = info;
 	std::vector<const char*> extensions;
-	if (info.onScreenCanvas) {
-		glfwInit();
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	}
 
 	createInstance(info);
 	setupDebugMessenger();
 
-	//GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
-	GLFWwindow* dummyWindow = glfwCreateWindow(100, 100, "dummywnd", nullptr/*primaryMonitor*/, nullptr);
-	VkSurfaceKHR dummySurface;
-	const VkResult result = glfwCreateWindowSurface(iinstance.instance, dummyWindow, nullptr, &dummySurface);
-	setPhysicalDevice(dummySurface);
+	pickPhysicalDevice();
+	VkSurfaceKHR dummySurface = createDummySurface(info.parentHwnd, info.parentHinst);
 	createLogicalDevice(dummySurface);
-	vkDestroySurfaceKHR(iinstance.instance, dummySurface, nullptr);
-
-	glfwDestroyWindow(dummyWindow);
+	disposeDummySurface(dummySurface);
 
 	createDescriptorPool();
 
@@ -648,10 +666,6 @@ RSresult VkRenderSystem::renderSystemDispose()
 
 	vkDestroyInstance(iinstance.instance, nullptr);
 	
-	if (iinitInfo.onScreenCanvas) {
-		glfwTerminate();
-	}
-
 	return RSresult::FAILURE;
 }
 
@@ -663,18 +677,12 @@ void VkRenderSystem::createImageViews(VkRSview& view) {
 	}
 }
 
-void VkRenderSystem::contextResizeSet(const RScontextID& ctxID, bool onOff) {
+void VkRenderSystem::contextResized(const RScontextID& ctxID, uint32_t newWidth, uint32_t newHeight) {
 	if (contextAvailable(ctxID)) {
 		VkRScontext& ctx = ictxMap[ctxID.id];
-		ctx.framebufferResized = onOff;
-	}
-}
-
-void VkRenderSystem::framebufferResizeCallback(GLFWwindow* window, int widht, int height) {
-	uint32_t id = *(reinterpret_cast<uint32_t*>(glfwGetWindowUserPointer(window)));
-	RScontextID ctxID(id);
-	if (getInstance().contextAvailable(ctxID)) {
-		getInstance().contextResizeSet(ctxID, true);
+		ctx.resized = true;
+		ctx.width = newWidth;
+		ctx.height = newHeight;
 	}
 }
 
@@ -685,12 +693,8 @@ RSresult VkRenderSystem::contextCreate(RScontextID& outCtxID, const RScontextInf
 	assert(success && "failed to create a context ID");
 	if (success) {
 		VkRScontext vkrsctx;
+		vkrsctx.info = info;
 
-		if (iinitInfo.onScreenCanvas) {
-			vkrsctx.window = glfwCreateWindow(info.width, info.height, info.title, nullptr, nullptr);
-			glfwSetWindowUserPointer(vkrsctx.window, &id);
-			glfwSetFramebufferSizeCallback(vkrsctx.window, framebufferResizeCallback);
-		}
 		createSurface(vkrsctx);
 		createCommandPool(vkrsctx);
 		createSyncObjects(vkrsctx);
@@ -718,8 +722,7 @@ void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 		vkDestroyFence(device, ctx.inFlightFences[i], nullptr);
 	}
 
-	glfwDestroyWindow(ctx.window);
-	ctx.window = nullptr;
+	ctx.info.hwnd = nullptr;
 }
 
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
@@ -727,10 +730,8 @@ RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
 	if (contextAvailable(ctxID)) {
 		VkRScontext& ctx = ictxMap[ctxID.id];
 
-		if (iinitInfo.onScreenCanvas && ctx.window != nullptr) {
-			disposeContext(ctx);
-			ictxMap.erase(ctxID.id);
-		}
+		disposeContext(ctx);
+		ictxMap.erase(ctxID.id);
 
 		return RSresult::SUCCESS;
 	}

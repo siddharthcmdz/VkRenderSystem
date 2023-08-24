@@ -7,9 +7,9 @@
 #include "rsids.h"
 
 #define MAX_IDS UINT32_MAX
-
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#include <Windows.h>
 
 
 struct RSinitInfo {
@@ -17,12 +17,17 @@ struct RSinitInfo {
 	bool onScreenCanvas = true;
 	char appName[256]; //name of the engine or application
 	char shaderPath[256];
+	//These two are needed for querying queue families early on - rendersysteminit(). Its always the case, the window is first constructed and then vkrs. The parent window can serve to construct the logical device which can be reused to present to the presentation queue.
+	HWND parentHwnd; 
+	HINSTANCE parentHinst;
 };
 
 struct RScontextInfo {
 	uint32_t width = 800;
 	uint32_t height = 600;
 	char title[256]{0}; //name of the window displayed as title
+	HWND hwnd{};
+	HINSTANCE hinst{};
 };
 
 struct RSview {

@@ -51,9 +51,11 @@ private:
 	bool isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
 	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
 	VkRSqueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
-	void setPhysicalDevice(const VkSurfaceKHR& vksurface);
+	void pickPhysicalDevice();
 	void createLogicalDevice(const VkSurfaceKHR& vksurface);
 	void createSurface(VkRScontext& vkrsctx);
+	VkSurfaceKHR createDummySurface(const HWND hwnd, const HINSTANCE hinst);
+	void disposeDummySurface(const VkSurfaceKHR surface);
 	void createSwapChain(VkRSview& view, VkRScontext& ctx);
 	void createCommandPool(const VkRScontext& ctx);
 	void createSyncObjects(VkRScontext& ctx);
@@ -70,7 +72,7 @@ private:
 	void createInstance(const RSinitInfo& info);
 	void setupDebugMessenger();
 	void recreateSwapchain(VkRScontext& ctx, VkRSview& view/*, const VkRenderPass& renderpass*/);
-	static void framebufferResizeCallback(GLFWwindow* window, int widht, int height);
+	//static void framebufferResizeCallback(GLFWwindow* window, int widht, int height);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void createDescriptorPool();
@@ -131,7 +133,7 @@ public:
 	RS_EXPORT RSresult contextCreate(RScontextID& outCtxID, const RScontextInfo& info);
 	RS_EXPORT RSresult contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID);
 	RS_EXPORT RSresult contextDispose(const RScontextID& ctxID);
-	RS_EXPORT void contextResizeSet(const RScontextID& ctxID, bool onOff);
+	RS_EXPORT void contextResized(const RScontextID& ctxID, uint32_t newWidth, uint32_t newHeight);
 	
 	RS_EXPORT bool viewAvailable(const RSviewID& viewID) const;
 	RS_EXPORT RSresult viewCreate(RSviewID& viewID, const RSview& view, const RScontextID& ctxID);
