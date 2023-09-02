@@ -13,7 +13,7 @@ PrimitiveExample::PrimitiveExample() {
 
 }
 
-void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
+void PrimitiveExample::createEntity(const RSexampleGlobal& globals, CircleEntity& ce, PrimitiveType pt) {
 	auto& vkrs = VkRenderSystem::getInstance();
 
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor};
@@ -45,7 +45,7 @@ void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 
 	RScollectionInfo collInfo;
 	vkrs.collectionCreate(ce.collectionID, collInfo);
-	vkrs.viewAddCollection(iviewID, ce.collectionID);
+	vkrs.viewAddCollection(globals.viewID, ce.collectionID);
 
 	RSinstanceInfo instInfo;
 	instInfo.gdataID = ce.geomDataID;
@@ -69,7 +69,7 @@ void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 	instInfo.spatialID = ce.spatialID;
 
 	vkrs.collectionInstanceCreate(ce.collectionID, ce.instanceID, instInfo);
-	vkrs.collectionFinalize(ce.collectionID, ictxID, iviewID);
+	vkrs.collectionFinalize(ce.collectionID, globals.ctxID, globals.viewID);
 
 }
 std::vector<rsvd::VertexPC> PrimitiveExample::getVertices(PrimitiveType pt, float radius) {
@@ -128,14 +128,14 @@ void PrimitiveExample::init(const RSexampleOptions& eo, const RSexampleGlobal& g
 	}
 	icircles[solididx].radius = radius;
 
-	createEntity(icircles[PrimitiveType::Points], PrimitiveType::Points);
-	createEntity(icircles[PrimitiveType::Lines], PrimitiveType::Lines);
-	createEntity(icircles[PrimitiveType::Solid], PrimitiveType::Solid);
+	createEntity(globals, icircles[PrimitiveType::Points], PrimitiveType::Points);
+	createEntity(globals, icircles[PrimitiveType::Lines], PrimitiveType::Lines);
+	createEntity(globals, icircles[PrimitiveType::Solid], PrimitiveType::Solid);
 }
 
 void PrimitiveExample::render(const RSexampleGlobal& globals) {
 	auto& vkrs = VkRenderSystem::getInstance();
-	vkrs.contextDrawCollections(ictxID, iviewID);
+	vkrs.contextDrawCollections(globals.ctxID, globals.viewID);
 }
 
 void PrimitiveExample::dispose(const RSexampleGlobal& globals) {
@@ -143,8 +143,8 @@ void PrimitiveExample::dispose(const RSexampleGlobal& globals) {
 	for (auto& ent : icircles) {
 		ent.dispose();
 	}
-	vkrs.viewDispose(iviewID);
-	vkrs.contextDispose(ictxID);
+	vkrs.viewDispose(globals.viewID);
+	vkrs.contextDispose(globals.ctxID);
 
 	vkrs.renderSystemDispose();
 }

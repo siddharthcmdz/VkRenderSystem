@@ -16,8 +16,6 @@ class HelloVulkanExample : public RSexample {
 		0, 1, 2, 2, 3, 0
 	};
 
-	RScontextID ictxID;
-	RSviewID iviewID;
 	helper::RSsingleEntity ientity;
 
 public:

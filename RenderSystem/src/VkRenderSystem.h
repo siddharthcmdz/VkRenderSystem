@@ -72,7 +72,6 @@ private:
 	void createInstance(const RSinitInfo& info);
 	void setupDebugMessenger();
 	void recreateSwapchain(VkRScontext& ctx, VkRSview& view/*, const VkRenderPass& renderpass*/);
-	//static void framebufferResizeCallback(GLFWwindow* window, int widht, int height);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void createDescriptorPool();

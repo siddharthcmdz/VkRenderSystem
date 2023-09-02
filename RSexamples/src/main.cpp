@@ -43,7 +43,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 
 	case WM_CREATE:
 	{
-		std::cout << "Creating window" << std::endl;
 		RSinitInfo info;
 		info.parentHwnd = hwnd;
 		info.parentHinst = GetModuleHandle(nullptr);
@@ -56,28 +55,38 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		RScontextInfo ctxInfo;
 		RECT dim;
 		GetWindowRect(hwnd, &dim);
-		ctxInfo.width = dim.right - dim.left;
-		ctxInfo.height = dim.bottom - dim.top;
+		ctxInfo.initWidth = dim.right - dim.left;
+		ctxInfo.initHeight = dim.bottom - dim.top;
+		ctxInfo.hwnd = hwnd;
+		ctxInfo.hinst = GetModuleHandle(nullptr);
 		sprintf_s(ctxInfo.title, g_example->getExampleName().c_str());
-		g_globals.width = ctxInfo.width;
-		g_globals.height = ctxInfo.height;
+		g_globals.width = ctxInfo.initWidth;
+		g_globals.height = ctxInfo.initHeight;
 		vkrs.contextCreate(g_globals.ctxID, ctxInfo);
+
+		RSview view;
+		view.cameraType = CameraType::ORBITAL;
+		view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+		view.dirty = true;
+		vkrs.viewCreate(g_globals.viewID, view, g_globals.ctxID);
 
 		if (g_example) {
 			g_example->init(g_exopts, g_globals);
 		}
-		break;
 
+		std::cout << "Window created" << std::endl;
+		break;
 	}
 
 	case WM_SIZE:
 	{
 		g_globals.width = LOWORD(lparam);
-		g_globals.height = LOWORD(lparam);
+		g_globals.height = HIWORD(lparam);
 
 		if (g_example) {
 			vkrs.contextResized(g_globals.ctxID, g_globals.width, g_globals.height);
 		}
+		std::cout << "Window resized" << std::endl;
 		break;
 	}
 
@@ -87,13 +96,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		if (g_example) {
 			g_example->render(g_globals);
 		}
-		std::cout << "Painting window" << std::endl;
+		std::cout << "Window painting " << std::endl;
 		break;
 	}
 
 	case WM_DESTROY:
 	{
-		std::cout << "Destroying window" << std::endl;
 		if (g_example != nullptr) {
 			g_example->dispose(g_globals);
 		}
@@ -103,6 +111,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 
 		DestroyWindow(hwnd);
 		PostQuitMessage(0);
+
+		std::cout << "Window destroying" << std::endl;
 		break;
 	}
 	}

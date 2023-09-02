@@ -2,7 +2,7 @@
 * Separate windowing system from rendersystem -- in progress
 * * send hwnd and hinstance to vkrs - done
   * create API to resize a context
-* Remove usage of glfw
+* Remove usage of glfw -- in progress
 ~~* Make VkRenderSystem a dll and export only needed functions~~ **DONE**
 * Support rendering luminance texture
 * Support buffer naming to see in renderdoc and nsight

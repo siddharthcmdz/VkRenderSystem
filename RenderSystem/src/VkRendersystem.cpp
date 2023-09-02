@@ -47,8 +47,8 @@ bool VkRenderSystem::checkValidationLayerSupport() const {
 std::vector<const char*> VkRenderSystem::getRequiredExtensions(const RSinitInfo& info) const {
 
 	std::vector<const char*> extensions = {
-		"VK_KHR_Surface",
-		"VK_KHR_win32_surface"
+		VK_KHR_SURFACE_EXTENSION_NAME,
+		VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 	};
 
 	if (info.enableValidation) {
@@ -293,6 +293,9 @@ void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, co
 }
 
 RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID) {
+	assert(ctxID.isValid() && "invalid input context ID");
+	assert(viewID.isValid() && "input viewID is not valid");
+
 	if (iinitInfo.onScreenCanvas) {
 		if (contextAvailable(ctxID) && viewAvailable(viewID)) {
 			VkRScontext& ctx = ictxMap[ctxID.id];
@@ -301,18 +304,18 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 				createFramebuffers(view);
 			}
 
+			std::vector<VkRScollection> collections;
+			for (const auto& collID : view.view.collectionIDlist) {
+				const VkRScollection& coll = icollectionMap[collID];
+				collections.push_back(coll);
+			}
 
-			//while (!glfwWindowShouldClose(ctx.window)) {
-			//	glfwPollEvents();
-				std::vector<VkRScollection> collections;
-				for (const auto& collID : view.view.collectionIDlist) {
-					const VkRScollection& coll = icollectionMap[collID];
-					collections.push_back(coll);
-				}
+			contextDrawCollections(ctx, view, collections.data(), static_cast<uint32_t>(collections.size()));
 
-				contextDrawCollections(ctx, view, collections.data(), static_cast<uint32_t>(collections.size()));
-			//}
-			vkDeviceWaitIdle(iinstance.device);
+			VkResult res = vkDeviceWaitIdle(iinstance.device);
+			if (res != VK_SUCCESS) {
+				throw std::runtime_error("Failed to wait for device to become idle");
+			}
 		}
 	}
 
@@ -678,6 +681,8 @@ void VkRenderSystem::createImageViews(VkRSview& view) {
 }
 
 void VkRenderSystem::contextResized(const RScontextID& ctxID, uint32_t newWidth, uint32_t newHeight) {
+	assert(ctxID.isValid() && "input context ID is not valid");
+
 	if (contextAvailable(ctxID)) {
 		VkRScontext& ctx = ictxMap[ctxID.id];
 		ctx.resized = true;
@@ -726,6 +731,8 @@ void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 }
 
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {
+
+	assert(ctxID.isValid() && "input context ID is not valid");
 
 	if (contextAvailable(ctxID)) {
 		VkRScontext& ctx = ictxMap[ctxID.id];
@@ -857,27 +864,32 @@ bool VkRenderSystem::viewAvailable(const RSviewID& viewID) const {
 }
 
 RSresult VkRenderSystem::viewCreate(RSviewID& outViewID, const RSview& view, const RScontextID& ctxID) {
-	RSuint id;
-	bool success = iviewIDpool.CreateID(id);
-	assert(success && "failed to create a view ID");
-	if (success) {
-		VkRSview vkrsview;
-		vkrsview.view = view;
+	
+	assert(ctxID.isValid() && "input contextID is not valid");
+
+	if (contextAvailable(ctxID)) {
+		RSuint id;
+		bool success = iviewIDpool.CreateID(id);
+		assert(success && "failed to create a view ID");
+		if (success) {
+			VkRSview vkrsview;
+			vkrsview.view = view;
 		
-		assert(contextAvailable(ctxID) && "invalid context ID");
-		VkRScontext& vkrsctx = ictxMap[ctxID];
-		createSwapChain(vkrsview, vkrsctx);
-		createImageViews(vkrsview);
-		createRenderpass(vkrsview);
+			assert(contextAvailable(ctxID) && "invalid context ID");
+			VkRScontext& vkrsctx = ictxMap[ctxID];
+			createSwapChain(vkrsview, vkrsctx);
+			createImageViews(vkrsview);
+			createRenderpass(vkrsview);
 
-		viewCreateDescriptorSetLayout(vkrsview);
-		createUniformBuffers(vkrsview);
-		viewCreateDescriptorSets(vkrsview);
-		createCommandBuffers(vkrsview);
+			viewCreateDescriptorSetLayout(vkrsview);
+			createUniformBuffers(vkrsview);
+			viewCreateDescriptorSets(vkrsview);
+			createCommandBuffers(vkrsview);
 
-		outViewID.id = id;
-		iviewMap[outViewID] = vkrsview;
-		return RSresult::SUCCESS;
+			outViewID.id = id;
+			iviewMap[outViewID] = vkrsview;
+			return RSresult::SUCCESS;
+		}
 	}
 
 	return RSresult::FAILURE;
@@ -904,6 +916,9 @@ RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScolle
 		vkrsview.view.dirty = true;
 		return RSresult::SUCCESS;
 	}
+	
+	assert(viewID.isValid() && "input viewID is not valid");
+	assert(colID.isValid() && "input collectionID is not valid");
 
 	return RSresult::FAILURE;
 }
@@ -916,6 +931,9 @@ RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RSco
 
 		return RSresult::SUCCESS;
 	}
+
+	assert(viewID.isValid() && "input viewID is not valid");
+	assert(colID.isValid() && "input collectionID is not valid");
 
 	return RSresult::FAILURE;
 }
@@ -930,6 +948,8 @@ RSresult VkRenderSystem::viewFinalize(const RSviewID& viewID) {
 		return RSresult::SUCCESS;
 	}
 
+	assert(viewID.isValid() && "input viewID is not valid");
+
 	return RSresult::FAILURE;
 }
 
@@ -942,6 +962,8 @@ RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)
 		iviewMap.erase(viewID);
 		return RSresult::SUCCESS;
 	}
+
+	assert(viewID.isValid() && "input viewID is not valid");
 
 	return RSresult::FAILURE;
 }
@@ -1032,6 +1054,10 @@ RSresult VkRenderSystem::collectionCreate(RScollectionID& colID, const RScollect
 }
 
 bool VkRenderSystem::collectionInstanceAvailable(const RScollectionID& collID, const RSinstanceID& instanceID) {
+
+	assert(collID.isValid() && "input collection ID is not valid");
+	assert(instanceID.isValid() && "input collection instance ID is not valid");
+
 	if (collectionAvailable(collID)) {
 		const VkRScollection& coll = icollectionMap[collID];
 		if (instanceID.isValid() && coll.instanceMap.find(instanceID) != coll.instanceMap.end()) {
@@ -1055,6 +1081,9 @@ bool VkRenderSystem::needsMaterialDescriptor(VkRScollectionInstance& inst) {
 }
 
 RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinstanceID& outInstID, const RSinstanceInfo& instInfo) {
+	
+	assert(collID.isValid() && "input collection ID is not valid");
+	
 	if (!appearanceAvailable(instInfo.appID) || !geometryDataAvailable(instInfo.gdataID) || !geometryAvailable(instInfo.geomID) || !spatialAvailable(instInfo.spatialID)) {
 		return RSresult::FAILURE;
 	}
@@ -1080,6 +1109,10 @@ RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID& collID, RSinst
 }
 
 RSresult VkRenderSystem::collectionInstanceDispose(RScollectionID& collID, RSinstanceID& instID) {
+
+	assert(collID.isValid() && "input collection ID is not valid");
+	assert(instID.isValid() && "input collection instance ID is not valid");
+
 	if (collectionInstanceAvailable(collID, instID)) {
 		VkRScollection& coll = icollectionMap[collID];
 		VkRScollectionInstance& vkrsinst = coll.instanceMap[instID];
@@ -1541,6 +1574,11 @@ void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstanc
 }
 
 RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const RScontextID& ctxID, const RSviewID& viewID) {
+
+	assert(colID.isValid() && "input collection ID is not valid");
+	assert(ctxID.isValid() && "input context ID is not valid");
+	assert(viewID.isValid() && "input viewID is not valid");
+
 	if (collectionAvailable(colID) && contextAvailable(ctxID) && viewAvailable(viewID)) {
 		VkRScollection& collection = icollectionMap[colID];
 		VkRScontext& ctx = ictxMap[ctxID];
@@ -1592,6 +1630,9 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 }
 
 RSresult VkRenderSystem::collectionDispose(const RScollectionID& colID) {
+	
+	assert(colID.isValid() && "input collection ID is not valid");
+
 	if (colID.isValid() && icollectionMap.find(colID) != icollectionMap.end()) {
 		VkRScollection& collection = icollectionMap[colID];
 		//dispose the collection
@@ -1874,6 +1915,9 @@ void VkRenderSystem::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t 
 
 
 RSresult VkRenderSystem::textureDispose(const RStextureID& texID) {
+	
+	assert(texID.isValid() && "input texture ID is invalid");
+	
 	if (textureAvailable(texID)) {
 		VkRStexture& vkrstex = itextureMap[texID];
 		vkrstex.texinfo.dispose();
@@ -1912,6 +1956,9 @@ RSresult VkRenderSystem::appearanceCreate(RSappearanceID& outAppID, const RSappe
 }
 
 RSresult VkRenderSystem::appearanceDispose(const RSappearanceID& appID) {
+
+	assert(appID.isValid() && "input appearance ID is invalid");
+
 	if (appearanceAvailable(appID)) {
 		iappearanceMap.erase(appID);
 		return RSresult::SUCCESS;
@@ -2052,6 +2099,8 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 
 RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeinBytes, void* data) {
 
+	assert(gdataID.isValid() && "input geometry data ID is invalid");
+
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 		if (offset != 0) {
@@ -2069,6 +2118,9 @@ RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdat
 }
 
 RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data) {
+
+	assert(gdataID.isValid() && "input geometry data ID is invalid");
+
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 		//memcpy((char*)(gdata.mappedStagingVAPtr) + offset, data, sizeInBytes);
@@ -2081,6 +2133,9 @@ RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdata
 
 
 RSresult VkRenderSystem::geometryDataFinalize(const RSgeometryDataID& gdataID) {
+
+	assert(gdataID.isValid() && "input geometry data ID is invalid");
+
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 
@@ -2111,6 +2166,9 @@ RSresult VkRenderSystem::geometryDataFinalize(const RSgeometryDataID& gdataID) {
 }
 
 RSresult VkRenderSystem::geometryDataDispose(const RSgeometryDataID& gdataID) {
+	
+	assert(gdataID.isValid() && "input geometry data ID is invalid");
+	
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 		vkDestroyBuffer(iinstance.device, gdata.vaBuffer, nullptr);
@@ -2148,6 +2206,9 @@ RSresult VkRenderSystem::geometryCreate(RSgeometryID& outgeomID, const RSgeometr
 }
 
 RSresult VkRenderSystem::geometryDispose(const RSgeometryID& geomID) {
+
+	assert(geomID.isValid() && "input geometry ID is invalid");
+
 	if (geometryAvailable(geomID)) {
 		igeometryMap.erase(geomID);
 
@@ -2179,6 +2240,9 @@ RSresult VkRenderSystem::spatialCreate(RSspatialID& outSplID, const RSspatial& s
 }
 
 RSresult VkRenderSystem::spatialDispose(const RSspatialID& spatialID) {
+
+	assert(spatialID.isValid() && "input spatial ID is invalid");
+
 	if (spatialAvailable(spatialID)) {
 		ispatialMap.erase(spatialID);
 
@@ -2211,6 +2275,9 @@ RSresult VkRenderSystem::stateCreate(RSstateID& outStateID, const RSstate& state
 }
 
 RSresult VkRenderSystem::stateDispose(const RSstateID& stateID) {
+
+	assert(stateID.isValid() && "input state ID is invalid");
+
 	if (stateAvailable(stateID)) {
 		istateMap.erase(stateID);
 

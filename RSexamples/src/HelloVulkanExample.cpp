@@ -27,7 +27,7 @@ void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 
 	RScollectionInfo collInfo;
 	vkrs.collectionCreate(ientity.collectionID, collInfo);
-	vkrs.viewAddCollection(iviewID, ientity.collectionID);
+	vkrs.viewAddCollection(globals.viewID, ientity.collectionID);
 	RSinstanceInfo instInfo;
 	instInfo.gdataID = ientity.geomDataID;
 	instInfo.geomID = ientity.geomID;
@@ -47,12 +47,12 @@ void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 	instInfo.spatialID = ientity.spatialID;
 
 	vkrs.collectionInstanceCreate(ientity.collectionID, ientity.instanceID, instInfo);
-	vkrs.collectionFinalize(ientity.collectionID, ictxID, iviewID);
+	vkrs.collectionFinalize(ientity.collectionID, globals.ctxID, globals.viewID);
 }
 
 void HelloVulkanExample::render(const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
-	vkrs.contextDrawCollections(ictxID, iviewID);
+	vkrs.contextDrawCollections(globals.ctxID, globals.viewID);
 }
 
 void HelloVulkanExample::dispose(const RSexampleGlobal& globals) {

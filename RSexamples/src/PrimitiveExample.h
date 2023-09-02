@@ -23,14 +23,9 @@ private:
 		Solid
 	};
 
-	RSviewID iviewID;
-	RScontextID ictxID;
-
-
 	std::array<CircleEntity, 3> icircles;
 	std::vector<rsvd::VertexPC> getVertices(PrimitiveType pt, float radius);
-
-	void createEntity(CircleEntity& ce, PrimitiveType pt);
+	void createEntity(const RSexampleGlobal& globals, CircleEntity& ce, PrimitiveType pt);
 
 public:
 	PrimitiveExample();

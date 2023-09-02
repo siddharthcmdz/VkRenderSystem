@@ -3,8 +3,6 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "RSdataTypes.h"
-//#define GLFW_INCLUDE_VULKAN
-//#include <GLFW/glfw3.h>
 
 #ifdef _WIN32
 #include <Windows.h>
