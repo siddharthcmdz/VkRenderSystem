@@ -216,6 +216,8 @@ void VkRenderSystem::recreateSwapchain(VkRScontext& ctx, VkRSview& view) {
 		createImageViews(view);
 		createFramebuffers(view);
 		
+		vkDeviceWaitIdle(iinstance.device);
+
 		ctx.resized = false;
 	}
 }
@@ -231,13 +233,13 @@ void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, co
 
 	uint32_t imageIndex;
 	VkResult res = vkAcquireNextImageKHR(device, view.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-	if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-		recreateSwapchain(ctx, view);
-		return;
-	}
-	else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
-		throw std::runtime_error("failed to acquire swap chain image!");
-	}
+	//if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+	//	recreateSwapchain(ctx, view);
+	//	return;
+	//}
+	//else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
+	//	throw std::runtime_error("failed to acquire swap chain image!");
+	//}
 	//only reset the fence if we are submitting work.
 	vkResetFences(device, 1, &inflightFence);
 	
@@ -281,13 +283,13 @@ void VkRenderSystem::contextDrawCollections(VkRScontext& ctx, VkRSview& view, co
 	presentInfo.pResults = nullptr;
 
 	res = vkQueuePresentKHR(iinstance.presentQueue, &presentInfo);
-	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || ctx.framebufferResized) {
-		ctx.framebufferResized = false;
-		recreateSwapchain(ctx, view);
-	}
-	else if (res != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
-	}
+	//if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || ctx.resized) {
+	//	ctx.resized = false;
+	//	recreateSwapchain(ctx, view);
+	//}
+	//else if (res != VK_SUCCESS) {
+	//	throw std::runtime_error("failed to submit draw command buffer!");
+	//}
 
 	view.currentFrame = (currentFrame + 1) % VkRScontext::MAX_FRAMES_IN_FLIGHT;
 }
@@ -552,7 +554,6 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, HWND w
 	}
 }
 
-//TODO: pass in VkSurface instead of ctx
 void VkRenderSystem::createSwapChain(VkRSview& view, VkRScontext& ctx) {
 	VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(iinstance.physicalDevice, ctx.surface);
 
@@ -636,7 +637,6 @@ void VkRenderSystem::disposeDummySurface(const VkSurfaceKHR surface) {
 RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 {
 	iinitInfo = info;
-	std::vector<const char*> extensions;
 
 	createInstance(info);
 	setupDebugMessenger();
@@ -680,14 +680,16 @@ void VkRenderSystem::createImageViews(VkRSview& view) {
 	}
 }
 
-void VkRenderSystem::contextResized(const RScontextID& ctxID, uint32_t newWidth, uint32_t newHeight) {
+void VkRenderSystem::contextResized(const RScontextID& ctxID, const RSviewID& viewID, uint32_t newWidth, uint32_t newHeight) {
 	assert(ctxID.isValid() && "input context ID is not valid");
-
-	if (contextAvailable(ctxID)) {
-		VkRScontext& ctx = ictxMap[ctxID.id];
+	assert(viewID.isValid() && "input view ID is not valid");
+	if (contextAvailable(ctxID) && viewAvailable(viewID)) {
+		VkRScontext& ctx = ictxMap[ctxID];
+		VkRSview& view = iviewMap[viewID];
 		ctx.resized = true;
 		ctx.width = newWidth;
 		ctx.height = newHeight;
+		recreateSwapchain(ctx, view);
 	}
 }
 
@@ -866,6 +868,7 @@ bool VkRenderSystem::viewAvailable(const RSviewID& viewID) const {
 RSresult VkRenderSystem::viewCreate(RSviewID& outViewID, const RSview& view, const RScontextID& ctxID) {
 	
 	assert(ctxID.isValid() && "input contextID is not valid");
+	assert(contextAvailable(ctxID) && "invalid context ID");
 
 	if (contextAvailable(ctxID)) {
 		RSuint id;
@@ -875,7 +878,6 @@ RSresult VkRenderSystem::viewCreate(RSviewID& outViewID, const RSview& view, con
 			VkRSview vkrsview;
 			vkrsview.view = view;
 		
-			assert(contextAvailable(ctxID) && "invalid context ID");
 			VkRScontext& vkrsctx = ictxMap[ctxID];
 			createSwapChain(vkrsview, vkrsctx);
 			createImageViews(vkrsview);

@@ -78,15 +78,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		break;
 	}
 
+	case WM_MOUSEMOVE:
+	{
+		InvalidateRect(hwnd, nullptr, FALSE);
+		std::cout << "Moused moved" << std::endl;
+		break;
+	}
+
 	case WM_SIZE:
 	{
 		g_globals.width = LOWORD(lparam);
 		g_globals.height = HIWORD(lparam);
 
 		if (g_example) {
-			vkrs.contextResized(g_globals.ctxID, g_globals.width, g_globals.height);
+			vkrs.contextResized(g_globals.ctxID, g_globals.viewID, g_globals.width, g_globals.height);
 		}
-		std::cout << "Window resized" << std::endl;
+		std::cout << "Window resized - width: "<<g_globals.width<<" , height: "<<g_globals.height << std::endl;
 		break;
 	}
 

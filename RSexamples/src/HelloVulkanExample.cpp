@@ -34,12 +34,11 @@ void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 
 	vkrs.textureCreate(ientity.textureID, "C:\\Projects\\FSI\\RSexamples\\i386\\x64\\Debug\\textures\\texture.jpg");
 
-	RSappearanceID appID;
 	RSappearanceInfo appInfo;
 	appInfo.diffuseTexture = ientity.textureID;
 	appInfo.shaderTemplate = RSshaderTemplate::stTextured;
-	vkrs.appearanceCreate(appID, appInfo);
-	instInfo.appID = appID;
+	vkrs.appearanceCreate(ientity.appID, appInfo);
+	instInfo.appID = ientity.appID;
 	RSspatial spl;
 	spl.model = glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
 	spl.modelInv = glm::inverse(spl.model);

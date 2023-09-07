@@ -132,7 +132,7 @@ public:
 	RS_EXPORT RSresult contextCreate(RScontextID& outCtxID, const RScontextInfo& info);
 	RS_EXPORT RSresult contextDrawCollections(const RScontextID& ctxID, const RSviewID& viewID);
 	RS_EXPORT RSresult contextDispose(const RScontextID& ctxID);
-	RS_EXPORT void contextResized(const RScontextID& ctxID, uint32_t newWidth, uint32_t newHeight);
+	RS_EXPORT void contextResized(const RScontextID& ctxID, const RSviewID& viewID, uint32_t newWidth, uint32_t newHeight);
 	
 	RS_EXPORT bool viewAvailable(const RSviewID& viewID) const;
 	RS_EXPORT RSresult viewCreate(RSviewID& viewID, const RSview& view, const RScontextID& ctxID);

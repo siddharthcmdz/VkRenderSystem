@@ -42,6 +42,7 @@
     <ClInclude Include="..\src\VkRenderSystem.h" />
     <ClInclude Include="..\src\VkRenderSystemEntry.h" />
     <ClInclude Include="..\src\VkRSdataTypes.h" />
+    <ClInclude Include="..\src\VkRSswapChain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\RSdataTypes.cpp" />
@@ -49,6 +50,7 @@
     <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VkRendersystem.cpp" />
     <ClCompile Include="..\src\VkRSdataTypes.cpp" />
+    <ClCompile Include="..\src\VkRSswapChain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\src\textures\texture.jpg" />

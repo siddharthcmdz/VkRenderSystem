@@ -55,7 +55,6 @@ struct VkRSinstance {
 
 struct VkRScontext {
 	static const int MAX_FRAMES_IN_FLIGHT = 2;
-	bool framebufferResized = false;
 	VkSurfaceKHR surface{};
 	bool resized = false;
 	uint32_t width = 0;
