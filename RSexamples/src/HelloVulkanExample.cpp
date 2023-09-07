@@ -7,32 +7,8 @@
 
 HelloVulkanExample::HelloVulkanExample() {}
 
-void getShaderPath(RSinitInfo& initInfo) {
-	std::string currDir = helper::getCurrentDir();
-	std::cout << "current dir: " << currDir << std::endl;
-	currDir += "\\shaders";
-	strcpy_s(initInfo.shaderPath, currDir.c_str());
-}
-
-void HelloVulkanExample::init() {
+void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
-	RSinitInfo info;
-	sprintf_s(info.appName, "RenderSystem");
-	info.enableValidation = true;
-	info.onScreenCanvas = true;
-	getShaderPath(info);
-	vkrs.renderSystemInit(info);
-
-	RScontextInfo ctxInfo;
-	ctxInfo.width = 800;
-	ctxInfo.height = 600;
-	sprintf_s(ctxInfo.title, "Hello Triangle");
-	vkrs.contextCreate(ictxID, ctxInfo);
-
-	RSview rsview;
-	rsview.cameraType = CameraType::ORBITAL;
-	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	vkrs.viewCreate(iviewID, rsview, ictxID);
 
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
 	RSvertexAttribsInfo attribInfo;
@@ -51,19 +27,18 @@ void HelloVulkanExample::init() {
 
 	RScollectionInfo collInfo;
 	vkrs.collectionCreate(ientity.collectionID, collInfo);
-	vkrs.viewAddCollection(iviewID, ientity.collectionID);
+	vkrs.viewAddCollection(globals.viewID, ientity.collectionID);
 	RSinstanceInfo instInfo;
 	instInfo.gdataID = ientity.geomDataID;
 	instInfo.geomID = ientity.geomID;
 
 	vkrs.textureCreate(ientity.textureID, "C:\\Projects\\FSI\\RSexamples\\i386\\x64\\Debug\\textures\\texture.jpg");
 
-	RSappearanceID appID;
 	RSappearanceInfo appInfo;
 	appInfo.diffuseTexture = ientity.textureID;
 	appInfo.shaderTemplate = RSshaderTemplate::stTextured;
-	vkrs.appearanceCreate(appID, appInfo);
-	instInfo.appID = appID;
+	vkrs.appearanceCreate(ientity.appID, appInfo);
+	instInfo.appID = ientity.appID;
 	RSspatial spl;
 	spl.model = glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
 	spl.modelInv = glm::inverse(spl.model);
@@ -71,24 +46,24 @@ void HelloVulkanExample::init() {
 	instInfo.spatialID = ientity.spatialID;
 
 	vkrs.collectionInstanceCreate(ientity.collectionID, ientity.instanceID, instInfo);
-	vkrs.collectionFinalize(ientity.collectionID, ictxID, iviewID);
+	vkrs.collectionFinalize(ientity.collectionID, globals.ctxID, globals.viewID);
 }
 
-void HelloVulkanExample::render() {
+void HelloVulkanExample::render(const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
-	vkrs.contextDrawCollections(ictxID, iviewID);
+	vkrs.contextDrawCollections(globals.ctxID, globals.viewID);
 }
 
-void HelloVulkanExample::dispose() {
+void HelloVulkanExample::dispose(const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 	vkrs.geometryDataDispose(ientity.geomDataID);
-	vkrs.viewDispose(iviewID);
-	vkrs.contextDispose(ictxID);
 	vkrs.textureDispose(ientity.textureID);
 	vkrs.appearanceDispose(ientity.appID);
 	vkrs.spatialDispose(ientity.spatialID);
 	vkrs.collectionInstanceDispose(ientity.collectionID, ientity.instanceID);
 	vkrs.collectionDispose(ientity.collectionID);
+}
 
-	vkrs.renderSystemDispose();
+std::string HelloVulkanExample::getExampleName() const {
+	return "HelloVulkanExample";
 }

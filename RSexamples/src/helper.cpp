@@ -19,9 +19,9 @@ namespace helper {
 	std::string getCurrentDir() {
 		TCHAR buffer[MAX_PATH] = { 0 };
 		GetModuleFileName(NULL, buffer, MAX_PATH);
-		std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+		std::string::size_type pos = std::string(buffer).find_last_of("\\/");
 
-		std::wstring wstr = std::wstring(buffer).substr(0, pos);
-		return wideTostring(wstr);
+		std::string str = std::string(buffer).substr(0, pos);
+		return str;
 	}
 }

@@ -16,13 +16,12 @@ class HelloVulkanExample : public RSexample {
 		0, 1, 2, 2, 3, 0
 	};
 
-	RScontextID ictxID;
-	RSviewID iviewID;
 	helper::RSsingleEntity ientity;
 
 public:
 	HelloVulkanExample();
-	void init() override;
-	void render() override;
-	void dispose() override;
+	void init(const RSexampleOptions& eo, const RSexampleGlobal& globals) override;
+	void render(const RSexampleGlobal& globals) override;
+	void dispose(const RSexampleGlobal& globals) override;
+	std::string getExampleName() const override;
 };

@@ -13,14 +13,7 @@ PrimitiveExample::PrimitiveExample() {
 
 }
 
-void PrimitiveExample::initShaderPath(RSinitInfo& initInfo) {
-	std::string currDir = helper::getCurrentDir();
-	std::cout << "current dir: " << currDir << std::endl;
-	std::string shaderDir = currDir + "\\shaders";
-	strcpy_s(initInfo.shaderPath, shaderDir.c_str());
-}
-
-void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
+void PrimitiveExample::createEntity(const RSexampleGlobal& globals, CircleEntity& ce, PrimitiveType pt) {
 	auto& vkrs = VkRenderSystem::getInstance();
 
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor};
@@ -52,7 +45,7 @@ void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 
 	RScollectionInfo collInfo;
 	vkrs.collectionCreate(ce.collectionID, collInfo);
-	vkrs.viewAddCollection(iviewID, ce.collectionID);
+	vkrs.viewAddCollection(globals.viewID, ce.collectionID);
 
 	RSinstanceInfo instInfo;
 	instInfo.gdataID = ce.geomDataID;
@@ -76,7 +69,7 @@ void PrimitiveExample::createEntity(CircleEntity& ce, PrimitiveType pt) {
 	instInfo.spatialID = ce.spatialID;
 
 	vkrs.collectionInstanceCreate(ce.collectionID, ce.instanceID, instInfo);
-	vkrs.collectionFinalize(ce.collectionID, ictxID, iviewID);
+	vkrs.collectionFinalize(ce.collectionID, globals.ctxID, globals.viewID);
 
 }
 std::vector<rsvd::VertexPC> PrimitiveExample::getVertices(PrimitiveType pt, float radius) {
@@ -86,7 +79,6 @@ std::vector<rsvd::VertexPC> PrimitiveExample::getVertices(PrimitiveType pt, floa
 	glm::vec4 red(1.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec4 green(0.0f, 1.0f, 0.0f, 1.0f);
 	for (uint32_t i = 0; i < numSamples; i++) {
-		//float theta = (float(i + 1) / float(numSamples)) * (float)RS_PI;
 		float theta = (2 * (float)RS_PI * i) / numSamples;
 		float x = radius * cos(theta);
 		x = abs(x) < 1e-2 ? 0.0f : x;
@@ -112,8 +104,7 @@ std::vector<rsvd::VertexPC> PrimitiveExample::getVertices(PrimitiveType pt, floa
 	return vertexDataList;
 }
 
-void PrimitiveExample::init() {
-
+void PrimitiveExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
 
 	int pointidx = PrimitiveType::Points;
 	int lineidx = PrimitiveType::Lines;
@@ -137,48 +128,30 @@ void PrimitiveExample::init() {
 	}
 	icircles[solididx].radius = radius;
 
-	auto& vkrs = VkRenderSystem::getInstance();
-	RSinitInfo info;
-	sprintf_s(info.appName, "PrimitiveExample");
-	info.enableValidation = true;
-	info.onScreenCanvas = true;
-	initShaderPath(info);
-
-	vkrs.renderSystemInit(info);
-	
-
-	RScontextInfo ctxInfo;
-	ctxInfo.width = 800;
-	ctxInfo.height = 600;
-	sprintf_s(ctxInfo.title, "Primitive example");
-	vkrs.contextCreate(ictxID, ctxInfo);
-
-	RSview rsview;
-	rsview.cameraType = CameraType::ORBITAL;
-	rsview.clearColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-	vkrs.viewCreate(iviewID, rsview, ictxID);
-
-	createEntity(icircles[PrimitiveType::Points], PrimitiveType::Points);
-	createEntity(icircles[PrimitiveType::Lines], PrimitiveType::Lines);
-	createEntity(icircles[PrimitiveType::Solid], PrimitiveType::Solid);
+	createEntity(globals, icircles[PrimitiveType::Points], PrimitiveType::Points);
+	createEntity(globals, icircles[PrimitiveType::Lines], PrimitiveType::Lines);
+	createEntity(globals, icircles[PrimitiveType::Solid], PrimitiveType::Solid);
 }
 
-void PrimitiveExample::render() {
+void PrimitiveExample::render(const RSexampleGlobal& globals) {
 	auto& vkrs = VkRenderSystem::getInstance();
-	vkrs.contextDrawCollections(ictxID, iviewID);
+	vkrs.contextDrawCollections(globals.ctxID, globals.viewID);
 }
 
-void PrimitiveExample::dispose() {
+void PrimitiveExample::dispose(const RSexampleGlobal& globals) {
 	auto& vkrs = VkRenderSystem::getInstance();
 	for (auto& ent : icircles) {
 		ent.dispose();
 	}
-	vkrs.viewDispose(iviewID);
-	vkrs.contextDispose(ictxID);
+	vkrs.viewDispose(globals.viewID);
+	vkrs.contextDispose(globals.ctxID);
 
 	vkrs.renderSystemDispose();
 }
 
+std::string PrimitiveExample::getExampleName() const {
+	return "PrimitiveExample";
+}
 
 void CircleEntity::dispose() {
 	auto& vkrs = VkRenderSystem::getInstance();

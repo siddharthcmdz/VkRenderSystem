@@ -42,6 +42,7 @@
     <ClInclude Include="..\src\VkRenderSystem.h" />
     <ClInclude Include="..\src\VkRenderSystemEntry.h" />
     <ClInclude Include="..\src\VkRSdataTypes.h" />
+    <ClInclude Include="..\src\VkRSswapChain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\RSdataTypes.cpp" />
@@ -49,6 +50,7 @@
     <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VkRendersystem.cpp" />
     <ClCompile Include="..\src\VkRSdataTypes.cpp" />
+    <ClCompile Include="..\src\VkRSswapChain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\src\textures\texture.jpg" />
@@ -141,7 +143,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;STB_IMAGE_IMPLEMENTATION;RS_FILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;STB_IMAGE_IMPLEMENTATION;RS_FILE;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(ProjectDir)/../../thirdparty\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)/../../thirdparty\stb_image;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>

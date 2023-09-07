@@ -3,24 +3,14 @@
 
 #include "HelloVulkanExample.h"
 #include "PrimitiveExample.h"
+#include <VkRenderSystem.h>
 #include <Windows.h>
 #include <iostream>
 
-enum RSexampleName {
-	enHelloVulkan,
-	enPrimitiveType,
-	enMax
-};
+RSexample* g_example = nullptr;
+RSexampleOptions g_exopts;
+RSexampleGlobal g_globals;
 
-const std::string RSexampleNameStr[] = {
-	"HelloVulkan",
-	"PrimitiveType",
-	"None"
-};
-
-struct RSexampleOptions {
-	RSexampleName example;
-};
 
 const RSexampleOptions processArgs(int argc, char** argv) {
 	RSexampleOptions exopts;
@@ -39,24 +29,99 @@ const RSexampleOptions processArgs(int argc, char** argv) {
 	return exopts;
 }
 
+void getShaderPath(RSinitInfo& initInfo) {
+	std::string currDir = helper::getCurrentDir();
+	std::cout << "current dir: " << currDir << std::endl;
+	currDir += "\\shaders";
+	strcpy_s(initInfo.shaderPath, currDir.c_str());
+}
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 
+	auto& vkrs = VkRenderSystem::getInstance();
 	switch (umsg) {
-	case WM_DESTROY:
-		std::cout << "Destroying window" << std::endl;
-		DestroyWindow(hwnd);
-		PostQuitMessage(0);
-		break;
-
 
 	case WM_CREATE:
-		std::cout << "Creating window" << std::endl;
+	{
+		RSinitInfo info;
+		info.parentHwnd = hwnd;
+		info.parentHinst = GetModuleHandle(nullptr);
+		sprintf_s(info.appName, "RSexamples");
+		info.enableValidation = true;
+		info.onScreenCanvas = true;
+		getShaderPath(info);
+		vkrs.renderSystemInit(info);
+
+		RScontextInfo ctxInfo;
+		RECT dim;
+		GetWindowRect(hwnd, &dim);
+		ctxInfo.initWidth = dim.right - dim.left;
+		ctxInfo.initHeight = dim.bottom - dim.top;
+		ctxInfo.hwnd = hwnd;
+		ctxInfo.hinst = GetModuleHandle(nullptr);
+		sprintf_s(ctxInfo.title, g_example->getExampleName().c_str());
+		g_globals.width = ctxInfo.initWidth;
+		g_globals.height = ctxInfo.initHeight;
+		vkrs.contextCreate(g_globals.ctxID, ctxInfo);
+
+		RSview view;
+		view.cameraType = CameraType::ORBITAL;
+		view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+		view.dirty = true;
+		vkrs.viewCreate(g_globals.viewID, view, g_globals.ctxID);
+
+		if (g_example) {
+			g_example->init(g_exopts, g_globals);
+		}
+
+		std::cout << "Window created" << std::endl;
 		break;
+	}
+
+	case WM_MOUSEMOVE:
+	{
+		InvalidateRect(hwnd, nullptr, FALSE);
+		std::cout << "Moused moved" << std::endl;
+		break;
+	}
+
+	case WM_SIZE:
+	{
+		g_globals.width = LOWORD(lparam);
+		g_globals.height = HIWORD(lparam);
+
+		if (g_example) {
+			vkrs.contextResized(g_globals.ctxID, g_globals.viewID, g_globals.width, g_globals.height);
+		}
+		std::cout << "Window resized - width: "<<g_globals.width<<" , height: "<<g_globals.height << std::endl;
+		break;
+	}
 
 	case WM_PAINT:
+	{
 		ValidateRect(hwnd, nullptr);
-		std::cout << "Painting window" << std::endl;
+		if (g_example) {
+			g_example->render(g_globals);
+		}
+		std::cout << "Window painting " << std::endl;
 		break;
+	}
+
+	case WM_DESTROY:
+	{
+		if (g_example != nullptr) {
+			g_example->dispose(g_globals);
+		}
+		vkrs.viewDispose(g_globals.viewID);
+		vkrs.contextDispose(g_globals.ctxID);
+		vkrs.renderSystemDispose();
+
+		DestroyWindow(hwnd);
+		PostQuitMessage(0);
+
+		std::cout << "Window destroying" << std::endl;
+		break;
+	}
 	}
 
 	return (DefWindowProc(hwnd, umsg, wparam, lparam));
@@ -136,30 +201,25 @@ void renderloop() {
 	}
 }
 
+
 int main(int argc, char** argv) {
-	const RSexampleOptions& exopts = processArgs(argc, argv);
-	RSexample* example = nullptr;
-	switch (exopts.example) {
+	g_exopts = processArgs(argc, argv);
+	switch (g_exopts.example) {
 	case RSexampleName::enHelloVulkan:
-		example = new HelloVulkanExample();
+		g_example = new HelloVulkanExample();
 		break;
 
 	case RSexampleName::enPrimitiveType:
-		example = new PrimitiveExample();
+		g_example = new PrimitiveExample();
 		break;
 
 	case RSexampleName::enMax:
 	default:
-		example = new HelloVulkanExample();
+		g_example = new HelloVulkanExample();
 	}
 	
-	//HWND window = createWindow("RSexamples", "main", 800, 600);
-	//renderloop();
-
-	example->init();
-	example->render();
-	example->dispose();
-
+	HWND window = createWindow("RSexamples", "main", 800, 600);
+	renderloop();
 
 	getchar();
 	return 0;
