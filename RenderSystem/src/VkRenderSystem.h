@@ -4,6 +4,7 @@
 #include "VkRSdataTypes.h"
 #include <vector>
 #include <unordered_map>
+#include <optional>
 #include "MakeID.h"
 #include "rsids.h"
 #include "rsenums.h"
@@ -136,10 +137,10 @@ public:
 	
 	RS_EXPORT bool viewAvailable(const RSviewID& viewID) const;
 	RS_EXPORT RSresult viewCreate(RSviewID& viewID, const RSview& view, const RScontextID& ctxID);
-	//RS_EXPORT RSresult viewUpdate(const RSviewID& viewID, const RSview& view);
+	RS_EXPORT RSresult viewUpdate(const RSviewID& viewID, const RSview& view);
 	RS_EXPORT RSresult viewAddCollection(const RSviewID& viewID, const RScollectionID& colID);
 	RS_EXPORT RSresult viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID);
-	RS_EXPORT RSresult viewFinalize(const RSviewID& viewID);
+	RS_EXPORT std::optional<RSview> viewGetData(const RSviewID& viewID);
 	RS_EXPORT RSresult viewDispose(const RSviewID& viewID);
 
 	RS_EXPORT bool collectionAvailable(const RScollectionID& colID);

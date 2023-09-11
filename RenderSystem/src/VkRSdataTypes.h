@@ -33,7 +33,6 @@ struct VkRSinstance {
 	std::vector<std::string> vkRequiredExtensions;
 	std::vector<std::string> vkExtensionProps;
 	std::vector<std::string> vkSupportedValidationLayers;
-	bool enableValidation = true;
 	VkInstance instance;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;

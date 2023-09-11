@@ -18,6 +18,7 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 bool VkRenderSystem::checkValidationLayerSupport() const {
 	uint32_t layerCount;
@@ -148,7 +149,7 @@ void VkRenderSystem::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreat
 }
 
 void VkRenderSystem::setupDebugMessenger() {
-	if (!iinstance.enableValidation)
+	if (!iinitInfo.enableValidation)
 		return;
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
@@ -479,7 +480,7 @@ void VkRenderSystem::createLogicalDevice(const VkSurfaceKHR& vksurface) {
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(iinstance.deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = iinstance.deviceExtensions.data();
 
-	if (iinstance.enableValidation) {
+	if (iinitInfo.enableValidation) {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(iinstance.validationLayers.size());
 		createInfo.ppEnabledLayerNames = iinstance.validationLayers.data();
 	}
@@ -663,7 +664,7 @@ RSresult VkRenderSystem::renderSystemDispose()
 	vkDestroyCommandPool(iinstance.device, iinstance.commandPool, nullptr);
 	vkDestroyDescriptorPool(iinstance.device, iinstance.descriptorPool, nullptr);
 	vkDestroyDevice(iinstance.device, nullptr);
-	if (iinstance.enableValidation) {
+	if (iinitInfo.enableValidation) {
 		DestroyDebugUtilsMessengerEXT(iinstance.instance, iinstance.debugMessenger, nullptr);
 	}
 
@@ -854,9 +855,21 @@ void VkRenderSystem::updateUniformBuffer(VkRSview& view, uint32_t currentFrame) 
 
 	VkRSviewDescriptor ubo{};
 	glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * model;
-	ubo.proj = glm::perspective(glm::radians(45.0f), ((float)view.swapChainExtent.width / (float)view.swapChainExtent.height), 0.0f, 1.0f);
-	ubo.proj[1][1] *= -1;
+	view.view.projmat[1][1] *= -1;
+	ubo.proj = view.view.projmat;
+	ubo.view = view.view.viewmat;
+	std::string newprojstr = glm::to_string(ubo.proj);
+	std::string newviewstr = glm::to_string(ubo.view);
+	std::cout << "new proj: " << newprojstr << std::endl;
+	std::cout << "new view: " << newviewstr << std::endl;
+
+	glm::mat4 oldview = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * model;
+	glm::mat4 oldproj = glm::perspective(glm::radians(45.0f), ((float)view.swapChainExtent.width / (float)view.swapChainExtent.height), 0.0f, 1.0f);
+	oldproj[1][1] *= -1;
+	std::string oldprojstr = glm::to_string(oldproj);
+	std::string oldviewstr = glm::to_string(oldview);
+	std::cout << "old proj: " << oldprojstr << std::endl;
+	std::cout << "old view: " << oldviewstr << std::endl;
 
 	memcpy(view.uniformBuffersMapped[currentFrame], &ubo, sizeof(VkRSviewDescriptor));
 }
@@ -897,19 +910,19 @@ RSresult VkRenderSystem::viewCreate(RSviewID& outViewID, const RSview& view, con
 	return RSresult::FAILURE;
 }
 
-//RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
-//{
-//	if (viewID.isValid()) {
-//		if (iviewMap.find(viewID.id) != iviewMap.end()) {
-//			iviewMap[viewID.id].view = view;
-//			iviewMap[viewID.id].view.dirty = true;
-//
-//			return RSresult::SUCCESS;
-//		}
-//	}
-//
-//	return RSresult::FAILURE;
-//}
+RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
+{
+	if (viewID.isValid()) {
+		if (iviewMap.find(viewID.id) != iviewMap.end()) {
+			iviewMap[viewID.id].view = view;
+			iviewMap[viewID.id].view.dirty = true;
+
+			return RSresult::SUCCESS;
+		}
+	}
+
+	return RSresult::FAILURE;
+}
 
 RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewAvailable(viewID)) {
@@ -940,20 +953,30 @@ RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RSco
 	return RSresult::FAILURE;
 }
 
-RSresult VkRenderSystem::viewFinalize(const RSviewID& viewID) {
+std::optional<RSview> VkRenderSystem::viewGetData(const RSviewID& viewID) {
+	std::optional<RSview> optionalView;
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
-		vkrsview.view.dirty = false;
-		
-		//finalize the view
-
-		return RSresult::SUCCESS;
+		optionalView = vkrsview.view;
 	}
 
-	assert(viewID.isValid() && "input viewID is not valid");
-
-	return RSresult::FAILURE;
+	return optionalView;
 }
+
+//RSresult VkRenderSystem::viewFinalize(const RSviewID& viewID) {
+//	if (viewAvailable(viewID)) {
+//		VkRSview& vkrsview = iviewMap[viewID];
+//		vkrsview.view.dirty = false;
+//		
+//		//finalize the view
+//
+//		return RSresult::SUCCESS;
+//	}
+//
+//	assert(viewID.isValid() && "input viewID is not valid");
+//
+//	return RSresult::FAILURE;
+//}
 
 RSresult VkRenderSystem::viewDispose(const RSviewID& viewID)
 {

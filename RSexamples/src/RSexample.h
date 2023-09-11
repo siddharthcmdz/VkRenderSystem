@@ -2,6 +2,8 @@
 
 #include <string>
 #include <rsids.h>
+#include <glm/glm.hpp>
+
 
 enum RSexampleName {
 	enHelloVulkan,
@@ -31,6 +33,7 @@ public:
 	virtual void init(const RSexampleOptions& eo, const RSexampleGlobal& globals) = 0;
 	virtual void render(const RSexampleGlobal& globals) = 0;
 	virtual void dispose(const RSexampleGlobal& globals) = 0;
+
 	virtual std::string getExampleName() const = 0;
 };
 

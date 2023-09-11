@@ -6,11 +6,22 @@
 #include <VkRenderSystem.h>
 #include <Windows.h>
 #include <iostream>
+#include <glm/glm.hpp>
+#include "Camera.h"
 
 RSexample* g_example = nullptr;
 RSexampleOptions g_exopts;
 RSexampleGlobal g_globals;
+Camera g_camera;
+glm::vec2 g_mousePos;
 
+struct MouseButtons {
+	bool left = false;
+	bool right = false;
+	bool middle = false;
+};
+
+MouseButtons g_mouseButtons;
 
 const RSexampleOptions processArgs(int argc, char** argv) {
 	RSexampleOptions exopts;
@@ -36,13 +47,39 @@ void getShaderPath(RSinitInfo& initInfo) {
 	strcpy_s(initInfo.shaderPath, currDir.c_str());
 }
 
+void handleMouseMove(int32_t x, int32_t y) {
+	int32_t dx = (int32_t)g_mousePos.x - x;
+	int32_t dy = (int32_t)g_mousePos.y - y;
+	//std::cout << "dx: " << dx << ", dy: " << dy << std::endl;
+	bool handled = false;
+
+	if (handled) {
+		g_mousePos = glm::vec2((float)x, (float)y);
+		return;
+	}
+
+	if (g_mouseButtons.left) {
+		g_camera.rotate(glm::vec3(dy * g_camera.rotationSpeed, -dx * g_camera.rotationSpeed, 0.0f));
+	}
+	if (g_mouseButtons.right) {
+		g_camera.translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
+	}
+	if (g_mouseButtons.middle) {
+		g_camera.translate(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
+	}
+	g_mousePos = glm::vec2((float)x, (float)y);
+}
+
+void print(const glm::vec2 pt) {
+	std::cout << "(" << pt.x << ", " << pt.y << ")" << std::endl;
+}
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 
 	auto& vkrs = VkRenderSystem::getInstance();
 	switch (umsg) {
 
-	case WM_CREATE:
-	{
+	case WM_CREATE:	{
 		RSinitInfo info;
 		info.parentHwnd = hwnd;
 		info.parentHinst = GetModuleHandle(nullptr);
@@ -67,9 +104,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		RSview view;
 		view.cameraType = CameraType::ORBITAL;
 		view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+		float aspectRatio = (float)ctxInfo.initWidth / (float)ctxInfo.initHeight;
+		g_camera.updateAspectRatio(aspectRatio);
+		g_camera.translate(glm::vec3(0.0f, 0.0f, -2.5f));
+		view.viewmat = g_camera.getViewMatrix();
+		view.projmat = g_camera.getProjectionMatrix();
 		view.dirty = true;
 		vkrs.viewCreate(g_globals.viewID, view, g_globals.ctxID);
-
+		vkrs.viewUpdate(g_globals.viewID, view);
 		if (g_example) {
 			g_example->init(g_exopts, g_globals);
 		}
@@ -78,18 +120,62 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		break;
 	}
 
-	case WM_MOUSEMOVE:
-	{
+	case WM_MOUSEMOVE: {
+		handleMouseMove(LOWORD(lparam), HIWORD(lparam));
 		InvalidateRect(hwnd, nullptr, FALSE);
-		std::cout << "Moused moved" << std::endl;
+		//std::cout << "Moused moved" << std::endl;
 		break;
 	}
 
-	case WM_SIZE:
-	{
+	case WM_LBUTTONDOWN: {
+		g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
+		print(g_mousePos);
+		g_mouseButtons.left = true;
+		break;
+	}
+
+	case WM_RBUTTONDOWN: {
+		g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
+		g_mouseButtons.right = true;
+		break;
+	}
+
+	case WM_MBUTTONDOWN: {
+		g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
+		g_mouseButtons.middle = true;
+		break;
+	}
+
+	case WM_LBUTTONUP: {
+		g_mouseButtons.left = false;
+		break;
+	}
+
+	case WM_RBUTTONUP: {
+		g_mouseButtons.right = false;
+		break;
+	}
+
+	case WM_MBUTTONUP: {
+		g_mouseButtons.middle = false;
+		break;
+	}
+
+	case WM_MOUSEWHEEL: {
+		short wheelDelta = GET_WHEEL_DELTA_WPARAM(wparam);
+		g_camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.005f));
+		break;
+	}
+
+	case WM_SIZE: {
 		g_globals.width = LOWORD(lparam);
 		g_globals.height = HIWORD(lparam);
-
+		float aspectRatio = (float)g_globals.width / (float)g_globals.height;
+		g_camera.updateAspectRatio(aspectRatio);
+		std::optional<RSview> view = vkrs.viewGetData(g_globals.viewID);
+		if (view.has_value()) {
+			view->projmat = g_camera.getProjectionMatrix();
+		}
 		if (g_example) {
 			vkrs.contextResized(g_globals.ctxID, g_globals.viewID, g_globals.width, g_globals.height);
 		}
@@ -97,18 +183,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		break;
 	}
 
-	case WM_PAINT:
-	{
+	case WM_PAINT: {
 		ValidateRect(hwnd, nullptr);
 		if (g_example) {
 			g_example->render(g_globals);
 		}
-		std::cout << "Window painting " << std::endl;
+		//std::cout << "Window painting " << std::endl;
 		break;
 	}
 
-	case WM_DESTROY:
-	{
+	case WM_DESTROY: {
 		if (g_example != nullptr) {
 			g_example->dispose(g_globals);
 		}
@@ -127,7 +211,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 	return (DefWindowProc(hwnd, umsg, wparam, lparam));
 }
 
-HWND createWindow(std::string appname, std::string title, int width, int height) {
+HWND createWindow(std::wstring appname, std::wstring title, int width, int height) {
 	
 	WNDCLASSEX wndclass{};
 	wndclass.cbSize = sizeof(WNDCLASSEX);
@@ -218,7 +302,7 @@ int main(int argc, char** argv) {
 		g_example = new HelloVulkanExample();
 	}
 	
-	HWND window = createWindow("RSexamples", "main", 800, 600);
+	HWND window = createWindow(L"RSexamples", L"main", 800, 600);
 	renderloop();
 
 	getchar();
