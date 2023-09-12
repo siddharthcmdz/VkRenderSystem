@@ -6,7 +6,7 @@
 ~~* Make VkRenderSystem a dll and export only needed functions~~ **DONE**
 * Support rendering luminance texture
 * Support buffer naming to see in renderdoc and nsight
-* Add support for macOS/iOS project
+* Add support for macOS/iOS project **IN PROGRESS**
 
 # Rendering techniques
 * Support depth attachment in framebuffers by default
@@ -19,7 +19,7 @@
 
 # Scene Management
 ~~* Create architecture for running multiple examples~~ **DONE**
-* Implement navigation mode **In Progress**
+~~* Implement navigation mode~~ **DONE**
 * Create a construct to render a 3D box grid
 * Create constructs to render analytical geometry - cyclinder and cone
 * Create a construct to render arrows representing X, Y and Z.
