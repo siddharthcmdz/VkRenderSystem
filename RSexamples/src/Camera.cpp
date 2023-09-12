@@ -1,4 +1,6 @@
 #include "Camera.h"
+#include <glm/gtx/string_cast.hpp>
+#include <iostream>
 
 bool Camera::isAnimating() const {
 	return keys.left || keys.right || keys.up || keys.down;
@@ -20,6 +22,9 @@ void Camera::setPerspective(float fov, float aspect, float znear, float zfar) {
 	if (flipY) {
 		matrices.perspective[1][1] *= -1.0f;
 	}
+
+	//std::cout << "camera setPerspective : " << std::endl;
+	//std::cout<<glm::to_string(matrices.perspective)<<std::endl;
 }
 
 void Camera::updateAspectRatio(float aspect) {
@@ -27,6 +32,9 @@ void Camera::updateAspectRatio(float aspect) {
 	if (flipY) {
 		matrices.perspective[1][1] *= -1.0f;
 	}
+
+	//std::cout << "camera updateAspectRatio : " << std::endl;
+	//std::cout << glm::to_string(matrices.perspective) << std::endl;
 }
 
 void Camera::setPosition(glm::vec3 position) {
@@ -163,7 +171,7 @@ glm::mat4 Camera::getProjectionMatrix() const {
 
 void Camera::updateViewMatrix() {
 	glm::mat4 rotM = glm::mat4(1.0f);
-	glm::mat4 transM;
+	//glm::mat4 transM;
 
 	rotM = glm::rotate(rotM, glm::radians(rotation.x * (flipY ? -1.0f : 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f));
 	rotM = glm::rotate(rotM, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -173,18 +181,22 @@ void Camera::updateViewMatrix() {
 	if (flipY) {
 		translation.y *= -1.0f;
 	}
-	transM = glm::translate(glm::mat4(1.0f), translation);
+	//transM = glm::translate(glm::mat4(1.0f), translation);
 
-	if (type == CameraType::firstperson)
-	{
-		matrices.view = rotM * transM;
-	}
-	else
-	{
-		matrices.view = transM * rotM;
-	}
+	//if (type == CameraType::firstperson)
+	//{
+	//	matrices.view = rotM * transM;
+	//}
+	//else
+	//{
+	//	matrices.view = transM * rotM;
+	//}
 
-	viewPos = glm::vec4(position, 0.0f) * glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f);
+	//viewPos = glm::vec4(position, 0.0f) * glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f);
+
+	matrices.view = glm::lookAt(translation, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * rotM;
+	//std::cout << "camera updateViewMatrix: " << std::endl;
+	//std::cout << glm::to_string(matrices.view) << std::endl;
 
 	updated = true;
 

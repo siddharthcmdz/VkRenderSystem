@@ -854,23 +854,25 @@ void VkRenderSystem::updateUniformBuffer(VkRSview& view, uint32_t currentFrame) 
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	VkRSviewDescriptor ubo{};
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	view.view.projmat[1][1] *= -1;
+	//glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = view.view.projmat;
 	ubo.view = view.view.viewmat;
-	std::string newprojstr = glm::to_string(ubo.proj);
-	std::string newviewstr = glm::to_string(ubo.view);
-	std::cout << "new proj: " << newprojstr << std::endl;
-	std::cout << "new view: " << newviewstr << std::endl;
+	//std::string newprojstr = glm::to_string(view.view.projmat);
+	//std::string newviewstr = glm::to_string(view.view.viewmat);
+	//std::cout << "new proj: \n" << newprojstr << std::endl;
+	//std::cout << "new view: \n" << newviewstr << std::endl;
 
-	glm::mat4 oldview = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * model;
-	glm::mat4 oldproj = glm::perspective(glm::radians(45.0f), ((float)view.swapChainExtent.width / (float)view.swapChainExtent.height), 0.0f, 1.0f);
-	oldproj[1][1] *= -1;
-	std::string oldprojstr = glm::to_string(oldproj);
-	std::string oldviewstr = glm::to_string(oldview);
-	std::cout << "old proj: " << oldprojstr << std::endl;
-	std::cout << "old view: " << oldviewstr << std::endl;
-
+	//glm::mat4 oldview = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//glm::mat4 oldproj = glm::perspective(glm::radians(45.0f), ((float)view.swapChainExtent.width / (float)view.swapChainExtent.height), 0.01f, 1000.0f);
+	//oldproj[1][1] *= -1;
+	////ubo.proj = oldproj;
+	////ubo.view = oldview;
+	//std::string oldprojstr = glm::to_string(oldproj);
+	//std::string oldviewstr = glm::to_string(oldview);
+	//std::cout << "old aspect ratio: " << ((float)view.swapChainExtent.width / (float)view.swapChainExtent.height) << std::endl;
+	//std::cout << "old proj: \n" << oldprojstr << std::endl;
+	//std::cout << "old view: \n" << oldviewstr << std::endl;
+	//std::cout << std::endl << std::endl;
 	memcpy(view.uniformBuffersMapped[currentFrame], &ubo, sizeof(VkRSviewDescriptor));
 }
 

@@ -26,7 +26,7 @@ public:
 	float movementSpeed = 1.0f;
 
 	bool updated = false;
-	bool flipY = false;
+	bool flipY = true;
 
 	struct
 	{

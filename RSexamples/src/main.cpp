@@ -59,13 +59,17 @@ void handleMouseMove(int32_t x, int32_t y) {
 	}
 
 	if (g_mouseButtons.left) {
-		g_camera.rotate(glm::vec3(dy * g_camera.rotationSpeed, -dx * g_camera.rotationSpeed, 0.0f));
+		glm::vec3 rotationDelta = glm::vec3(dy * g_camera.rotationSpeed, -dx * g_camera.rotationSpeed, 0.0f);
+		std::cout << "rotation delta: " << rotationDelta.x << ", " << rotationDelta.y << ", " << rotationDelta.z << std::endl;
+		g_camera.rotate(rotationDelta);
 	}
 	if (g_mouseButtons.right) {
-		g_camera.translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
+		glm::vec3 translationDelta = glm::vec3(-0.0f, 0.0f, dy * .005f);
+		g_camera.translate(translationDelta);
 	}
 	if (g_mouseButtons.middle) {
-		g_camera.translate(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
+		glm::vec3 translationDelta = glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f);
+		g_camera.translate(translationDelta);
 	}
 	g_mousePos = glm::vec2((float)x, (float)y);
 }
@@ -106,7 +110,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
 		float aspectRatio = (float)ctxInfo.initWidth / (float)ctxInfo.initHeight;
 		g_camera.updateAspectRatio(aspectRatio);
-		g_camera.translate(glm::vec3(0.0f, 0.0f, -2.5f));
+		g_camera.translate(glm::vec3(2.0f, 2.0f, 2.0f));
 		view.viewmat = g_camera.getViewMatrix();
 		view.projmat = g_camera.getProjectionMatrix();
 		view.dirty = true;
@@ -122,6 +126,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 
 	case WM_MOUSEMOVE: {
 		handleMouseMove(LOWORD(lparam), HIWORD(lparam));
+		auto& vkrs = VkRenderSystem::getInstance();
+		std::optional<RSview> optview = vkrs.viewGetData(g_globals.viewID);
+		if (optview.has_value()) {
+			optview->viewmat = g_camera.getViewMatrix();
+			vkrs.viewUpdate(g_globals.viewID, *optview);
+		}
 		InvalidateRect(hwnd, nullptr, FALSE);
 		//std::cout << "Moused moved" << std::endl;
 		break;
@@ -171,12 +181,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		g_globals.width = LOWORD(lparam);
 		g_globals.height = HIWORD(lparam);
 		float aspectRatio = (float)g_globals.width / (float)g_globals.height;
+		std::cout << "new aspect ratio: " << aspectRatio << std::endl;
 		g_camera.updateAspectRatio(aspectRatio);
 		std::optional<RSview> view = vkrs.viewGetData(g_globals.viewID);
 		if (view.has_value()) {
 			view->projmat = g_camera.getProjectionMatrix();
+			vkrs.viewUpdate(g_globals.viewID, *view);
 		}
-		if (g_example) {
+		if (g_example) { 
 			vkrs.contextResized(g_globals.ctxID, g_globals.viewID, g_globals.width, g_globals.height);
 		}
 		std::cout << "Window resized - width: "<<g_globals.width<<" , height: "<<g_globals.height << std::endl;
