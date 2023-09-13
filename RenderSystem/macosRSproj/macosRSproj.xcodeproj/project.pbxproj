@@ -1,0 +1,388 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		48C002322AB1541E0053C1B6 /* VkRendersystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002182AB1541D0053C1B6 /* VkRendersystem.cpp */; };
+		48C002332AB1541E0053C1B6 /* TextureLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002192AB1541D0053C1B6 /* TextureLoader.cpp */; };
+		48C002342AB1541E0053C1B6 /* VkSampleMain0.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0021A2AB1541D0053C1B6 /* VkSampleMain0.h */; };
+		48C002352AB1541E0053C1B6 /* VkRenderSystemEntry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C0021B2AB1541D0053C1B6 /* VkRenderSystemEntry.cpp */; };
+		48C002362AB1541E0053C1B6 /* VkRenderSystem.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0021C2AB1541D0053C1B6 /* VkRenderSystem.h */; };
+		48C002372AB1541E0053C1B6 /* rsexporter.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0021D2AB1541D0053C1B6 /* rsexporter.h */; };
+		48C002382AB1541E0053C1B6 /* rsenums.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0021E2AB1541D0053C1B6 /* rsenums.h */; };
+		48C002392AB1541E0053C1B6 /* VkRenderSystemEntry.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0021F2AB1541D0053C1B6 /* VkRenderSystemEntry.h */; };
+		48C0023A2AB1541E0053C1B6 /* VkSampleMain1.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002202AB1541D0053C1B6 /* VkSampleMain1.h */; };
+		48C0023B2AB1541E0053C1B6 /* VkSampleMain0.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002212AB1541D0053C1B6 /* VkSampleMain0.cpp */; };
+		48C0023C2AB1541E0053C1B6 /* RSdataTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002222AB1541D0053C1B6 /* RSdataTypes.h */; };
+		48C0023D2AB1541E0053C1B6 /* rsids.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002232AB1541D0053C1B6 /* rsids.h */; };
+		48C0023E2AB1541E0053C1B6 /* RStypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002242AB1541D0053C1B6 /* RStypes.h */; };
+		48C0023F2AB1541E0053C1B6 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002252AB1541D0053C1B6 /* main.cpp */; };
+		48C002402AB1541E0053C1B6 /* stb_image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002262AB1541D0053C1B6 /* stb_image.cpp */; };
+		48C002412AB1541E0053C1B6 /* VkRSdataTypes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002272AB1541D0053C1B6 /* VkRSdataTypes.cpp */; };
+		48C002422AB1541E0053C1B6 /* VkRSswapChain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002282AB1541D0053C1B6 /* VkRSswapChain.cpp */; };
+		48C002432AB1541E0053C1B6 /* RSdataTypes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002292AB1541D0053C1B6 /* RSdataTypes.cpp */; };
+		48C002442AB1541E0053C1B6 /* VkSampleMain1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C0022A2AB1541D0053C1B6 /* VkSampleMain1.cpp */; };
+		48C002452AB1541E0053C1B6 /* VertexData.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0022B2AB1541E0053C1B6 /* VertexData.h */; };
+		48C002462AB1541E0053C1B6 /* TextureLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0022C2AB1541E0053C1B6 /* TextureLoader.h */; };
+		48C002472AB1541E0053C1B6 /* VkRSdataTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0022D2AB1541E0053C1B6 /* VkRSdataTypes.h */; };
+		48C002482AB1541E0053C1B6 /* RSVkDebugUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0022E2AB1541E0053C1B6 /* RSVkDebugUtils.h */; };
+		48C002492AB1541E0053C1B6 /* DrawCommand.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C0022F2AB1541E0053C1B6 /* DrawCommand.h */; };
+		48C0024A2AB1541E0053C1B6 /* MakeID.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002302AB1541E0053C1B6 /* MakeID.h */; };
+		48C0024B2AB1541E0053C1B6 /* VkRSswapChain.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002312AB1541E0053C1B6 /* VkRSswapChain.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		48C002112AB153EC0053C1B6 /* libmacosRSproj.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libmacosRSproj.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		48C002182AB1541D0053C1B6 /* VkRendersystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkRendersystem.cpp; path = ../src/VkRendersystem.cpp; sourceTree = "<group>"; };
+		48C002192AB1541D0053C1B6 /* TextureLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TextureLoader.cpp; path = ../src/TextureLoader.cpp; sourceTree = "<group>"; };
+		48C0021A2AB1541D0053C1B6 /* VkSampleMain0.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VkSampleMain0.h; path = ../src/VkSampleMain0.h; sourceTree = "<group>"; };
+		48C0021B2AB1541D0053C1B6 /* VkRenderSystemEntry.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkRenderSystemEntry.cpp; path = ../src/VkRenderSystemEntry.cpp; sourceTree = "<group>"; };
+		48C0021C2AB1541D0053C1B6 /* VkRenderSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VkRenderSystem.h; path = ../src/VkRenderSystem.h; sourceTree = "<group>"; };
+		48C0021D2AB1541D0053C1B6 /* rsexporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rsexporter.h; path = ../src/rsexporter.h; sourceTree = "<group>"; };
+		48C0021E2AB1541D0053C1B6 /* rsenums.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rsenums.h; path = ../src/rsenums.h; sourceTree = "<group>"; };
+		48C0021F2AB1541D0053C1B6 /* VkRenderSystemEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VkRenderSystemEntry.h; path = ../src/VkRenderSystemEntry.h; sourceTree = "<group>"; };
+		48C002202AB1541D0053C1B6 /* VkSampleMain1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VkSampleMain1.h; path = ../src/VkSampleMain1.h; sourceTree = "<group>"; };
+		48C002212AB1541D0053C1B6 /* VkSampleMain0.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkSampleMain0.cpp; path = ../src/VkSampleMain0.cpp; sourceTree = "<group>"; };
+		48C002222AB1541D0053C1B6 /* RSdataTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RSdataTypes.h; path = ../src/RSdataTypes.h; sourceTree = "<group>"; };
+		48C002232AB1541D0053C1B6 /* rsids.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rsids.h; path = ../src/rsids.h; sourceTree = "<group>"; };
+		48C002242AB1541D0053C1B6 /* RStypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RStypes.h; path = ../src/RStypes.h; sourceTree = "<group>"; };
+		48C002252AB1541D0053C1B6 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../src/main.cpp; sourceTree = "<group>"; };
+		48C002262AB1541D0053C1B6 /* stb_image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stb_image.cpp; path = ../src/stb_image.cpp; sourceTree = "<group>"; };
+		48C002272AB1541D0053C1B6 /* VkRSdataTypes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkRSdataTypes.cpp; path = ../src/VkRSdataTypes.cpp; sourceTree = "<group>"; };
+		48C002282AB1541D0053C1B6 /* VkRSswapChain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkRSswapChain.cpp; path = ../src/VkRSswapChain.cpp; sourceTree = "<group>"; };
+		48C002292AB1541D0053C1B6 /* RSdataTypes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RSdataTypes.cpp; path = ../src/RSdataTypes.cpp; sourceTree = "<group>"; };
+		48C0022A2AB1541D0053C1B6 /* VkSampleMain1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkSampleMain1.cpp; path = ../src/VkSampleMain1.cpp; sourceTree = "<group>"; };
+		48C0022B2AB1541E0053C1B6 /* VertexData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VertexData.h; path = ../src/VertexData.h; sourceTree = "<group>"; };
+		48C0022C2AB1541E0053C1B6 /* TextureLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextureLoader.h; path = ../src/TextureLoader.h; sourceTree = "<group>"; };
+		48C0022D2AB1541E0053C1B6 /* VkRSdataTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VkRSdataTypes.h; path = ../src/VkRSdataTypes.h; sourceTree = "<group>"; };
+		48C0022E2AB1541E0053C1B6 /* RSVkDebugUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RSVkDebugUtils.h; path = ../src/RSVkDebugUtils.h; sourceTree = "<group>"; };
+		48C0022F2AB1541E0053C1B6 /* DrawCommand.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DrawCommand.h; path = ../src/DrawCommand.h; sourceTree = "<group>"; };
+		48C002302AB1541E0053C1B6 /* MakeID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MakeID.h; path = ../src/MakeID.h; sourceTree = "<group>"; };
+		48C002312AB1541E0053C1B6 /* VkRSswapChain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VkRSswapChain.h; path = ../src/VkRSswapChain.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		48C0020F2AB153EC0053C1B6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		48C002082AB153EC0053C1B6 = {
+			isa = PBXGroup;
+			children = (
+				48C0022F2AB1541E0053C1B6 /* DrawCommand.h */,
+				48C002252AB1541D0053C1B6 /* main.cpp */,
+				48C002302AB1541E0053C1B6 /* MakeID.h */,
+				48C002292AB1541D0053C1B6 /* RSdataTypes.cpp */,
+				48C002222AB1541D0053C1B6 /* RSdataTypes.h */,
+				48C0021E2AB1541D0053C1B6 /* rsenums.h */,
+				48C0021D2AB1541D0053C1B6 /* rsexporter.h */,
+				48C002232AB1541D0053C1B6 /* rsids.h */,
+				48C002242AB1541D0053C1B6 /* RStypes.h */,
+				48C0022E2AB1541E0053C1B6 /* RSVkDebugUtils.h */,
+				48C002262AB1541D0053C1B6 /* stb_image.cpp */,
+				48C002192AB1541D0053C1B6 /* TextureLoader.cpp */,
+				48C0022C2AB1541E0053C1B6 /* TextureLoader.h */,
+				48C0022B2AB1541E0053C1B6 /* VertexData.h */,
+				48C002182AB1541D0053C1B6 /* VkRendersystem.cpp */,
+				48C0021C2AB1541D0053C1B6 /* VkRenderSystem.h */,
+				48C0021B2AB1541D0053C1B6 /* VkRenderSystemEntry.cpp */,
+				48C0021F2AB1541D0053C1B6 /* VkRenderSystemEntry.h */,
+				48C002272AB1541D0053C1B6 /* VkRSdataTypes.cpp */,
+				48C0022D2AB1541E0053C1B6 /* VkRSdataTypes.h */,
+				48C002282AB1541D0053C1B6 /* VkRSswapChain.cpp */,
+				48C002312AB1541E0053C1B6 /* VkRSswapChain.h */,
+				48C002212AB1541D0053C1B6 /* VkSampleMain0.cpp */,
+				48C0021A2AB1541D0053C1B6 /* VkSampleMain0.h */,
+				48C0022A2AB1541D0053C1B6 /* VkSampleMain1.cpp */,
+				48C002202AB1541D0053C1B6 /* VkSampleMain1.h */,
+				48C002122AB153EC0053C1B6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		48C002122AB153EC0053C1B6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				48C002112AB153EC0053C1B6 /* libmacosRSproj.dylib */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		48C0020D2AB153EC0053C1B6 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				48C002492AB1541E0053C1B6 /* DrawCommand.h in Headers */,
+				48C002482AB1541E0053C1B6 /* RSVkDebugUtils.h in Headers */,
+				48C002382AB1541E0053C1B6 /* rsenums.h in Headers */,
+				48C0024A2AB1541E0053C1B6 /* MakeID.h in Headers */,
+				48C002372AB1541E0053C1B6 /* rsexporter.h in Headers */,
+				48C0023D2AB1541E0053C1B6 /* rsids.h in Headers */,
+				48C0023A2AB1541E0053C1B6 /* VkSampleMain1.h in Headers */,
+				48C002362AB1541E0053C1B6 /* VkRenderSystem.h in Headers */,
+				48C002392AB1541E0053C1B6 /* VkRenderSystemEntry.h in Headers */,
+				48C0024B2AB1541E0053C1B6 /* VkRSswapChain.h in Headers */,
+				48C002472AB1541E0053C1B6 /* VkRSdataTypes.h in Headers */,
+				48C002342AB1541E0053C1B6 /* VkSampleMain0.h in Headers */,
+				48C0023C2AB1541E0053C1B6 /* RSdataTypes.h in Headers */,
+				48C002462AB1541E0053C1B6 /* TextureLoader.h in Headers */,
+				48C002452AB1541E0053C1B6 /* VertexData.h in Headers */,
+				48C0023E2AB1541E0053C1B6 /* RStypes.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		48C002102AB153EC0053C1B6 /* macosRSproj */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 48C002152AB153EC0053C1B6 /* Build configuration list for PBXNativeTarget "macosRSproj" */;
+			buildPhases = (
+				48C0020D2AB153EC0053C1B6 /* Headers */,
+				48C0020E2AB153EC0053C1B6 /* Sources */,
+				48C0020F2AB153EC0053C1B6 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = macosRSproj;
+			productName = macosRSproj;
+			productReference = 48C002112AB153EC0053C1B6 /* libmacosRSproj.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		48C002092AB153EC0053C1B6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					48C002102AB153EC0053C1B6 = {
+						CreatedOnToolsVersion = 14.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 48C0020C2AB153EC0053C1B6 /* Build configuration list for PBXProject "macosRSproj" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 48C002082AB153EC0053C1B6;
+			productRefGroup = 48C002122AB153EC0053C1B6 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				48C002102AB153EC0053C1B6 /* macosRSproj */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		48C0020E2AB153EC0053C1B6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				48C002332AB1541E0053C1B6 /* TextureLoader.cpp in Sources */,
+				48C002442AB1541E0053C1B6 /* VkSampleMain1.cpp in Sources */,
+				48C002322AB1541E0053C1B6 /* VkRendersystem.cpp in Sources */,
+				48C0023B2AB1541E0053C1B6 /* VkSampleMain0.cpp in Sources */,
+				48C002402AB1541E0053C1B6 /* stb_image.cpp in Sources */,
+				48C002412AB1541E0053C1B6 /* VkRSdataTypes.cpp in Sources */,
+				48C0023F2AB1541E0053C1B6 /* main.cpp in Sources */,
+				48C002432AB1541E0053C1B6 /* RSdataTypes.cpp in Sources */,
+				48C002422AB1541E0053C1B6 /* VkRSswapChain.cpp in Sources */,
+				48C002352AB1541E0053C1B6 /* VkRenderSystemEntry.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		48C002132AB153EC0053C1B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					/Users/fusesparkignite/VkRenderSystem/thirdparty/stb_image,
+					/Users/fusesparkignite/VkRenderSystem/thirdparty/MoltenVK/MoltenVK/include,
+					"/Users/fusesparkignite/VkRenderSystem/thirdparty/glm-0.9.9.8/glm",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		48C002142AB153EC0053C1B6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					/Users/fusesparkignite/VkRenderSystem/thirdparty/stb_image,
+					/Users/fusesparkignite/VkRenderSystem/thirdparty/MoltenVK/MoltenVK/include,
+					"/Users/fusesparkignite/VkRenderSystem/thirdparty/glm-0.9.9.8/glm",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		48C002162AB153EC0053C1B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J3QGJ9FUP4;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		48C002172AB153EC0053C1B6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J3QGJ9FUP4;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		48C0020C2AB153EC0053C1B6 /* Build configuration list for PBXProject "macosRSproj" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				48C002132AB153EC0053C1B6 /* Debug */,
+				48C002142AB153EC0053C1B6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		48C002152AB153EC0053C1B6 /* Build configuration list for PBXNativeTarget "macosRSproj" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				48C002162AB153EC0053C1B6 /* Debug */,
+				48C002172AB153EC0053C1B6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 48C002092AB153EC0053C1B6 /* Project object */;
+}
