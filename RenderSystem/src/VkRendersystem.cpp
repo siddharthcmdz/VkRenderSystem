@@ -1494,9 +1494,9 @@ void VkRenderSystem::createCommandBuffers(VkRSview& view) {
 }
 
 void VkRenderSystem::createSyncObjects(VkRScontext& ctx) {
-	ctx.imageAvailableSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
-	ctx.renderFinishedSemaphores.resize(ctx.MAX_FRAMES_IN_FLIGHT);
-	ctx.inFlightFences.resize(ctx.MAX_FRAMES_IN_FLIGHT);
+	ctx.imageAvailableSemaphores.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	ctx.renderFinishedSemaphores.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	ctx.inFlightFences.resize(VkRScontext::MAX_FRAMES_IN_FLIGHT);
 
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1506,7 +1506,7 @@ void VkRenderSystem::createSyncObjects(VkRScontext& ctx) {
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	const VkDevice& device = iinstance.device;
-	for (size_t i = 0; i < ctx.MAX_FRAMES_IN_FLIGHT; ++i) {
+	for (size_t i = 0; i < VkRScontext::MAX_FRAMES_IN_FLIGHT; ++i) {
 		VkResult imgAvailSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &ctx.imageAvailableSemaphores[i]);
 		VkResult renderFinishedSemaphoreRes = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &ctx.renderFinishedSemaphores[i]);
 		VkResult fenceRes = vkCreateFence(device, &fenceInfo, nullptr, &ctx.inFlightFences[i]);
