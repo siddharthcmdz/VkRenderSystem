@@ -9,8 +9,9 @@
 #define MAX_IDS UINT32_MAX
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#if defined(_WIN32)
 #include <Windows.h>
-
+#endif
 
 struct RSinitInfo {
 	bool enableValidation = true;
@@ -18,16 +19,24 @@ struct RSinitInfo {
 	char appName[256]; //name of the engine or application
 	char shaderPath[256];
 	//These two are needed for querying queue families early on - rendersysteminit(). Its always the case, the window is first constructed and then vkrs. The parent window can serve to construct the logical device which can be reused to present to the presentation queue.
-	HWND parentHwnd; 
-	HINSTANCE parentHinst;
+#if defined(_WIN32)
+    HWND parentHwnd{};
+    HINSTANCE parentHinst{};
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    void* parentView;
+#endif
 };
 
 struct RScontextInfo {
 	uint32_t initWidth = 800;
 	uint32_t initHeight = 600;
 	char title[256]{0}; //name of the window displayed as title
-	HWND hwnd{};
-	HINSTANCE hinst{};
+#if defined(_WIN32)
+    HWND hwnd{};
+    HINSTANCE hinst{};
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    void* metallayer;
+#endif
 };
 
 struct RSview {

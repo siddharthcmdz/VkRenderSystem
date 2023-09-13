@@ -55,7 +55,13 @@ private:
 	void pickPhysicalDevice();
 	void createLogicalDevice(const VkSurfaceKHR& vksurface);
 	void createSurface(VkRScontext& vkrsctx);
+
+#if defined(_WIN32)
 	VkSurfaceKHR createDummySurface(const HWND hwnd, const HINSTANCE hinst);
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    VkSurfaceKHR createDummySurface(const void* parentSurface);
+#endif
+    
 	void disposeDummySurface(const VkSurfaceKHR surface);
 	void createSwapChain(VkRSview& view, VkRScontext& ctx);
 	void createCommandPool(const VkRScontext& ctx);

@@ -1,5 +1,10 @@
 #include "VkRenderSystem.h"
 #include <vulkan/vulkan.h>
+
+#if defined(VK_USE_PLATFORM_IOS_MVK)
+#include <vulkan/vulkan_metal.h>
+#endif
+
 #include <assert.h>
 #include <iostream>
 #include <set>
@@ -47,16 +52,28 @@ bool VkRenderSystem::checkValidationLayerSupport() const {
 
 std::vector<const char*> VkRenderSystem::getRequiredExtensions(const RSinitInfo& info) const {
 
-	std::vector<const char*> extensions = {
-		VK_KHR_SURFACE_EXTENSION_NAME,
-		VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-	};
+    std::vector<const char*> extensions = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+    };
+    
+#if defined(_WIN32)
+    extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    extensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+#elif defined(VK_USE_PLATFORM_MACOS_MVK)
+    extensions.push_back(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+#endif
+    
+#if (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK))
+    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+//    extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
 
-	if (info.enableValidation) {
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
-
-	return extensions;
+    if (info.enableValidation) {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+    
+    return extensions;
 }
 
 void VkRenderSystem::populateInstanceData(VkRSinstance& inst, const RSinitInfo& info) {
@@ -163,15 +180,25 @@ void VkRenderSystem::setupDebugMessenger() {
 
 void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
 	
-	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
-	surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	surfaceCreateInfo.hinstance = vkrsctx.info.hinst;
-	surfaceCreateInfo.hwnd = vkrsctx.info.hwnd;
-	VkResult res = vkCreateWin32SurfaceKHR(iinstance.instance, &surfaceCreateInfo, nullptr, &vkrsctx.surface);
+    VkSurfaceKHR surface;
+    VkResult res;
+#if defined(_WIN32)
+    VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
+    surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    surfaceCreateInfo.hinstance = vkrsctx.info.hinst;
+    surfaceCreateInfo.hwnd = vkrsctx.info.hwnd;
+    res = vkCreateWin32SurfaceKHR(iinstance.instance, &surfaceCreateInfo, nullptr, &vkrsctx.surface);
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    VkMetalSurfaceCreateInfoEXT surfaceCI{};
+    surfaceCI.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+    surfaceCI.pLayer = vkrsctx.info.metallayer;
+    
+    res = vkCreateMetalSurfaceEXT(iinstance.instance, &surfaceCI, nullptr, &surface);
+#endif
 
-	if (res!= VK_SUCCESS) {
-		throw std::runtime_error("failed to create a window surface!");
-	}
+    if (res!= VK_SUCCESS) {
+        throw std::runtime_error("failed to create a window surface!");
+    }
 }
 
 void VkRenderSystem::createFramebuffers(VkRSview& view) {
@@ -531,23 +558,12 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avai
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, HWND wnd) {
+VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, RSuint surfaceWidth, RSuint surfaceHeight) {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		return capabilities.currentExtent;
 	}
 	else {
-		int width, height;
-		RECT rect;
-		if (GetWindowRect(wnd, &rect)) {
-			width = rect.right - rect.left;
-			height = rect.bottom - rect.top;
-		}
-
-		VkExtent2D actualExtent = {
-			static_cast<uint32_t>(width),
-			static_cast<uint32_t>(height)
-		};
-
+        VkExtent2D actualExtent = {surfaceWidth, surfaceHeight};
 		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
 		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
@@ -560,7 +576,7 @@ void VkRenderSystem::createSwapChain(VkRSview& view, VkRScontext& ctx) {
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
 	VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, ctx.info.hwnd);
+	VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, ctx.width, ctx.height);
 
 	//TODO: perhaps use std::clamp here
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -614,6 +630,7 @@ void VkRenderSystem::createSwapChain(VkRSview& view, VkRScontext& ctx) {
 	view.swapChainExtent = extent;
 }
 
+#if defined(_WIN32)
 VkSurfaceKHR VkRenderSystem::createDummySurface(const HWND hwnd, const HINSTANCE hinst) {
 	VkSurfaceKHR surface;
 	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
@@ -628,6 +645,21 @@ VkSurfaceKHR VkRenderSystem::createDummySurface(const HWND hwnd, const HINSTANCE
 
 	return surface;
 }
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+VkSurfaceKHR VkRenderSystem::createDummySurface(const void* parentSurface) {
+    VkSurfaceKHR surface;
+    VkMetalSurfaceCreateInfoEXT surfaceCI{};
+    surfaceCI.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+    surfaceCI.pLayer = parentSurface;
+    
+    VkResult res = vkCreateMetalSurfaceEXT(iinstance.instance, &surfaceCI, nullptr, &surface);
+    if(res != VK_SUCCESS) {
+        throw std::runtime_error("failed to create metal surface");
+    }
+
+    return surface;
+}
+#endif
 
 void VkRenderSystem::disposeDummySurface(const VkSurfaceKHR surface) {
 	if (surface != VK_NULL_HANDLE) {
@@ -643,7 +675,11 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 	setupDebugMessenger();
 
 	pickPhysicalDevice();
+#if defined(_WIN32)
 	VkSurfaceKHR dummySurface = createDummySurface(info.parentHwnd, info.parentHinst);
+#elif defined(VK_USE_PLATFORM_IOS_MVK)
+    VkSurfaceKHR dummySurface = createDummySurface(info.parentView);
+#endif
 	createLogicalDevice(dummySurface);
 	disposeDummySurface(dummySurface);
 
@@ -730,7 +766,6 @@ void VkRenderSystem::disposeContext(VkRScontext& ctx) {
 		vkDestroyFence(device, ctx.inFlightFences[i], nullptr);
 	}
 
-	ctx.info.hwnd = nullptr;
 }
 
 RSresult VkRenderSystem::contextDispose(const RScontextID& ctxID) {

@@ -20,7 +20,6 @@
 		48C0023C2AB1541E0053C1B6 /* RSdataTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002222AB1541D0053C1B6 /* RSdataTypes.h */; };
 		48C0023D2AB1541E0053C1B6 /* rsids.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002232AB1541D0053C1B6 /* rsids.h */; };
 		48C0023E2AB1541E0053C1B6 /* RStypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 48C002242AB1541D0053C1B6 /* RStypes.h */; };
-		48C0023F2AB1541E0053C1B6 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002252AB1541D0053C1B6 /* main.cpp */; };
 		48C002402AB1541E0053C1B6 /* stb_image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002262AB1541D0053C1B6 /* stb_image.cpp */; };
 		48C002412AB1541E0053C1B6 /* VkRSdataTypes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002272AB1541D0053C1B6 /* VkRSdataTypes.cpp */; };
 		48C002422AB1541E0053C1B6 /* VkRSswapChain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 48C002282AB1541D0053C1B6 /* VkRSswapChain.cpp */; };
@@ -50,7 +49,6 @@
 		48C002222AB1541D0053C1B6 /* RSdataTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RSdataTypes.h; path = ../src/RSdataTypes.h; sourceTree = "<group>"; };
 		48C002232AB1541D0053C1B6 /* rsids.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rsids.h; path = ../src/rsids.h; sourceTree = "<group>"; };
 		48C002242AB1541D0053C1B6 /* RStypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RStypes.h; path = ../src/RStypes.h; sourceTree = "<group>"; };
-		48C002252AB1541D0053C1B6 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../src/main.cpp; sourceTree = "<group>"; };
 		48C002262AB1541D0053C1B6 /* stb_image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stb_image.cpp; path = ../src/stb_image.cpp; sourceTree = "<group>"; };
 		48C002272AB1541D0053C1B6 /* VkRSdataTypes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkRSdataTypes.cpp; path = ../src/VkRSdataTypes.cpp; sourceTree = "<group>"; };
 		48C002282AB1541D0053C1B6 /* VkRSswapChain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VkRSswapChain.cpp; path = ../src/VkRSswapChain.cpp; sourceTree = "<group>"; };
@@ -80,7 +78,6 @@
 			isa = PBXGroup;
 			children = (
 				48C0022F2AB1541E0053C1B6 /* DrawCommand.h */,
-				48C002252AB1541D0053C1B6 /* main.cpp */,
 				48C002302AB1541E0053C1B6 /* MakeID.h */,
 				48C002292AB1541D0053C1B6 /* RSdataTypes.cpp */,
 				48C002222AB1541D0053C1B6 /* RSdataTypes.h */,
@@ -206,7 +203,6 @@
 				48C0023B2AB1541E0053C1B6 /* VkSampleMain0.cpp in Sources */,
 				48C002402AB1541E0053C1B6 /* stb_image.cpp in Sources */,
 				48C002412AB1541E0053C1B6 /* VkRSdataTypes.cpp in Sources */,
-				48C0023F2AB1541E0053C1B6 /* main.cpp in Sources */,
 				48C002432AB1541E0053C1B6 /* RSdataTypes.cpp in Sources */,
 				48C002422AB1541E0053C1B6 /* VkRSswapChain.cpp in Sources */,
 				48C002352AB1541E0053C1B6 /* VkRenderSystemEntry.cpp in Sources */,
@@ -259,6 +255,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
+					VK_USE_PLATFORM_IOS_MVK,
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -317,6 +314,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = VK_USE_PLATFORM_IOS_MVK;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
