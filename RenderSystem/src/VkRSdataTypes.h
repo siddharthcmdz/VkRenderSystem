@@ -137,6 +137,9 @@ struct VkRSview {
 	VkSwapchainKHR swapChain{};
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
+	VkImage depthImage;
+	VkDeviceMemory depthImageMemory;
+	VkImageView depthImageView;
 
 	uint32_t currentFrame = 0;
 	RSview view;

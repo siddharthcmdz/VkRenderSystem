@@ -12,8 +12,8 @@ enum RSexampleName {
 };
 
 const std::string RSexampleNameStr[] = {
-	"HelloVulkan",
-	"PrimitiveType",
+	"HelloVulkanExample",
+	"PrimitiveExample",
 	"None"
 };
 

@@ -61,7 +61,6 @@ private:
 	void createCommandPool(const VkRScontext& ctx);
 	void createSyncObjects(VkRScontext& ctx);
 	void disposeContext(VkRScontext& ctx);
-	
 
 	//rs global helpers
 	void printPhysicalDeviceInfo(VkPhysicalDevice device);
@@ -100,6 +99,10 @@ private:
 	void createCommandBuffers(VkRSview& view);
 	void cleanupSwapChain(VkRSview& view);
 	void createImageViews(VkRSview& view);
+	void createDepthResources(VkRSview& view);
+	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+	VkFormat findDepthFormat();
+	bool hasStencilComponent(VkFormat format);
 	void disposeView(VkRSview& view);
 
 	//geometry data related helpers
@@ -116,7 +119,7 @@ private:
 	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-	VkImageView createImageView(VkImage image, VkFormat format);
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 public:
 	RS_EXPORT static VkRenderSystem& getInstance() {
