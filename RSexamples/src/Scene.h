@@ -5,7 +5,7 @@
 namespace ss {
 	class Scene {
 	private:
-		std::vector<MeshInstance> meshInstance;
+		std::vector<MeshInstance> imeshInstanceList;
 		
 	public:
 		Scene() = default;
