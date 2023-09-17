@@ -10,6 +10,8 @@ HelloVulkanExample::HelloVulkanExample() {}
 void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 
+	ibbox = BoundingBox(glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
 	RSvertexAttribsInfo attribInfo;
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
@@ -62,6 +64,10 @@ void HelloVulkanExample::dispose(const RSexampleGlobal& globals) {
 	vkrs.spatialDispose(ientity.spatialID);
 	vkrs.collectionInstanceDispose(ientity.collectionID, ientity.instanceID);
 	vkrs.collectionDispose(ientity.collectionID);
+}
+
+BoundingBox HelloVulkanExample::getBounds() {
+	return ibbox;
 }
 
 std::string HelloVulkanExample::getExampleName() const {

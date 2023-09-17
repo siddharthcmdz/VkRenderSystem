@@ -98,6 +98,7 @@ std::vector<rsvd::VertexPC> PrimitiveExample::getVertices(PrimitiveType pt, floa
 			vert.color = glm::vec4(0, 0, 0, 1);
 		}
 
+		ibbox.expandBy(vert.pos);
 		vertexDataList.push_back(vert);
 	}
 
@@ -151,6 +152,10 @@ void PrimitiveExample::dispose(const RSexampleGlobal& globals) {
 
 std::string PrimitiveExample::getExampleName() const {
 	return "PrimitiveExample";
+}
+
+BoundingBox PrimitiveExample::getBounds() {
+	return ibbox;
 }
 
 void CircleEntity::dispose() {
