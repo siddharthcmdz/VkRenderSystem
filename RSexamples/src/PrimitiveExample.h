@@ -7,8 +7,11 @@
 #include <RSdataTypes.h>
 #include "helper.h"
 #include <array>
+#include "BoundingBox.h"
 
-struct CircleEntity : public helper::RSsingleEntity {
+using namespace ss;
+
+struct CircleEntity : public RSsingleEntity {
 	std::vector<rsvd::VertexPC> vertices;
 	float radius = 0.25f;
 
@@ -17,6 +20,7 @@ struct CircleEntity : public helper::RSsingleEntity {
 
 class PrimitiveExample : public RSexample {
 private:
+	BoundingBox ibbox;
 	enum PrimitiveType {
 		Points,
 		Lines,
@@ -32,5 +36,6 @@ public:
 	void init(const RSexampleOptions& eo, const RSexampleGlobal& globals) override;
 	void render(const RSexampleGlobal& globals) override;
 	void dispose(const RSexampleGlobal& globals) override;
+	BoundingBox getBounds() override;
 	std::string getExampleName() const override;
 };

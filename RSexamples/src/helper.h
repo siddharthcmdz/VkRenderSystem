@@ -5,20 +5,8 @@
 #include <rsenums.h>
 
 namespace helper {
-	struct RSsingleEntity {
-		RSgeometryDataID geomDataID;
-		RSgeometryID geomID;
-		RSappearanceID appID;
-		RSspatialID spatialID;
-		RStextureID textureID;
-		RSinstanceID instanceID;
-		RScollectionID collectionID;
-		RSstateID stateID;
-		RSprimitiveType primType;
-	};
-
-
 	std::string getCurrentDir();
 
-	std::string toString(std::wstring wstr);
+	std::wstring ConvertUtf8ToWide(const std::string& str);
+	std::string ConvertWideToUtf8(const std::wstring& wstr);
 }
