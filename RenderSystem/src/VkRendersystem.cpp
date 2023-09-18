@@ -180,7 +180,6 @@ void VkRenderSystem::setupDebugMessenger() {
 
 void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
 	
-    VkSurfaceKHR surface;
     VkResult res;
 #if defined(_WIN32)
     VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
@@ -193,7 +192,7 @@ void VkRenderSystem::createSurface(VkRScontext& vkrsctx) {
     surfaceCI.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
     surfaceCI.pLayer = vkrsctx.info.metallayer;
     
-    res = vkCreateMetalSurfaceEXT(iinstance.instance, &surfaceCI, nullptr, &surface);
+    res = vkCreateMetalSurfaceEXT(iinstance.instance, &surfaceCI, nullptr, &vkrsctx.surface);
 #endif
 
     if (res!= VK_SUCCESS) {
