@@ -1426,7 +1426,7 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
 		scissor.extent = view.swapChainExtent;
-		vkCmdSetScissor(view.commandBuffers[currentFrame], 0, 1, &scissor);
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 		for (uint32_t i = 0; i < numCollections; i++) {
 			const VkRScollection& collection = collections[i];
 			for (const VkRSdrawCommand& drawcmd : collection.drawCommands) {
@@ -1437,19 +1437,19 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint
 				case RSvertexAttributeSettings::vasInterleaved: {
 					VkBuffer vertexBuffers[]{ drawcmd.vertexBuffers[0]};
 					offsets = { drawcmd.vertexOffset };
-					vkCmdBindVertexBuffers(view.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets.data());
+					vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets.data());
 					break;
 				}
 
 				case RSvertexAttributeSettings::vasSeparate: {
 					offsets = { 0, 0, 0, 0 };
-					vkCmdBindVertexBuffers(view.commandBuffers[currentFrame], 0, static_cast<uint32_t>(drawcmd.vertexBuffers.size()), drawcmd.vertexBuffers.data(), offsets.data());
+					vkCmdBindVertexBuffers(commandBuffer, 0, static_cast<uint32_t>(drawcmd.vertexBuffers.size()), drawcmd.vertexBuffers.data(), offsets.data());
 					break;
 				}
 				}
 
 				if (drawcmd.isIndexed) {
-					vkCmdBindIndexBuffer(view.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
+					vkCmdBindIndexBuffer(commandBuffer, drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
 				}
 
 				//bind the descriptor sets
@@ -1459,19 +1459,19 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint
 					descriptorSets.push_back(drawcmd.materialDescriptors[currentFrame]);
 				}
 				uint32_t numDescriptorSets = static_cast<uint32_t>(descriptorSets.size());
-				vkCmdBindDescriptorSets(view.commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, numDescriptorSets, descriptorSets.data(), 0, nullptr);
-				vkCmdPushConstants(view.commandBuffers[currentFrame], drawcmd.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(RSspatial), &drawcmd.spatial);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.pipelineLayout, 0, numDescriptorSets, descriptorSets.data(), 0, nullptr);
+				vkCmdPushConstants(commandBuffer, drawcmd.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(RSspatial), &drawcmd.spatial);
 
 				if (drawcmd.isIndexed) {
-					vkCmdDrawIndexed(view.commandBuffers[currentFrame], drawcmd.numIndices, 1, 0, 0, 0);
+					vkCmdDrawIndexed(commandBuffer, drawcmd.numIndices, 1, 0, 0, 0);
 				}
 				else {
-					vkCmdDraw(view.commandBuffers[currentFrame], drawcmd.numVertices, 1, 0, 0);
+					vkCmdDraw(commandBuffer, drawcmd.numVertices, 1, 0, 0);
 				}
 			}
 		}
 	}
-	vkCmdEndRenderPass(view.commandBuffers[currentFrame]);
+	vkCmdEndRenderPass(commandBuffer);
 
 	const VkResult endCmdBuffRes = vkEndCommandBuffer(commandBuffer);
 	if (endCmdBuffRes != VK_SUCCESS) {

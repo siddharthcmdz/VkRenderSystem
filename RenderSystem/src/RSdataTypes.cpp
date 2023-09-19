@@ -11,23 +11,6 @@ uint32_t RSvertexAttribsInfo::sizeOfInterleavedAttrib() const {
 	for (uint32_t i = 0; i < numVertexAttribs; i++) {
 		RSvertexAttribute attrib = attributes[i];
 		sum += sizeOfAttrib(attrib);
-		//switch (attributes[i]) {
-		//case RSvertexAttribute::vaPosition:
-		//	sum += sizeof(glm::vec4);
-		//	break;
-
-		//case RSvertexAttribute::vaColor:
-		//	sum += sizeof(glm::vec4);
-		//	break;
-
-		//case RSvertexAttribute::vaNormal:
-		//	sum += sizeof(glm::vec4);
-		//	break;
-
-		//case RSvertexAttribute::vaTexCoord:
-		//	sum += sizeof(glm::vec2);
-		//	break;
-		//}
 	}
 
 	if (sum == 0) {
