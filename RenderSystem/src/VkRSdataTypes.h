@@ -11,19 +11,11 @@
 #include <string>
 #include <optional>
 #include <unordered_map>
+#include <array>
 #include "rsenums.h"
 #include "DrawCommand.h"
 #include "TextureLoader.h"
-
-#define VK_CHECK_RESULT(f)																				\
-{																										\
-	VkResult res = (f);																					\
-	if (res != VK_SUCCESS)																				\
-	{																									\
-		std::cout << "Fatal : VkResult is \"" << vks::tools::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
-		assert(res == VK_SUCCESS);																		\
-	}																									\
-}
+#include "VkRSbuffer.h"
 
 struct VkRSinstance {
 	static const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -73,23 +65,49 @@ struct AllocationID {
 	uint16_t elemSize;
 };
 
+struct VkRSinterleavedGeomBuffers {
+	VkBuffer vaBuffer = VK_NULL_HANDLE;
+	VkBuffer stagingVABuffer = VK_NULL_HANDLE;
+	VkDeviceMemory vaBufferMemory = VK_NULL_HANDLE;
+	VkDeviceMemory stagingVAbufferMemory = VK_NULL_HANDLE;
+	void* mappedStagingVAPtr = nullptr;
+};
+
+struct VkRSbuffer {
+	VkBuffer buffer = VK_NULL_HANDLE;
+	VkDeviceMemory memory = VK_NULL_HANDLE;
+	VkDeviceSize size = 0;
+	VkDeviceSize alignment = 0;
+	void* mapped = nullptr;
+	/** @brief Usage flags to be filled by external source at buffer creation (to query at some later point) */
+	VkBufferUsageFlags usageFlags;
+	/** @brief Memory property flags to be filled by external source at buffer creation (to query at some later point) */
+	VkMemoryPropertyFlags memoryPropertyFlags;
+
+};
+
+struct VkRSseparateGeomBuffers {
+	std::array<VkRSbuffer, 4> buffers;
+};
+
+struct VkRSindicesBuffers {
+	VkBuffer indicesBuffer = VK_NULL_HANDLE;
+	VkBuffer stagingIndexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory indicesBufferMemory = VK_NULL_HANDLE;
+	VkDeviceMemory stagingIndexBufferMemory = VK_NULL_HANDLE;
+	void* mappedIndexPtr = nullptr;
+};
+
 struct VkRSgeometryData {
 	uint32_t numVertices = 0;
 	uint32_t numIndices = 0;
 	RSvertexAttribsInfo attributesInfo;
 	RSbufferUsageHints usageHints = RSbufferUsageHints::buVertices;
 	
-	VkBuffer vaBuffer = VK_NULL_HANDLE;
-	VkBuffer stagingVABuffer = VK_NULL_HANDLE;
-	VkDeviceMemory vaBufferMemory = VK_NULL_HANDLE;
-	VkDeviceMemory stagingVAbufferMemory = VK_NULL_HANDLE;
-	void* mappedStagingVAPtr = nullptr;
+	VkRSinterleavedGeomBuffers interleaved;
+	VkRSseparateGeomBuffers separate;
+	VkRSindicesBuffers indices;
 
-	VkBuffer indicesBuffer = VK_NULL_HANDLE;
-	VkBuffer stagingIndexBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory indicesBufferMemory = VK_NULL_HANDLE;
-	VkDeviceMemory stagingIndexBufferMemory = VK_NULL_HANDLE;
-	void* mappedIndexPtr = nullptr;
 };
 
 struct VkRSgeometry {

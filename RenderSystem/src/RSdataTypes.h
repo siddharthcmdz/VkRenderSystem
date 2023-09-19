@@ -46,7 +46,7 @@ struct RScollectionInfo {
 struct RSvertexAttribsInfo {
 	uint32_t numVertexAttribs = 0;
 	RSvertexAttribute* attributes = nullptr;
-
+	RSvertexAttributeSettings settings;
 	uint32_t sizeOfAttrib() const;
 };
 
