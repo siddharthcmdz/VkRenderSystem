@@ -22,7 +22,7 @@ void PrimitiveExample::createEntity(const RSexampleGlobal& globals, CircleEntity
 	attribInfo.attributes = attribs.data();
 	vkrs.geometryDataCreate(ce.geomDataID, static_cast<uint32_t>(ce.vertices.size()), 0, attribInfo, RSbufferUsageHints::buVertices);
 	uint32_t vertSizeInBytes = static_cast<uint32_t>(ce.vertices.size() * sizeof(ce.vertices[0]));
-	vkrs.geometryDataUpdateVertices(ce.geomDataID, 0, vertSizeInBytes, (void*)ce.vertices.data());
+	vkrs.geometryDataUpdateInterleavedVertices(ce.geomDataID, 0, vertSizeInBytes, (void*)ce.vertices.data());
 	uint32_t indicesSizeInBytes = 0;
 	vkrs.geometryDataFinalize(ce.geomDataID);
 

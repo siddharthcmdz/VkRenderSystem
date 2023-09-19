@@ -18,7 +18,7 @@ void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 	attribInfo.attributes = attribs.data();
 	vkrs.geometryDataCreate(ientity.geomDataID, static_cast<uint32_t>(ivertices.size()), static_cast<uint32_t>(iindices.size()), attribInfo, RSbufferUsageHints::buVertices);
 	uint32_t vertSizeInBytes = static_cast<uint32_t>(ivertices.size() * sizeof(ivertices[0]));
-	vkrs.geometryDataUpdateVertices(ientity.geomDataID, 0, vertSizeInBytes, (void*)ivertices.data());
+	vkrs.geometryDataUpdateInterleavedVertices(ientity.geomDataID, 0, vertSizeInBytes, (void*)ivertices.data());
 	uint32_t indicesSizeInBytes = static_cast<uint32_t>(iindices.size()) * sizeof(uint32_t);
 	vkrs.geometryDataUpdateIndices(ientity.geomDataID, 0, indicesSizeInBytes, (void*)iindices.data());
 	vkrs.geometryDataFinalize(ientity.geomDataID);
