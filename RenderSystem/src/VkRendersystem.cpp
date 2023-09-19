@@ -1623,11 +1623,11 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					const VkRSgeometryData& gdata = igeometryDataMap[gdataID];
 					const VkRSgeometry& geom = igeometryMap[geomID];
 					VkRSdrawCommand cmd;
-					cmd.indicesBuffer = gdata.indicesBuffer;
-					cmd.isIndexed = gdata.indicesBuffer != VK_NULL_HANDLE;
+					cmd.indicesBuffer = gdata.indices.indicesBuffer;
+					cmd.isIndexed = gdata.indices.indicesBuffer != VK_NULL_HANDLE;
 					cmd.numIndices = gdata.numIndices;
 					cmd.numVertices = gdata.numVertices;
-					cmd.vertexBuffer = gdata.vaBuffer;
+					cmd.vertexBuffer = gdata.interleaved.vaBuffer;
 					cmd.primTopology = getPrimitiveType(geom.geomInfo.primType);
 					if (stateAvailable(collinst.instInfo.stateID)) {
 						VkRSstate& state = istateMap[collinst.instInfo.stateID];
@@ -2101,19 +2101,19 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 		
 		//create buffer for staging position vertex attribs
 		VkDeviceSize vaBufferSize = numVertices * attributesInfo.sizeOfAttrib();
-		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingVABuffer, gdata.stagingVAbufferMemory);
-		vkMapMemory(iinstance.device, gdata.stagingVAbufferMemory, 0, vaBufferSize, 0, &gdata.mappedStagingVAPtr);
+		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.interleaved.stagingVABuffer, gdata.interleaved.stagingVAbufferMemory);
+		vkMapMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory, 0, vaBufferSize, 0, &gdata.interleaved.mappedStagingVAPtr);
 
 		//create buffer for final vertex attributes buffer
-		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.vaBuffer, gdata.vaBufferMemory);
+		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.interleaved.vaBuffer, gdata.interleaved.vaBufferMemory);
 
 		//create buffer for indices
 		if (numIndices) {
 			VkDeviceSize indexBufferSize = numIndices * sizeof(uint32_t);
-			createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.stagingIndexBuffer, gdata.stagingIndexBufferMemory);
-			vkMapMemory(iinstance.device, gdata.stagingIndexBufferMemory, 0, indexBufferSize, 0, &gdata.mappedIndexPtr);
+			createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.indices.stagingIndexBuffer, gdata.indices.stagingIndexBufferMemory);
+			vkMapMemory(iinstance.device, gdata.indices.stagingIndexBufferMemory, 0, indexBufferSize, 0, &gdata.indices.mappedIndexPtr);
 		
-			createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.indicesBuffer, gdata.indicesBufferMemory);
+			createBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.indices.indicesBuffer, gdata.indices.indicesBufferMemory);
 		}
 
 		outgdataID.id = id;
@@ -2124,24 +2124,41 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 	return RSresult::FAILURE;
 }
 
-RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeinBytes, void* data) {
+RSresult VkRenderSystem::geometryDataUpdateInterleavedVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeinBytes, void* data) {
 
 	assert(gdataID.isValid() && "input geometry data ID is invalid");
 
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
+		if (gdata.attributesInfo.settings != RSvertexAttributeSettings::vasInterleaved) {
+			return RSresult::FAILURE;
+		}
+
 		if (offset != 0) {
 			throw std::runtime_error("Unsupported operation!");
 		}
 		
 		assert(gdata.usageHints == RSbufferUsageHints::buVertices && "invalid buffer usage hint");
 		//memcpy((char*)gdata.mappedStagingVAPtr + offset, data, sizeinBytes);
-		memcpy(gdata.mappedStagingVAPtr, data, sizeinBytes);
-		rsvd::VertexPC* vertices = static_cast<rsvd::VertexPC*>(gdata.mappedStagingVAPtr);
+		memcpy(gdata.interleaved.mappedStagingVAPtr, data, sizeinBytes);
+		//rsvd::VertexPC* vertices = static_cast<rsvd::VertexPC*>(gdata.interleaved.mappedStagingVAPtr);
 
 		return RSresult::SUCCESS;
 	}
 	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, RSvertexAttribute attrib, void* data) {
+
+	assert(gdataID.isValid() && "input geometry data ID is invalid");
+
+	if (geometryDataAvailable(gdataID)) {
+		VkRSgeometryData gdata = igeometryDataMap[gdataID];
+
+		if (gdata.attributesInfo.settings != RSvertexAttributeSettings::vasSeparate) {
+			return RSresult::FAILURE;
+		}
+	}
 }
 
 RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data) {
@@ -2151,8 +2168,8 @@ RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdata
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 		//memcpy((char*)(gdata.mappedStagingVAPtr) + offset, data, sizeInBytes);
-		memcpy(gdata.mappedIndexPtr, data, sizeInBytes);
-		uint32_t* indices = static_cast<uint32_t*>(gdata.mappedIndexPtr);
+		memcpy(gdata.indices.mappedIndexPtr, data, sizeInBytes);
+		uint32_t* indices = static_cast<uint32_t*>(gdata.indices.mappedIndexPtr);
 		return RSresult::SUCCESS;
 	}
 	return RSresult::FAILURE;
@@ -2167,24 +2184,24 @@ RSresult VkRenderSystem::geometryDataFinalize(const RSgeometryDataID& gdataID) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 
 		//unmap the host pointers
-		vkUnmapMemory(iinstance.device, gdata.stagingVAbufferMemory);
-		gdata.mappedStagingVAPtr = nullptr;
+		vkUnmapMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory);
+		gdata.interleaved.mappedStagingVAPtr = nullptr;
 		//copy to device buffer
 		VkDeviceSize vaBufferSize = gdata.numVertices * gdata.attributesInfo.sizeOfAttrib();
-		copyBuffer(gdata.stagingVABuffer, gdata.vaBuffer, vaBufferSize);
+		copyBuffer(gdata.interleaved.stagingVABuffer, gdata.interleaved.vaBuffer, vaBufferSize);
 		//destroy the staging buffers
-		vkDestroyBuffer(iinstance.device, gdata.stagingVABuffer, nullptr);
-		vkFreeMemory(iinstance.device, gdata.stagingVAbufferMemory, nullptr);
+		vkDestroyBuffer(iinstance.device, gdata.interleaved.stagingVABuffer, nullptr);
+		vkFreeMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory, nullptr);
 
 		if (gdata.numIndices) {
-			vkUnmapMemory(iinstance.device, gdata.stagingIndexBufferMemory);
-			gdata.mappedIndexPtr = nullptr;
+			vkUnmapMemory(iinstance.device, gdata.indices.stagingIndexBufferMemory);
+			gdata.indices.mappedIndexPtr = nullptr;
 			//copy to device buffer
 			VkDeviceSize indexBufferSize = gdata.numIndices * sizeof(uint32_t);
-			copyBuffer(gdata.stagingIndexBuffer, gdata.indicesBuffer, indexBufferSize);
+			copyBuffer(gdata.indices.stagingIndexBuffer, gdata.indices.indicesBuffer, indexBufferSize);
 			//destroy the staging buffers
-			vkDestroyBuffer(iinstance.device, gdata.stagingIndexBuffer, nullptr);
-			vkFreeMemory(iinstance.device, gdata.stagingIndexBufferMemory, nullptr);
+			vkDestroyBuffer(iinstance.device, gdata.indices.stagingIndexBuffer, nullptr);
+			vkFreeMemory(iinstance.device, gdata.indices.stagingIndexBufferMemory, nullptr);
 		}
 
 		return RSresult::SUCCESS;
@@ -2198,12 +2215,12 @@ RSresult VkRenderSystem::geometryDataDispose(const RSgeometryDataID& gdataID) {
 	
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
-		vkDestroyBuffer(iinstance.device, gdata.vaBuffer, nullptr);
-		vkFreeMemory(iinstance.device, gdata.vaBufferMemory, nullptr);
+		vkDestroyBuffer(iinstance.device, gdata.interleaved.vaBuffer, nullptr);
+		vkFreeMemory(iinstance.device, gdata.interleaved.vaBufferMemory, nullptr);
 
 		if (gdata.numIndices) {
-			vkDestroyBuffer(iinstance.device, gdata.indicesBuffer, nullptr);
-			vkFreeMemory(iinstance.device, gdata.indicesBufferMemory, nullptr);
+			vkDestroyBuffer(iinstance.device, gdata.indices.indicesBuffer, nullptr);
+			vkFreeMemory(iinstance.device, gdata.indices.indicesBufferMemory, nullptr);
 		}
 		igeometryDataMap.erase(gdataID);
 

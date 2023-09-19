@@ -81,13 +81,7 @@
     <ClInclude Include="..\src\VkRenderSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\VkRenderSystemEntry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\VkRSdataTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\VkRSswapChain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\VkRSbuffer.h">
@@ -108,9 +102,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\VkRSdataTypes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\VkRSswapChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\VkRSbuffer.cpp">

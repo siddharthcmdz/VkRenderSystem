@@ -73,20 +73,8 @@ struct VkRSinterleavedGeomBuffers {
 	void* mappedStagingVAPtr = nullptr;
 };
 
-struct VkRSbuffer {
-	VkBuffer buffer = VK_NULL_HANDLE;
-	VkDeviceMemory memory = VK_NULL_HANDLE;
-	VkDeviceSize size = 0;
-	VkDeviceSize alignment = 0;
-	void* mapped = nullptr;
-	/** @brief Usage flags to be filled by external source at buffer creation (to query at some later point) */
-	VkBufferUsageFlags usageFlags;
-	/** @brief Memory property flags to be filled by external source at buffer creation (to query at some later point) */
-	VkMemoryPropertyFlags memoryPropertyFlags;
-
-};
-
 struct VkRSseparateGeomBuffers {
+	std::array<VkRSbuffer, 4> stagingBuffers;
 	std::array<VkRSbuffer, 4> buffers;
 };
 
@@ -107,7 +95,6 @@ struct VkRSgeometryData {
 	VkRSinterleavedGeomBuffers interleaved;
 	VkRSseparateGeomBuffers separate;
 	VkRSindicesBuffers indices;
-
 };
 
 struct VkRSgeometry {

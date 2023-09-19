@@ -153,7 +153,8 @@ public:
 
 	RS_EXPORT bool geometryDataAvailable(const RSgeometryDataID& geomDataID);
 	RS_EXPORT RSresult geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints bufferUsage);
-	RS_EXPORT RSresult geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
+	RS_EXPORT RSresult geometryDataUpdateInterleavedVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
+	RS_EXPORT RSresult geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, RSvertexAttribute attrib, void* data);
 	RS_EXPORT RSresult geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
 	RS_EXPORT RSresult geometryDataFinalize(const RSgeometryDataID& gdataID);
 	RS_EXPORT RSresult geometryDataDispose(const RSgeometryDataID& gdataID);
