@@ -106,7 +106,7 @@ private:
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memProperties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	VkVertexInputBindingDescription getBindingDescription(const RSvertexAttribsInfo& attribInfo);
+	std::vector<VkVertexInputBindingDescription> getBindingDescription(const RSvertexAttribsInfo& attribInfo);
 	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(const RSvertexAttribsInfo& attribInfo);
 
 	//texture related

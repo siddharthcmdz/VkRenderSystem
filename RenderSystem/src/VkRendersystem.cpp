@@ -1239,13 +1239,13 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 
 	VkRSgeometryData& gdata = igeometryDataMap[collinst.instInfo.gdataID];
 	
-	auto bindingDescription = getBindingDescription(gdata.attributesInfo);
+	auto bindingDescriptions = getBindingDescription(gdata.attributesInfo);
 	auto attributeDescriptions = getAttributeDescriptions(gdata.attributesInfo);
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+	vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -1383,7 +1383,8 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	if (graphicsPipelineResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
-
+	
+	//TODO: maintain a table of compiled shader module and destroy them when rendersystem is disposed
 	vkDestroyShaderModule(iinstance.device, vertShaderModule, nullptr);
 	vkDestroyShaderModule(iinstance.device, fragShaderModule, nullptr);
 }
@@ -1431,9 +1432,22 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint
 			for (const VkRSdrawCommand& drawcmd : collection.drawCommands) {
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, drawcmd.graphicsPipeline);
 
-				VkBuffer vertexBuffers[]{ drawcmd.vertexBuffer };
-				VkDeviceSize offsets[]{ drawcmd.vertexOffset };
-				vkCmdBindVertexBuffers(view.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+				std::vector<VkDeviceSize> offsets;
+				switch (drawcmd.attribSetting) {
+				case RSvertexAttributeSettings::vasInterleaved: {
+					VkBuffer vertexBuffers[]{ drawcmd.vertexBuffers[0]};
+					offsets = { drawcmd.vertexOffset };
+					vkCmdBindVertexBuffers(view.commandBuffers[currentFrame], 0, 1, vertexBuffers, offsets.data());
+					break;
+				}
+
+				case RSvertexAttributeSettings::vasSeparate: {
+					offsets = { 0, 0, 0, 0 };
+					vkCmdBindVertexBuffers(view.commandBuffers[currentFrame], 0, static_cast<uint32_t>(drawcmd.vertexBuffers.size()), drawcmd.vertexBuffers.data(), offsets.data());
+					break;
+				}
+				}
+
 				if (drawcmd.isIndexed) {
 					vkCmdBindIndexBuffer(view.commandBuffers[currentFrame], drawcmd.indicesBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT32);
 				}
@@ -1627,7 +1641,14 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 					cmd.isIndexed = gdata.indices.indicesBuffer != VK_NULL_HANDLE;
 					cmd.numIndices = gdata.numIndices;
 					cmd.numVertices = gdata.numVertices;
-					cmd.vertexBuffer = gdata.interleaved.vaBuffer;
+					cmd.attribSetting = gdata.attributesInfo.settings;
+					if (gdata.attributesInfo.settings == RSvertexAttributeSettings::vasInterleaved) {
+						cmd.vertexBuffers = { gdata.interleaved.vaBuffer };
+					} else {
+						for (uint32_t i = 0; i < gdata.attributesInfo.numVertexAttribs; i++) {
+							cmd.vertexBuffers.push_back(gdata.separate.buffers[i].buffer);
+						}
+					}
 					cmd.primTopology = getPrimitiveType(geom.geomInfo.primType);
 					if (stateAvailable(collinst.instInfo.stateID)) {
 						VkRSstate& state = istateMap[collinst.instInfo.stateID];
@@ -2053,23 +2074,52 @@ void VkRenderSystem::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevice
 /**
 * vertex input binding description describes what rate to load data from memory throughout the vertices.
 */
-VkVertexInputBindingDescription VkRenderSystem::getBindingDescription(const RSvertexAttribsInfo& attribInfo) {
-	VkVertexInputBindingDescription bindingDescription{};
-	bindingDescription.binding = 0;
-	bindingDescription.stride = attribInfo.sizeOfAttrib();//sizeof(rsvd::VertexPC);
-	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+std::vector<VkVertexInputBindingDescription> VkRenderSystem::getBindingDescription(const RSvertexAttribsInfo& attribInfo) {
+	std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+	switch (attribInfo.settings) {
+	case RSvertexAttributeSettings::vasInterleaved: {
+		VkVertexInputBindingDescription bindingDescription{};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = attribInfo.sizeOfInterleavedAttrib();//sizeof(rsvd::VertexPC);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		bindingDescriptions.push_back(bindingDescription);
+		break;
+	}
+
+	case RSvertexAttributeSettings::vasSeparate: {
+		for (uint32_t i = 0; i < attribInfo.numVertexAttribs; i++) {
+			RSvertexAttribute attrib = attribInfo.attributes[i];
+			VkVertexInputBindingDescription bindingDescription{};
+			bindingDescription.binding = attribInfo.getBindingPoint(attrib);
+			bindingDescription.stride = attribInfo.sizeOfAttrib(attrib);
+			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+			bindingDescriptions.push_back(bindingDescription);
+		}
+		break;
+	}
+	}
+
 	
-	return bindingDescription;
+	return bindingDescriptions;
 }
 
 std::vector<VkVertexInputAttributeDescription> VkRenderSystem::getAttributeDescriptions(const RSvertexAttribsInfo& attribInfo) {
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+	
 	attributeDescriptions.resize(attribInfo.numVertexAttribs);
 	for (uint32_t i = 0; i < attribInfo.numVertexAttribs; i++) {
-		attributeDescriptions[i].binding = 0;
-		attributeDescriptions[i].location = i;
+		RSvertexAttribute attrib = attribInfo.attributes[i];
+		if (attribInfo.settings == RSvertexAttributeSettings::vasInterleaved) {
+			attributeDescriptions[i].binding = 0;
+			attributeDescriptions[i].offset = getOffset(attribInfo.numVertexAttribs, i);
+		}
+		else {
+			attributeDescriptions[i].binding = attribInfo.getBindingPoint(attrib);
+			attributeDescriptions[i].offset = 0;
+		}
+		attributeDescriptions[i].location = attribInfo.getBindingPoint(attrib);
 		attributeDescriptions[i].format = getVkFormat(attribInfo.attributes[i]);
-		attributeDescriptions[i].offset = getOffset(attribInfo.numVertexAttribs, i);
 	}
 
 	return attributeDescriptions;
@@ -2098,14 +2148,35 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 			return RSresult::FAILURE;
 		}
 
-		
-		//create buffer for staging position vertex attribs
-		VkDeviceSize vaBufferSize = numVertices * attributesInfo.sizeOfAttrib();
-		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.interleaved.stagingVABuffer, gdata.interleaved.stagingVAbufferMemory);
-		vkMapMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory, 0, vaBufferSize, 0, &gdata.interleaved.mappedStagingVAPtr);
+		switch (gdata.attributesInfo.settings) {
+		case RSvertexAttributeSettings::vasInterleaved: {
+			//create buffer for staging position vertex attribs
+			VkDeviceSize vaBufferSize = numVertices * attributesInfo.sizeOfInterleavedAttrib();
+			createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, gdata.interleaved.stagingVABuffer, gdata.interleaved.stagingVAbufferMemory);
+			vkMapMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory, 0, vaBufferSize, 0, &gdata.interleaved.mappedStagingVAPtr);
 
-		//create buffer for final vertex attributes buffer
-		createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.interleaved.vaBuffer, gdata.interleaved.vaBufferMemory);
+			//create buffer for final vertex attributes buffer
+			createBuffer(vaBufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gdata.interleaved.vaBuffer, gdata.interleaved.vaBufferMemory);
+			break;
+		}
+
+		case RSvertexAttributeSettings::vasSeparate: {
+			for (uint32_t i = 0; i < gdata.attributesInfo.numVertexAttribs; i++) {
+				RSvertexAttribute attrib = gdata.attributesInfo.attributes[i];
+				VkDeviceSize bufferSize = numVertices * attributesInfo.sizeOfAttrib(attrib);
+				
+				//create staging buffer.
+				uint32_t attribidx = static_cast<uint32_t>(attrib);
+				VkRSbuffer& attribBuffer = gdata.separate.buffers[attribidx];
+				createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, attribBuffer.buffer, attribBuffer.memory);
+				vkMapMemory(iinstance.device, attribBuffer.memory, 0, bufferSize, 0, &attribBuffer.mapped);
+
+				//create the device buffer
+				createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, attribBuffer.buffer, attribBuffer.memory);
+			}
+			break;
+		}
+		}
 
 		//create buffer for indices
 		if (numIndices) {
@@ -2130,6 +2201,8 @@ RSresult VkRenderSystem::geometryDataUpdateInterleavedVertices(const RSgeometryD
 
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
+		assert(gdata.attributesInfo.settings == RSvertexAttributeSettings::vasInterleaved && "attributes are not interleaved");
+		assert(gdata.usageHints == RSbufferUsageHints::buVertices && "invalid buffer usage hint");
 		if (gdata.attributesInfo.settings != RSvertexAttributeSettings::vasInterleaved) {
 			return RSresult::FAILURE;
 		}
@@ -2138,7 +2211,6 @@ RSresult VkRenderSystem::geometryDataUpdateInterleavedVertices(const RSgeometryD
 			throw std::runtime_error("Unsupported operation!");
 		}
 		
-		assert(gdata.usageHints == RSbufferUsageHints::buVertices && "invalid buffer usage hint");
 		//memcpy((char*)gdata.mappedStagingVAPtr + offset, data, sizeinBytes);
 		memcpy(gdata.interleaved.mappedStagingVAPtr, data, sizeinBytes);
 		//rsvd::VertexPC* vertices = static_cast<rsvd::VertexPC*>(gdata.interleaved.mappedStagingVAPtr);
@@ -2155,10 +2227,17 @@ RSresult VkRenderSystem::geometryDataUpdateVertices(const RSgeometryDataID& gdat
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 
+		assert(gdata.attributesInfo.settings == RSvertexAttributeSettings::vasSeparate && "attributes are not separate");
 		if (gdata.attributesInfo.settings != RSvertexAttributeSettings::vasSeparate) {
 			return RSresult::FAILURE;
 		}
+		uint32_t attribIdx = static_cast<uint32_t>(attrib);
+		memcpy(gdata.separate.stagingBuffers[attribIdx].mapped, data, sizeInBytes);
+
+		return RSresult::SUCCESS;
 	}
+
+	return RSresult::FAILURE;
 }
 
 RSresult VkRenderSystem::geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data) {
@@ -2184,14 +2263,40 @@ RSresult VkRenderSystem::geometryDataFinalize(const RSgeometryDataID& gdataID) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 
 		//unmap the host pointers
-		vkUnmapMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory);
-		gdata.interleaved.mappedStagingVAPtr = nullptr;
-		//copy to device buffer
-		VkDeviceSize vaBufferSize = gdata.numVertices * gdata.attributesInfo.sizeOfAttrib();
-		copyBuffer(gdata.interleaved.stagingVABuffer, gdata.interleaved.vaBuffer, vaBufferSize);
-		//destroy the staging buffers
-		vkDestroyBuffer(iinstance.device, gdata.interleaved.stagingVABuffer, nullptr);
-		vkFreeMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory, nullptr);
+		switch (gdata.attributesInfo.settings) {
+		case RSvertexAttributeSettings::vasInterleaved: {
+			vkUnmapMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory);
+			gdata.interleaved.mappedStagingVAPtr = nullptr;
+			
+			//copy to device buffer
+			VkDeviceSize vaBufferSize = gdata.numVertices * gdata.attributesInfo.sizeOfInterleavedAttrib();
+			copyBuffer(gdata.interleaved.stagingVABuffer, gdata.interleaved.vaBuffer, vaBufferSize);
+			
+			//destroy the staging buffers
+			vkDestroyBuffer(iinstance.device, gdata.interleaved.stagingVABuffer, nullptr);
+			vkFreeMemory(iinstance.device, gdata.interleaved.stagingVAbufferMemory, nullptr);
+			break;
+		}
+
+		case RSvertexAttributeSettings::vasSeparate: {
+			for(uint32_t i = 0; i < gdata.attributesInfo.numVertexAttribs; i++) {
+				RSvertexAttribute attrib = gdata.attributesInfo.attributes[i];
+				uint32_t attribIdx = static_cast<uint32_t>(attrib);
+				VkRSbuffer& stagingBuffer = gdata.separate.stagingBuffers[attribIdx];
+				VkRSbuffer& deviceBuffer = gdata.separate.buffers[attribIdx];
+				stagingBuffer.mapped = nullptr;
+
+				//copy to device buffer
+				VkDeviceSize bufferSize = gdata.numVertices * gdata.attributesInfo.sizeOfAttrib(attrib);
+				copyBuffer(stagingBuffer.buffer, deviceBuffer.buffer, bufferSize);
+
+				//destroy the staging buffers
+				vkDestroyBuffer(iinstance.device, stagingBuffer.buffer, nullptr);
+				vkFreeMemory(iinstance.device, stagingBuffer.memory, nullptr);
+			}
+			break;
+		}
+		}
 
 		if (gdata.numIndices) {
 			vkUnmapMemory(iinstance.device, gdata.indices.stagingIndexBufferMemory);

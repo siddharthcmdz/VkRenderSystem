@@ -2,14 +2,19 @@
 #include <cstdint>
 #include <glm/vec4.hpp>
 #include <vector>
+#include <string>
 #include "RStypes.h"
 #include "rsenums.h"
 #include "rsids.h"
 
+
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+
 #define MAX_IDS UINT32_MAX
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
-#include <Windows.h>
 
 
 struct RSinitInfo {
@@ -47,7 +52,10 @@ struct RSvertexAttribsInfo {
 	uint32_t numVertexAttribs = 0;
 	RSvertexAttribute* attributes = nullptr;
 	RSvertexAttributeSettings settings;
-	uint32_t sizeOfAttrib() const;
+	uint32_t sizeOfInterleavedAttrib() const;
+	uint32_t sizeOfAttrib(RSvertexAttribute attrib) const;
+	std::string getName(RSvertexAttribute attrib) const;
+	uint32_t getBindingPoint(RSvertexAttribute attrib) const;
 };
 
 struct RSgeometryInfo {
