@@ -13,7 +13,8 @@ struct QuadricData {
 };
 
 class QuadricDataFactory {
-	const static float RS_PI; //
+	const static float RS_PI;
 public:
 	static QuadricData createSphere(float radius, uint32_t numslices, uint32_t numstacks);
+	static QuadricData createQuad(float size);
 };

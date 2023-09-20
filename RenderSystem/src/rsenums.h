@@ -19,12 +19,6 @@ enum RSvertexAttributeSettings {
 	vasSeparate
 };
 
-enum RSbufferUsageHints {
-	buVertices,
-	buUniforms,
-	buSpatials
-};
-
 enum RSprimitiveType {
 	ptTriangle,
 	ptTriangleStrip,

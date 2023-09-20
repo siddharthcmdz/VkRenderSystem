@@ -8,7 +8,7 @@ QuadricExample::QuadricExample() {
 }
 
 void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
-	QuadricData sphereData = QuadricDataFactory::createSphere(1, 4, 4);
+	QuadricData sphereData = QuadricDataFactory::createSphere(1, 6, 6);
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 
 	ibbox = ss::BoundingBox(glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -20,7 +20,7 @@ void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& glo
 	attribInfo.settings = RSvertexAttributeSettings::vasSeparate;
 	
 	RSsingleEntity entity;
-	vkrs.geometryDataCreate(entity.geomDataID, static_cast<uint32_t>(sphereData.positions.size()), static_cast<uint32_t>(sphereData.indices.size()), attribInfo, RSbufferUsageHints::buVertices);
+	vkrs.geometryDataCreate(entity.geomDataID, static_cast<uint32_t>(sphereData.positions.size()), static_cast<uint32_t>(sphereData.indices.size()), attribInfo);
 	uint32_t posSizeInBytes = static_cast<uint32_t>(sphereData.positions.size() * sizeof(sphereData.positions[0]));
 	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, posSizeInBytes, RSvertexAttribute::vaPosition, (void*)sphereData.positions.data());
 
@@ -80,7 +80,9 @@ void QuadricExample::dispose(const RSexampleGlobal& globals) {
 		vkrs.geometryDataDispose(entity.geomDataID);
 		vkrs.appearanceDispose(entity.appID);
 		vkrs.spatialDispose(entity.spatialID);
-		vkrs.stateDispose(entity.stateID);
+		if (entity.stateID.isValid()) {
+			vkrs.stateDispose(entity.stateID);
+		}
 		vkrs.collectionInstanceDispose(entity.collectionID, entity.instanceID);
 		vkrs.collectionDispose(entity.collectionID);
 	}

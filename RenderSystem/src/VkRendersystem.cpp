@@ -2125,7 +2125,7 @@ std::vector<VkVertexInputAttributeDescription> VkRenderSystem::getAttributeDescr
 	return attributeDescriptions;
 }
 
-RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints usageHints) {
+RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo) {
 	RSuint id;
 	bool success = igeomDataIDpool.CreateID(id);
 	assert(success && "failed to create a geometry data ID");
@@ -2133,7 +2133,6 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 		VkRSgeometryData gdata;
 		gdata.numVertices = numVertices;
 		gdata.numIndices = numIndices;
-		gdata.usageHints = usageHints;
 		gdata.attributesInfo = attributesInfo;
 
 		//Create buffer for position
@@ -2203,7 +2202,6 @@ RSresult VkRenderSystem::geometryDataUpdateInterleavedVertices(const RSgeometryD
 	if (geometryDataAvailable(gdataID)) {
 		VkRSgeometryData gdata = igeometryDataMap[gdataID];
 		assert(gdata.attributesInfo.settings == RSvertexAttributeSettings::vasInterleaved && "attributes are not interleaved");
-		assert(gdata.usageHints == RSbufferUsageHints::buVertices && "invalid buffer usage hint");
 		if (gdata.attributesInfo.settings != RSvertexAttributeSettings::vasInterleaved) {
 			return RSresult::FAILURE;
 		}

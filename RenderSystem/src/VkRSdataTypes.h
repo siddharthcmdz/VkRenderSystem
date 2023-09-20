@@ -90,7 +90,6 @@ struct VkRSgeometryData {
 	uint32_t numVertices = 0;
 	uint32_t numIndices = 0;
 	RSvertexAttribsInfo attributesInfo;
-	RSbufferUsageHints usageHints = RSbufferUsageHints::buVertices;
 	
 	VkRSinterleavedGeomBuffers interleaved;
 	VkRSseparateGeomBuffers separate;
