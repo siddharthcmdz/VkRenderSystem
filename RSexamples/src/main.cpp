@@ -4,6 +4,7 @@
 #include "HelloVulkanExample.h"
 #include "PrimitiveExample.h"
 #include "ModelLoadExample.h"
+#include "QuadricExample.h"
 #include <VkRenderSystem.h>
 #include <Windows.h>
 #include <iostream>
@@ -312,6 +313,10 @@ int main(int argc, char** argv) {
 
 	case RSexampleName::enModelLoad:
 		g_example = new ModelLoadExample();
+		break;
+
+	case RSexampleName::enQuadric:
+		g_example = new QuadricExample();
 		break;
 
 	case RSexampleName::enMax:

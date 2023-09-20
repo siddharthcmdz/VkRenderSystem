@@ -20,6 +20,7 @@ struct CircleEntity : public RSsingleEntity {
 
 class PrimitiveExample : public RSexample {
 private:
+	const float RS_PI = 3.14159265358979323846f;
 	BoundingBox ibbox;
 	enum PrimitiveType {
 		Points,

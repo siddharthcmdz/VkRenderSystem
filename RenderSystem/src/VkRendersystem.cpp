@@ -2167,12 +2167,13 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID& outgdataID, uint32
 				
 				//create staging buffer.
 				uint32_t attribidx = static_cast<uint32_t>(attrib);
-				VkRSbuffer& attribBuffer = gdata.separate.buffers[attribidx];
-				createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, attribBuffer.buffer, attribBuffer.memory);
-				vkMapMemory(iinstance.device, attribBuffer.memory, 0, bufferSize, 0, &attribBuffer.mapped);
+				VkRSbuffer& stageBuffer = gdata.separate.stagingBuffers[attribidx];
+				createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stageBuffer.buffer, stageBuffer.memory);
+				vkMapMemory(iinstance.device, stageBuffer.memory, 0, bufferSize, 0, &stageBuffer.mapped);
 
 				//create the device buffer
-				createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, attribBuffer.buffer, attribBuffer.memory);
+				VkRSbuffer& deviceBuffer = gdata.separate.buffers[attribidx];
+				createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, deviceBuffer.buffer, deviceBuffer.memory);
 			}
 			break;
 		}

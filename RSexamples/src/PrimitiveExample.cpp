@@ -4,7 +4,6 @@
 #include <cmath>
 #include <iostream>
 
-#define RS_PI 3.14159265358979323846
 #include <VkRenderSystem.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include "helper.h"
