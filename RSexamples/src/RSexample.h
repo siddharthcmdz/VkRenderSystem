@@ -6,10 +6,13 @@
 #include "BoundingBox.h"
 #include <rsenums.h>
 
+
+
 enum RSexampleName {
 	enHelloVulkan,
 	enPrimitiveType,
 	enModelLoad,
+	enQuadric,
 	enMax
 };
 
@@ -17,6 +20,7 @@ const std::string RSexampleNameStr[] = {
 	"HelloVulkanExample",
 	"PrimitiveExample",
 	"ModelLoadExample",
+	"QuadricExample",
 	"None"
 };
 

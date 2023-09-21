@@ -30,6 +30,8 @@
     <ClCompile Include="..\src\ModelLoadExample.cpp" />
     <ClCompile Include="..\src\PrimitiveExample.cpp" />
     <ClCompile Include="..\src\Scene.cpp" />
+    <ClCompile Include="..\src\QuadricDataFactory.cpp" />
+    <ClCompile Include="..\src\QuadricExample.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Scripts\dependency_importer.py" />
@@ -45,6 +47,8 @@
     <ClInclude Include="..\src\ModelCapabilities.h" />
     <ClInclude Include="..\src\ModelLoadExample.h" />
     <ClInclude Include="..\src\PrimitiveExample.h" />
+    <ClInclude Include="..\src\QuadricDataFactory.h" />
+    <ClInclude Include="..\src\QuadricExample.h" />
     <ClInclude Include="..\src\RSexample.h" />
     <ClInclude Include="..\src\Scene.h" />
   </ItemGroup>

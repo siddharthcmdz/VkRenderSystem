@@ -3,7 +3,7 @@
 //vertex attributes
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec4 inColor;
-layout(location = 2) in vec2 inTexCoord;
+layout(location = 3) in vec2 inTexCoord;
 
 //descriptor sets
 layout(set = 0, binding = 0) uniform View {

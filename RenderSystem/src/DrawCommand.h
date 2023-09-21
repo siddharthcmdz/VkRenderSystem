@@ -3,7 +3,8 @@
 #include <array>
 
 struct VkRSdrawCommand {
-	VkBuffer vertexBuffer = VK_NULL_HANDLE;
+	RSvertexAttributeSettings attribSetting;
+	std::vector<VkBuffer> vertexBuffers{};
 	VkBuffer indicesBuffer = VK_NULL_HANDLE;
 	bool isIndexed = true;
 	uint32_t numIndices = 0;

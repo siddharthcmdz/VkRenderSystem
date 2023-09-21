@@ -14,10 +14,9 @@ enum RSvertexAttribute {
 	vaTexCoord
 };
 
-enum RSbufferUsageHints {
-	buVertices,
-	buUniforms,
-	buSpatials
+enum RSvertexAttributeSettings {
+	vasInterleaved,
+	vasSeparate
 };
 
 enum RSprimitiveType {

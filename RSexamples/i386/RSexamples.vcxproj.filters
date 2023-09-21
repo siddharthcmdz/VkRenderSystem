@@ -49,6 +49,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Scene.cpp">
+    <ClCompile Include="..\src\QuadricDataFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\QuadricExample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -92,6 +96,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\Material.h">
+    <ClInclude Include="..\src\QuadricDataFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\QuadricExample.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

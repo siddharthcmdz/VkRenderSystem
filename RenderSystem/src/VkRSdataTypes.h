@@ -11,19 +11,11 @@
 #include <string>
 #include <optional>
 #include <unordered_map>
+#include <array>
 #include "rsenums.h"
 #include "DrawCommand.h"
 #include "TextureLoader.h"
-
-#define VK_CHECK_RESULT(f)																				\
-{																										\
-	VkResult res = (f);																					\
-	if (res != VK_SUCCESS)																				\
-	{																									\
-		std::cout << "Fatal : VkResult is \"" << vks::tools::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
-		assert(res == VK_SUCCESS);																		\
-	}																									\
-}
+#include "VkRSbuffer.h"
 
 struct VkRSinstance {
 	static const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -73,23 +65,35 @@ struct AllocationID {
 	uint16_t elemSize;
 };
 
-struct VkRSgeometryData {
-	uint32_t numVertices = 0;
-	uint32_t numIndices = 0;
-	RSvertexAttribsInfo attributesInfo;
-	RSbufferUsageHints usageHints = RSbufferUsageHints::buVertices;
-	
+struct VkRSinterleavedGeomBuffers {
 	VkBuffer vaBuffer = VK_NULL_HANDLE;
 	VkBuffer stagingVABuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vaBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory stagingVAbufferMemory = VK_NULL_HANDLE;
 	void* mappedStagingVAPtr = nullptr;
+};
 
+struct VkRSseparateGeomBuffers {
+	std::array<VkRSbuffer, 4> stagingBuffers;
+	std::array<VkRSbuffer, 4> buffers;
+};
+
+struct VkRSindicesBuffers {
 	VkBuffer indicesBuffer = VK_NULL_HANDLE;
 	VkBuffer stagingIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory indicesBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory stagingIndexBufferMemory = VK_NULL_HANDLE;
 	void* mappedIndexPtr = nullptr;
+};
+
+struct VkRSgeometryData {
+	uint32_t numVertices = 0;
+	uint32_t numIndices = 0;
+	RSvertexAttribsInfo attributesInfo;
+	
+	VkRSinterleavedGeomBuffers interleaved;
+	VkRSseparateGeomBuffers separate;
+	VkRSindicesBuffers indices;
 };
 
 struct VkRSgeometry {

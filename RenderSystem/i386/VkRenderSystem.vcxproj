@@ -40,7 +40,7 @@
     <ClInclude Include="..\src\TextureLoader.h" />
     <ClInclude Include="..\src\VertexData.h" />
     <ClInclude Include="..\src\VkRenderSystem.h" />
-    <ClInclude Include="..\src\VkRenderSystemEntry.h" />
+    <ClInclude Include="..\src\VkRSbuffer.h" />
     <ClInclude Include="..\src\VkRSdataTypes.h" />
   </ItemGroup>
   <ItemGroup>
@@ -48,6 +48,7 @@
     <ClCompile Include="..\src\stb_image.cpp" />
     <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VkRendersystem.cpp" />
+    <ClCompile Include="..\src\VkRSbuffer.cpp" />
     <ClCompile Include="..\src\VkRSdataTypes.cpp" />
   </ItemGroup>
   <ItemGroup>
