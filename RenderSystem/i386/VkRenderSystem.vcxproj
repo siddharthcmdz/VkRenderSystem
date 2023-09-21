@@ -21,12 +21,18 @@
   <ItemGroup>
     <None Include="..\..\ToDoList.md" />
     <None Include="..\src\scripts\deploy.py" />
-    <None Include="..\src\shaders\passthrough.frag" />
-    <None Include="..\src\shaders\passthrough.vert" />
-    <None Include="..\src\shaders\sampleshader.frag" />
-    <None Include="..\src\shaders\sampleshader.vert" />
-    <None Include="..\src\shaders\textured.frag" />
-    <None Include="..\src\shaders\textured.vert" />
+    <None Include="..\src\shaders\glsl\passthrough.frag" />
+    <None Include="..\src\shaders\glsl\passthrough.vert" />
+    <None Include="..\src\shaders\glsl\sampleshader.frag" />
+    <None Include="..\src\shaders\glsl\sampleshader.vert" />
+    <None Include="..\src\shaders\glsl\textured.frag" />
+    <None Include="..\src\shaders\glsl\textured.vert" />
+    <None Include="..\src\shaders\spv\passthroughFrag.spv" />
+    <None Include="..\src\shaders\spv\passthroughVert.spv" />
+    <None Include="..\src\shaders\spv\sampleshaderFrag.spv" />
+    <None Include="..\src\shaders\spv\sampleshaderVert.spv" />
+    <None Include="..\src\shaders\spv\texturedFrag.spv" />
+    <None Include="..\src\shaders\spv\texturedVert.spv" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h" />
@@ -44,10 +50,12 @@
     <ClInclude Include="..\src\VkRSdataTypes.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\RSdataTypes.cpp" />
     <ClCompile Include="..\src\stb_image.cpp" />
     <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VkRendersystem.cpp" />
+    <ClCompile Include="..\src\VkRenderSystemEntry.cpp" />
     <ClCompile Include="..\src\VkRSbuffer.cpp" />
     <ClCompile Include="..\src\VkRSdataTypes.cpp" />
   </ItemGroup>
