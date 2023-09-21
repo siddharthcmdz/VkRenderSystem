@@ -1,14 +1,21 @@
 #pragma once
 #include "RSexample.h"
 #include "BoundingBox.h"
-#include "ModelCapabilities.h"
+#include "ModelData.h"
+#include "Scene.h"
 
 using namespace ss;
 
+struct aiMesh;
+struct aiScene;
+struct aiNode;
+
 class ModelLoadExample : public RSexample {
 private:
-	BoundingBox ibbox;
-	ss::ModelCapabilities imdcaps;
+	ModelData imodelData;
+
+	ss::MeshData getMesh(const aiMesh* mesh, uint32_t& matIdx);
+	void traverseScene(const aiScene* scene, const aiNode* node, ModelData& modelData);
 
 public:
 	ModelLoadExample();

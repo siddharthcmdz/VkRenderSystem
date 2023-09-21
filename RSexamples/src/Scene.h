@@ -1,15 +1,15 @@
 #pragma once
 #include <vector>
-#include "MeshInstance.h"
+#include "ModelData.h"
 
 namespace ss {
 	class Scene {
 	private:
-		std::vector<MeshInstance> imeshInstanceList;
-		
+		ModelData imodelData;
+
 	public:
 		Scene() = default;
-		void addMeshInstance(const MeshInstance& meshInst);
-		~Scene();
+		//void setModelData(const ModelData& md);
+		//ModelData getModelData() const;
 	};
 };
