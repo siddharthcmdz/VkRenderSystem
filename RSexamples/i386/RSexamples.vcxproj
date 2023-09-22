@@ -24,6 +24,7 @@
     <ClCompile Include="..\src\HelloVulkanExample.cpp" />
     <ClCompile Include="..\src\helper.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\ModelData.cpp" />
     <ClCompile Include="..\src\ModelLoadExample.cpp" />
     <ClCompile Include="..\src\PrimitiveExample.cpp" />
     <ClCompile Include="..\src\Scene.cpp" />

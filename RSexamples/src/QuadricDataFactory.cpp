@@ -103,7 +103,7 @@ QuadricData QuadricDataFactory::createQuad(float size) {
 	return qd;
 }
 
-QuadricData QuadricDataFactory::createCylinder(float radius, float numslices, float numstacks, float zmin, float zmax, float phimax) {
+QuadricData QuadricDataFactory::createCylinder(float radius, uint32_t numslices, uint32_t numstacks, float zmin, float zmax, float phimax) {
 	QuadricData qd;
 	float phiMax = phimax;
 	ss::BoundingBox bbox;
@@ -156,7 +156,7 @@ QuadricData QuadricDataFactory::createCylinder(float radius, float numslices, fl
 }
 
 
-QuadricData QuadricDataFactory::createDisk(float innerRadius, float outerRadius, float numslices, float numstacks, float z, float phimax) {
+QuadricData QuadricDataFactory::createDisk(float innerRadius, float outerRadius, uint32_t numslices, uint32_t numstacks, float z, float phimax) {
 	QuadricData qd;
 	ss::BoundingBox bbox;
 	for (uint32_t i = 0; i < numslices; i++) {
@@ -200,7 +200,7 @@ QuadricData QuadricDataFactory::createDisk(float innerRadius, float outerRadius,
 	return qd;
 }
 
-QuadricData QuadricDataFactory::createCone(float radius, float numslices, float numstacks, float height, float phimax) {
+QuadricData QuadricDataFactory::createCone(float radius, uint32_t numslices, uint32_t numstacks, float height, float phimax) {
 	QuadricData qd;
 	ss::BoundingBox bbox;
 	for (uint32_t i = 0; i < numslices; i++) {

@@ -25,7 +25,7 @@ class QuadricDataFactory {
 public:
 	static QuadricData createSphere(float radius = DEFAULT_RADIUS, uint32_t numslices = DEFAULT_NUM_STACKS, uint32_t numstacks = DEFAULT_NUM_SLICES);
 	static QuadricData createQuad(float size = DEFAULT_SIZE);
-	static QuadricData createCone(float radius = DEFAULT_RADIUS, float numslices = DEFAULT_NUM_SLICES, float numstacks = DEFAULT_NUM_STACKS, float height = DEFAULT_HEIGHT, float phimax = DEFAULT_PHI_MAX);
-	static QuadricData createCylinder(float radius = DEFAULT_RADIUS, float numslices = DEFAULT_NUM_SLICES, float numstacks = DEFAULT_NUM_STACKS, float zmin = 0, float zmax = DEFAULT_HEIGHT, float phimax = DEFAULT_PHI_MAX);
-	static QuadricData createDisk(float innerRadius = DEFAULT_HALF_RADIUS, float outerRadius = DEFAULT_RADIUS, float numslices = DEFAULT_NUM_SLICES, float numstacks = DEFAULT_NUM_STACKS, float z = 0, float phimax = DEFAULT_PHI_MAX);
+	static QuadricData createCone(float radius = DEFAULT_RADIUS, uint32_t numslices = DEFAULT_NUM_SLICES, uint32_t numstacks = DEFAULT_NUM_STACKS, float height = DEFAULT_HEIGHT, float phimax = DEFAULT_PHI_MAX);
+	static QuadricData createCylinder(float radius = DEFAULT_RADIUS, uint32_t numslices = DEFAULT_NUM_SLICES, uint32_t numstacks = DEFAULT_NUM_STACKS, float zmin = 0, float zmax = DEFAULT_HEIGHT, float phimax = DEFAULT_PHI_MAX);
+	static QuadricData createDisk(float innerRadius = DEFAULT_HALF_RADIUS, float outerRadius = DEFAULT_RADIUS, uint32_t numslices = DEFAULT_NUM_SLICES, uint32_t numstacks = DEFAULT_NUM_STACKS, float z = 0, float phimax = DEFAULT_PHI_MAX);
 };

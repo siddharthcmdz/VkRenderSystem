@@ -6,6 +6,7 @@
 #include <assimp/cimport.h>
 #include <stdexcept>
 #include <assert.h>
+#include <VkRenderSystem.h>
 
 ModelLoadExample::ModelLoadExample() {
 }
@@ -41,13 +42,38 @@ void ModelLoadExample::traverseScene(const aiScene* scene, const aiNode* node, M
 	}
 }
 
+RSvertexAttribsInfo ModelLoadExample::getRSvertexAttribData(const aiMesh* mesh) {
+	RSvertexAttribsInfo attribsInfo;
+	std::vector<RSvertexAttribute> attribs;
+
+	if (mesh->HasPositions()) {
+		attribs.push_back(RSvertexAttribute::vaPosition);
+	}
+	if (mesh->HasNormals()) {
+		attribs.push_back(RSvertexAttribute::vaNormal);
+	}
+	if (mesh->HasVertexColors(0)) {
+		attribs.push_back(RSvertexAttribute::vaColor);
+	}
+	if (mesh->HasTextureCoords(0)) {
+		attribs.push_back(RSvertexAttribute::vaTexCoord);
+	}
+	attribsInfo.settings = RSvertexAttributeSettings::vasSeparate;
+	
+	attribsInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
+	attribsInfo.attributes = new RSvertexAttribute[attribsInfo.numVertexAttribs]();
+	std::memcpy(attribsInfo.attributes, attribs.data(), attribsInfo.numVertexAttribs * sizeof(RSvertexAttribute));
+
+	return attribsInfo;
+}
+
 ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 	ss::MeshData meshdata;
 	
 	if (!mesh->HasPositions()) {
 		throw std::runtime_error("mesh file has no vertex positions - invalid file");
 	}
-
+	
 	std::vector<glm::vec4> rsposlist;
 	std::vector<glm::vec4> rsnormlist;
 	std::vector<glm::vec2> rstexcoordlist;
@@ -73,7 +99,6 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 	meshdata.normals = rsnormlist;
 	meshdata.texcoords = rstexcoordlist;
 	matIdx = mesh->mMaterialIndex;
-
 	std::vector<uint32_t> rsindexlist;
 	for (uint32_t j = 0; j < mesh->mNumFaces; j++) {
 		const aiFace& face = mesh->mFaces[j];
@@ -82,6 +107,8 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 		rsindexlist.push_back(face.mIndices[1]);
 		rsindexlist.push_back(face.mIndices[2]);
 	}
+
+	initRSgeomData(meshdata);
 
 	return meshdata;
 }
@@ -162,14 +189,107 @@ void ModelLoadExample::init(const RSexampleOptions& eo, const RSexampleGlobal& g
 	imodelData.materials = materials;
 
 	traverseScene(scene, scene->mRootNode, imodelData);
+
+	//populate rs stuff
+	populateRSentities();
+	auto& vkrs = VkRenderSystem::getInstance();
+	assert(imodelData.collectionID.isValid() && "model data collection ID should be valid at this point");
+	vkrs.viewAddCollection(globals.viewID, imodelData.collectionID);
+}
+
+void ModelLoadExample::initRSgeomData(MeshData& meshdata) {
+	auto& vkrs = VkRenderSystem::getInstance();
+	
+	assert(!meshdata.positions.empty() && "mesh must have atleast position");
+	uint32_t numvertices = static_cast<uint32_t>(meshdata.positions.size());
+	uint32_t numindices = static_cast<uint32_t>(meshdata.iindices.size());
+	vkrs.geometryDataCreate(meshdata.geometryDataID, numvertices, numindices, meshdata.attribsInfo);
+
+	for (uint32_t i = 0; i < meshdata.attribsInfo.numVertexAttribs; i++) {
+		RSvertexAttribute attrib = meshdata.attribsInfo.attributes[i];
+		vkrs.geometryDataUpdateVertices(meshdata.geometryDataID, 0, numvertices * meshdata.attribsInfo.sizeOfAttrib(attrib), attrib, meshdata.getAttribData(attrib));
+	}
+
+	if (!meshdata.iindices.empty()) {
+		vkrs.geometryDataUpdateIndices(meshdata.geometryDataID, 0, numindices * sizeof(uint32_t), meshdata.iindices.data());
+	}
+
+	RSgeometryInfo geomInfo;
+	geomInfo.primType = RSprimitiveType::ptTriangle;
+	vkrs.geometryCreate(meshdata.geometryID, geomInfo);
+}
+
+void ModelLoadExample::initRSappearance(Appearance& app) {
+	auto& vkrs = VkRenderSystem::getInstance();
+	RSappearanceInfo appinfo;
+	if (!app.diffuseTexturePath.empty()) {
+		vkrs.textureCreate(app.textureID, app.diffuseTexturePath.c_str());
+		appinfo.diffuseTexture = app.textureID;
+	}
+
+	vkrs.appearanceCreate(app.appearanceID, appinfo);
+}
+
+void ModelLoadExample::initRSinstance(MeshInstance& mi) {
+	auto& vkrs = VkRenderSystem::getInstance();
+	
+	RSinstanceInfo instinfo;
+	instinfo.gdataID = mi.meshData.geometryDataID;
+	instinfo.geomID = mi.meshData.geometryID;
+
+	RSspatial spatial;
+	spatial.model = mi.modelmat;
+	spatial.modelInv = glm::inverse(spatial.model);
+	vkrs.spatialCreate(mi.spatialID, spatial);
+
+	Appearance& app = imodelData.materials[mi.materialIdx];
+	if (!app.appearanceID.isValid()) {
+		initRSappearance(app);
+	}
+
+	instinfo.spatialID = mi.spatialID;
+	instinfo.appID = app.appearanceID;
+
+	vkrs.collectionInstanceCreate(imodelData.collectionID, mi.instanceID, instinfo);
+}
+
+void ModelLoadExample::populateRSentities() {
+	auto& vkrs = VkRenderSystem::getInstance();
+
+	uint32_t numinsts = static_cast<uint32_t>(imodelData.meshInstances.size());
+	RScollectionInfo collinfo;
+	collinfo.maxInstances = 1000;
+	vkrs.collectionCreate(imodelData.collectionID, collinfo);
+
+	for (uint32_t i = 0; i < numinsts; i++) {
+		MeshData& md = imodelData.meshInstances[i].meshData;
+		initRSgeomData(md);
+		MeshInstance& mi = imodelData.meshInstances[i];
+		initRSinstance(mi);
+	}
 }
 
 void ModelLoadExample::render(const RSexampleGlobal& globals) {
+	auto& vkrs = VkRenderSystem::getInstance();
 
+	vkrs.contextDrawCollections(globals.ctxID, globals.viewID);
 }
 
 void ModelLoadExample::dispose(const RSexampleGlobal& globals) {
+	uint32_t numMeshes = static_cast<uint32_t>(imodelData.meshInstances.size());
+	for (uint32_t i = 0; i < numMeshes; i++) {
+		MeshInstance& mi = imodelData.meshInstances[i];
+		mi.dispose();
+	}
 
+	uint32_t numAppearances = static_cast<uint32_t>(imodelData.materials.size());
+	for (uint32_t i = 0; i < numAppearances; i++) {
+		Appearance& app = imodelData.materials[i];
+		app.dispose();
+	}
+
+	auto& vkrs = VkRenderSystem::getInstance();
+	vkrs.renderSystemDispose();
 }
 
 std::string ModelLoadExample::getExampleName() const {

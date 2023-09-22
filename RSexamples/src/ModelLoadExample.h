@@ -16,6 +16,11 @@ private:
 
 	ss::MeshData getMesh(const aiMesh* mesh, uint32_t& matIdx);
 	void traverseScene(const aiScene* scene, const aiNode* node, ModelData& modelData);
+	void populateRSentities();
+	void initRSgeomData(MeshData& meshdata);
+	void initRSinstance(MeshInstance& meshinstance);
+	void initRSappearance(Appearance& app);
+	RSvertexAttribsInfo getRSvertexAttribData(const aiMesh* mesh);
 
 public:
 	ModelLoadExample();

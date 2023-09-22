@@ -16,6 +16,7 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
+#include "rsexporter.h"
 
 struct RSinitInfo {
 	bool enableValidation = true;
@@ -52,10 +53,11 @@ struct RSvertexAttribsInfo {
 	uint32_t numVertexAttribs = 0;
 	RSvertexAttribute* attributes = nullptr;
 	RSvertexAttributeSettings settings;
-	uint32_t sizeOfInterleavedAttrib() const;
-	uint32_t sizeOfAttrib(RSvertexAttribute attrib) const;
-	std::string getName(RSvertexAttribute attrib) const;
-	uint32_t getBindingPoint(RSvertexAttribute attrib) const;
+	
+	RS_EXPORT uint32_t sizeOfInterleavedAttrib() const;
+	RS_EXPORT uint32_t sizeOfAttrib(RSvertexAttribute attrib) const;
+	RS_EXPORT std::string getName(RSvertexAttribute attrib) const;
+	RS_EXPORT uint32_t getBindingPoint(RSvertexAttribute attrib) const;
 };
 
 struct RSgeometryInfo {

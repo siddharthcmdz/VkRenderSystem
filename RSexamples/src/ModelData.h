@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <string>
 #include "BoundingBox.h"
+#include <rsids.h>
+#include <RSdataTypes.h>
 
 namespace ss {
 	struct ModelCapabilities {
@@ -21,6 +23,13 @@ namespace ss {
 		std::vector<glm::vec4> colors;
 		std::vector<glm::vec2> texcoords;
 		std::vector<uint32_t> iindices;
+		
+		RSgeometryDataID geometryDataID;
+		RSgeometryID geometryID;
+		RSvertexAttribsInfo attribsInfo;
+
+		void* getAttribData(const RSvertexAttribute attrib);
+		void dispose();
 	};
 
 	struct Appearance {
@@ -30,12 +39,23 @@ namespace ss {
 		glm::vec4 emissive = glm::vec4(0, 0, 0, 1);
 		float shininess = 0.0f;
 		std::string diffuseTexturePath;
+
+		RSappearanceID appearanceID;
+		RStextureID textureID;
+		void dispose();
 	};
 
 	struct MeshInstance {
 		MeshData meshData;
 		uint32_t materialIdx;
 		glm::mat4 modelmat;
+
+		RSinstanceID instanceID;
+		RSspatialID spatialID;
+		RSstateID stateID;
+		RScollectionID associatedCollectionID; //do not dispose this
+
+		void dispose();
 	};
 
 	struct ModelData {
@@ -44,5 +64,7 @@ namespace ss {
 		ss::ModelCapabilities imdcaps;
 		std::vector<MeshInstance> meshInstances;
 		std::vector<Appearance> materials;
+
+		RScollectionID collectionID;
 	};
 }
