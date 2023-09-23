@@ -649,8 +649,8 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 
 	createDescriptorPool();
 
-	ishaderModuleMap[RSshaderTemplate::stOneTriangle] = createShaderModule(RSshaderTemplate::stOneTriangle);
-    ishaderModuleMap[RSshaderTemplate::stPassthrough] = createShaderModule(RSshaderTemplate::stPassthrough);
+	ishaderModuleMap[RSshaderTemplate::stPassthrough] = createShaderModule(RSshaderTemplate::stPassthrough);
+    ishaderModuleMap[RSshaderTemplate::stTextured] = createShaderModule(RSshaderTemplate::stTextured);
 
 
 	iisRSinited = true;

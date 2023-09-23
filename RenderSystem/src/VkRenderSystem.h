@@ -48,6 +48,8 @@ private:
 	RSspatials ispatialMap;
 	RSstates istateMap;
 
+	std::unordered_map<RSshaderTemplate, VKRSshader> ishaderModuleMap;
+
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
 	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);

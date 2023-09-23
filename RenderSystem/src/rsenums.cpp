@@ -4,8 +4,8 @@
 std::string getShaderStr(const RSshaderTemplate shaderTemplate) {
     std::string shaderStr;
     switch (shaderTemplate) {
-        case RSshaderTemplate::stOneTriangle:
-            shaderStr = "onetriangle";
+        case RSshaderTemplate::stTextured:
+            shaderStr = "textured";
             break;
             
         case RSshaderTemplate::stPassthrough:

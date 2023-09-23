@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 /**
 * @brief describes what vertex attributes are being used. 
 * vaPosition should always use glm::vec4 where w is reserved
@@ -31,3 +33,5 @@ enum RSshaderTemplate {
 	stPassthrough,
 	stTextured
 };
+
+std::string getShaderStr(const RSshaderTemplate shaderTemplate);
