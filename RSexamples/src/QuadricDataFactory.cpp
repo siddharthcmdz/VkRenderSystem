@@ -100,6 +100,10 @@ QuadricData QuadricDataFactory::createQuad(float size) {
 		{1.0f, 1.0f}
 	};
 
+	qd.indices = {
+		0, 1, 2, 2, 3, 0
+	};
+
 	return qd;
 }
 
@@ -175,6 +179,11 @@ QuadricData QuadricDataFactory::createDisk(float innerRadius, float outerRadius,
 			glm::vec2 texcoord(u, v);
 			bbox.expandBy(position);
 
+			qd.positions.push_back(position);
+			qd.colors.push_back(color);
+			qd.normals.push_back(normal);
+			qd.texcoords.push_back(texcoord);
+
 			if (i < (numslices - 1) && j < (numstacks - 1)) {
 				uint32_t start = i * numstacks + j;
 
@@ -219,6 +228,11 @@ QuadricData QuadricDataFactory::createCone(float radius, uint32_t numslices, uin
 			glm::vec4 color(u, v, 0.5f, 1.0f);
 			glm::vec2 texcoord(u, v);
 			bbox.expandBy(position);
+
+			qd.positions.push_back(position);
+			qd.colors.push_back(color);
+			qd.normals.push_back(normal);
+			qd.texcoords.push_back(texcoord);
 
 			if (i < (numslices - 1) && j < (numstacks - 1)) {
 				uint32_t start = i * numstacks + j;

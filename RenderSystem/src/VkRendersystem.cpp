@@ -1179,8 +1179,8 @@ VKRSshader VkRenderSystem::createShaderModule(const RSshaderTemplate shaderTempl
     std::string shaderPathStr = iinitInfo.shaderPath;
     
     //shaderPathStr ends with a "/"
-    std::string vertShaderPath = shaderPathStr + spvfileName + "_vert.spv";
-    std::string fragShaderPath = shaderPathStr + spvfileName + "_frag.spv";
+    std::string vertShaderPath = shaderPathStr + "/" + spvfileName + "_vert.spv";
+    std::string fragShaderPath = shaderPathStr + "/" + spvfileName + "_frag.spv";
     const std::vector<char>& vertfile = readFile(vertShaderPath);
     const std::vector<char>& fragfile = readFile(fragShaderPath);
     VKRSshader vkrsshader;

@@ -34,24 +34,6 @@
       <Filter>Scripts</Filter>
     </None>
     <None Include="..\..\ToDoList.md" />
-    <None Include="..\src\shaders\spv\passthrough_frag.spv">
-      <Filter>Shaders\spirv</Filter>
-    </None>
-    <None Include="..\src\shaders\spv\passthrough_vert.spv">
-      <Filter>Shaders\spirv</Filter>
-    </None>
-    <None Include="..\src\shaders\spv\sampleshader_frag.spv">
-      <Filter>Shaders\spirv</Filter>
-    </None>
-    <None Include="..\src\shaders\spv\sampleshader_vert.spv">
-      <Filter>Shaders\spirv</Filter>
-    </None>
-    <None Include="..\src\shaders\spv\textured_frag.spv">
-      <Filter>Shaders\spirv</Filter>
-    </None>
-    <None Include="..\src\shaders\spv\textured_vert.spv">
-      <Filter>Shaders\spirv</Filter>
-    </None>
     <None Include="..\src\shaders\glsl\passthrough.frag">
       <Filter>Shaders\glsl</Filter>
     </None>
@@ -69,6 +51,24 @@
     </None>
     <None Include="..\src\shaders\glsl\textured.vert">
       <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\passthrough_frag.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\passthrough_vert.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\sampleshader_frag.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\sampleshader_vert.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\textured_frag.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\textured_vert.spv">
+      <Filter>Shaders\spirv</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

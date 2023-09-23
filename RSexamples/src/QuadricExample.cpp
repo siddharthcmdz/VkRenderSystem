@@ -8,7 +8,11 @@ QuadricExample::QuadricExample() {
 }
 
 void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
-	QuadricData sphereData = QuadricDataFactory::createSphere(1, 6, 6);
+	QuadricData quadricData = QuadricDataFactory::createSphere(1, 6, 6);
+	//QuadricData quadricData = QuadricDataFactory::createCone();
+	//QuadricData quadricData = QuadricDataFactory::createCylinder();
+	//QuadricData quadricData = QuadricDataFactory::createDisk();
+	//QuadricData quadricData = QuadricDataFactory::createQuad();
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 
 	ibbox = ss::BoundingBox(glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -20,21 +24,21 @@ void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& glo
 	attribInfo.settings = RSvertexAttributeSettings::vasSeparate;
 	
 	RSsingleEntity entity;
-	vkrs.geometryDataCreate(entity.geomDataID, static_cast<uint32_t>(sphereData.positions.size()), static_cast<uint32_t>(sphereData.indices.size()), attribInfo);
-	uint32_t posSizeInBytes = static_cast<uint32_t>(sphereData.positions.size() * sizeof(sphereData.positions[0]));
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, posSizeInBytes, RSvertexAttribute::vaPosition, (void*)sphereData.positions.data());
+	vkrs.geometryDataCreate(entity.geomDataID, static_cast<uint32_t>(quadricData.positions.size()), static_cast<uint32_t>(quadricData.indices.size()), attribInfo);
+	uint32_t posSizeInBytes = static_cast<uint32_t>(quadricData.positions.size() * sizeof(quadricData.positions[0]));
+	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, posSizeInBytes, RSvertexAttribute::vaPosition, (void*)quadricData.positions.data());
 
-	uint32_t normSizeInBytes = static_cast<uint32_t>(sphereData.normals.size()) * sizeof(sphereData.normals[0]);
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, normSizeInBytes, RSvertexAttribute::vaNormal, (void*)sphereData.normals.data());
+	uint32_t normSizeInBytes = static_cast<uint32_t>(quadricData.normals.size()) * sizeof(quadricData.normals[0]);
+	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, normSizeInBytes, RSvertexAttribute::vaNormal, (void*)quadricData.normals.data());
 
-	uint32_t colorSizeInBytes = static_cast<uint32_t>(sphereData.colors.size()) * sizeof(sphereData.colors[0]);
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, colorSizeInBytes, RSvertexAttribute::vaColor, (void*)sphereData.colors.data());
+	uint32_t colorSizeInBytes = static_cast<uint32_t>(quadricData.colors.size()) * sizeof(quadricData.colors[0]);
+	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, colorSizeInBytes, RSvertexAttribute::vaColor, (void*)quadricData.colors.data());
 
-	uint32_t texcoordSizeInBytes = static_cast<uint32_t>(sphereData.texcoords.size()) * sizeof(sphereData.texcoords[0]);
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, texcoordSizeInBytes, RSvertexAttribute::vaTexCoord, (void*)sphereData.texcoords.data());
+	uint32_t texcoordSizeInBytes = static_cast<uint32_t>(quadricData.texcoords.size()) * sizeof(quadricData.texcoords[0]);
+	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, texcoordSizeInBytes, RSvertexAttribute::vaTexCoord, (void*)quadricData.texcoords.data());
 
-	uint32_t indicesSizeInBytes = static_cast<uint32_t>(sphereData.indices.size()) * sizeof(uint32_t);
-	vkrs.geometryDataUpdateIndices(entity.geomDataID, 0, indicesSizeInBytes, (void*)sphereData.indices.data());
+	uint32_t indicesSizeInBytes = static_cast<uint32_t>(quadricData.indices.size()) * sizeof(uint32_t);
+	vkrs.geometryDataUpdateIndices(entity.geomDataID, 0, indicesSizeInBytes, (void*)quadricData.indices.data());
 	vkrs.geometryDataFinalize(entity.geomDataID);
 
 	RSgeometryInfo geomInfo;
@@ -62,8 +66,8 @@ void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& glo
 	vkrs.collectionInstanceCreate(entity.collectionID, entity.instanceID, instInfo);
 	vkrs.collectionFinalize(entity.collectionID, globals.ctxID, globals.viewID);
 
-	ibbox.expandBy(sphereData.bbox.getmin());
-	ibbox.expandBy(sphereData.bbox.getmax());
+	ibbox.expandBy(quadricData.bbox.getmin());
+	ibbox.expandBy(quadricData.bbox.getmax());
 
 	iquadrics.push_back(entity);
 }
