@@ -13,6 +13,7 @@ struct QuadricData {
 };
 
 class QuadricDataFactory {
+private:
 	const static float RS_PI;
 	const static float DEFAULT_NUM_STACKS;
 	const static float DEFAULT_NUM_SLICES;

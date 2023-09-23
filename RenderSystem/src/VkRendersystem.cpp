@@ -649,6 +649,10 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 
 	createDescriptorPool();
 
+	ishaderModuleMap[RSshaderTemplate::stOneTriangle] = createShaderModule(RSshaderTemplate::stOneTriangle);
+    ishaderModuleMap[RSshaderTemplate::stPassthrough] = createShaderModule(RSshaderTemplate::stPassthrough);
+
+
 	iisRSinited = true;
 	
 	return RSresult::SUCCESS;
@@ -1169,19 +1173,40 @@ std::vector<char> VkRenderSystem::readFile(const std::string& filename) {
 	return buffer;
 }
 
-VkShaderModule VkRenderSystem::createShaderModule(const std::vector<char>& code) {
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+VKRSshader VkRenderSystem::createShaderModule(const RSshaderTemplate shaderTemplate) {
+    
+    const std::string spvfileName = getShaderStr(shaderTemplate);
+    std::string shaderPathStr = iinitInfo.shaderPath;
+    
+    //shaderPathStr ends with a "/"
+    std::string vertShaderPath = shaderPathStr + spvfileName + "_vert.spv";
+    std::string fragShaderPath = shaderPathStr + spvfileName + "_frag.spv";
+    const std::vector<char>& vertfile = readFile(vertShaderPath);
+    const std::vector<char>& fragfile = readFile(fragShaderPath);
+    VKRSshader vkrsshader;
+    vkrsshader.shadernName = spvfileName;
+    
+    VkShaderModuleCreateInfo vertShaderModuleCI{};
+    vertShaderModuleCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    vertShaderModuleCI.codeSize = vertfile.size();
+    vertShaderModuleCI.pCode = reinterpret_cast<const uint32_t*>(vertfile.data());
 
-	VkShaderModule shaderModule;
-	const VkResult result = vkCreateShaderModule(iinstance.device, &createInfo, nullptr, &shaderModule);
-	if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a shader module!");
-	}
+    VkResult result = vkCreateShaderModule(iinstance.device, &vertShaderModuleCI, nullptr, &vkrsshader.vert);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create a shader module!");
+    }
+    
+    VkShaderModuleCreateInfo fragShaderModuleCI{};
+    fragShaderModuleCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    fragShaderModuleCI.codeSize = fragfile.size();
+    fragShaderModuleCI.pCode = reinterpret_cast<const uint32_t*>(fragfile.data());
 
-	return shaderModule;
+    result = vkCreateShaderModule(iinstance.device, &fragShaderModuleCI, nullptr, &vkrsshader.frag);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create a shader module!");
+    }
+
+    return vkrsshader;
 }
 
 void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSview& view, VkRScollection& collection, VkRScollectionInstance& collinst, VkRSdrawCommand& drawcmd) {
@@ -1190,28 +1215,11 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 		throw std::runtime_error("invalid appearance");
 	}
 	const VkRSappearance& vkrsapp = iappearanceMap[appID];
+    const RSshaderTemplate shaderTemplate = vkrsapp.appInfo.shaderTemplate;
 
-	std::string vertSPV, fragSPV;
-	std::string shaderPath(iinitInfo.shaderPath);
-	switch (vkrsapp.appInfo.shaderTemplate) {
-	case RSshaderTemplate::stPassthrough:
-		vertSPV = shaderPath + "/passthroughVert.spv";
-		fragSPV = shaderPath + "/passthroughFrag.spv";
-		break;
-
-	case RSshaderTemplate::stTextured:
-		vertSPV = shaderPath + "/texturedVert.spv";
-		fragSPV = shaderPath + "/texturedFrag.spv";
-		break;
-	}
-
-	std::cout << "vert shader path: " << vertSPV << std::endl;
-	std::cout << "frag shader path: " << fragSPV << std::endl;
-	auto vertShaderCode = readFile(vertSPV);
-	auto fragShaderCode = readFile(fragSPV);
-	
-	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+    const VKRSshader& vkrsshader = ishaderModuleMap[shaderTemplate];
+    VkShaderModule vertShaderModule = vkrsshader.vert;
+    VkShaderModule fragShaderModule = vkrsshader.frag;
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

@@ -146,6 +146,12 @@ struct VkRSview {
 	RSview view;
 };
 
+struct VKRSshader {
+    VkShaderModule vert{};
+    VkShaderModule frag{};
+    std::string shadernName;
+};
+
 struct VkRSqueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;

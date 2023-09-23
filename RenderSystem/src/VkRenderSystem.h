@@ -81,7 +81,7 @@ private:
 	void createRenderpass(VkRSview& view);
 	void createGraphicsPipeline(const VkRScontext& ctx, const VkRSview& view, VkRScollection& collection, VkRScollectionInstance& collinst, VkRSdrawCommand& drawcmd);
 	void recordCommandBuffer(const VkRScollection* collections, uint32_t numCollections, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
-	VkShaderModule createShaderModule(const std::vector<char>& code);
+	VKRSshader createShaderModule(const RSshaderTemplate shaderTemplate);
 	static std::vector<char> readFile(const std::string& filename);
 	void contextDrawCollections(VkRScontext& context, VkRSview& view, const VkRScollection* collections, uint32_t numCollections);
 	void disposeCollection(VkRScollection& collection);
