@@ -5,20 +5,21 @@ print_mode = False
 
 class ShaderCompiler:
   def __init__(self, shader_dir, glslcompiler_path):
-    self.shader_dir = shader_dir
-    self.spv_dir = self.shader_dir + '/spv/'
+    self.shader_dir = shader_dir + '/glsl'
+    self.spv_dir = self.shader_dir + '/spv'
     self.glsl_compiler_path = glslcompiler_path
     
   def compile(self):
     print('Compiling shaders...')
     shader_files = os.listdir(self.shader_dir)
+    print(str(len(shader_files)) + ' found in '+ self.shader_dir)
     for file in shader_files:
       if '.vert' in file or '.frag' in file:
         # postfix = 'Vert'
         # if '.frag' in file:
         #   postfix = 'Frag'
       
-        dstfile = self.spv_dir+file
+        dstfile = self.spv_dir+'/'+file
         if '.vert' in dstfile:
           dstfile = dstfile.replace('.vert', '_vert.spv')
         if '.frag' in dstfile:
@@ -29,6 +30,7 @@ class ShaderCompiler:
           print(self.glsl_compiler_path + ' ' + srcfile + ' -o ' + dstfile)
         else:
           subprocess.call([self.glsl_compiler_path, srcfile, '-o', dstfile] )
+          print(self.glsl_compiler_path + ' ' + srcfile + '-o' + dstfile)
           print('Completed compiling', file)
     print('\n')
         

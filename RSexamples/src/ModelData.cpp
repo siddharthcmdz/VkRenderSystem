@@ -14,7 +14,7 @@ namespace ss {
 			return colors.data();
 
 		case RSvertexAttribute::vaTexCoord:
-			return colors.data();
+			return texcoords.data();
 		}
 
 		return nullptr;

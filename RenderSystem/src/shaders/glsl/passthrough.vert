@@ -13,12 +13,31 @@ layout(push_constant) uniform Spatial {
 } spatial;
 
 layout(location = 0) in vec4 inPosition;
+layout(location = 1) in vec4 inNormal;
 layout(location = 2) in vec4 inColor;
+layout(location = 3) in vec2 inTexCoord;
 
-layout(location = 0) out vec4 fragColor;
+struct FragDataOut {
+	vec4 color;
+	vec4 normal;
+	vec2 texCoord;
+};
+
+//layout(location = 0) out vec4 fragColor;
+//layout(location = 1) out vec4 fragNormal;
+//layout(location = 2) out vec2 fragTexCoord;
+
+layout(location = 0) out FragDataOut fragout;
 
 void main() {
 	gl_Position = view.projMat * view.viewMat * spatial.modelMat * inPosition;
+	//fragColor = inColor;
+	//fragColor = inNormal;
+	//fragNormal = inNormal;
+	/fragTexCoord = inTexCoord;
+	fragout.color = inColor;
+	fragout.normal = inNormal;
+	fragout.texCoord = inTexCoord;
+
 	gl_PointSize = 10.0f;
-	fragColor = inColor;
 }

@@ -4,7 +4,7 @@
 
 struct VkRSdrawCommand {
 	RSvertexAttributeSettings attribSetting;
-	std::vector<VkBuffer> vertexBuffers{};
+	std::array<VkBuffer, 4> vertexBuffers{ VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
 	VkBuffer indicesBuffer = VK_NULL_HANDLE;
 	bool isIndexed = true;
 	uint32_t numIndices = 0;
