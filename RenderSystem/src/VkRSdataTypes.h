@@ -135,7 +135,7 @@ struct VkRSview {
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
 	std::vector<void*> uniformBuffersMapped;
-
+	std::vector<RScollectionID> collectionIDlist;
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	VkSwapchainKHR swapChain{};

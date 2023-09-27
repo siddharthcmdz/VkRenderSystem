@@ -6,7 +6,7 @@ print_mode = False
 class ShaderCompiler:
   def __init__(self, shader_dir, glslcompiler_path):
     self.shader_dir = shader_dir + '/glsl'
-    self.spv_dir = self.shader_dir + '/spv'
+    self.spv_dir = shader_dir + '/spirv'
     self.glsl_compiler_path = glslcompiler_path
     
   def compile(self):
@@ -18,8 +18,10 @@ class ShaderCompiler:
         # postfix = 'Vert'
         # if '.frag' in file:
         #   postfix = 'Frag'
-      
+        
         dstfile = self.spv_dir+'/'+file
+        print('dstfile - ', dstfile)
+        print('spvfile - ', self.spv_dir)
         if '.vert' in dstfile:
           dstfile = dstfile.replace('.vert', '_vert.spv')
         if '.frag' in dstfile:
@@ -30,7 +32,7 @@ class ShaderCompiler:
           print(self.glsl_compiler_path + ' ' + srcfile + ' -o ' + dstfile)
         else:
           subprocess.call([self.glsl_compiler_path, srcfile, '-o', dstfile] )
-          print(self.glsl_compiler_path + ' ' + srcfile + '-o' + dstfile)
+          print(self.glsl_compiler_path + ' ' + srcfile + ' -o ' + dstfile)
           print('Completed compiling', file)
     print('\n')
         
@@ -91,7 +93,8 @@ class Deployer:
 
   def deployAssets(self):
     #deploy shaders and textures
-    src_dirs = [self.deploy_dirs.shader_dir+'/spv', self.deploy_dirs.texture_dir]
+    print('shade deploy dir: ', self.deploy_dirs.shader_dir+'/spirv')
+    src_dirs = [self.deploy_dirs.shader_dir+'/spirv', self.deploy_dirs.texture_dir]
     dst_sub_dirs = ['shaders', 'textures']
     copier = ArtifactCopier(src_dirs, self.deploy_dirs.target_dir+'/assets', dst_sub_dirs)
     
@@ -126,8 +129,14 @@ class Deployer:
     print('Found texture directory: ', self.deploy_dirs.texture_dir)
     
 
-driver = Deployer()
-driver.printData()
-driver.compileShaders()
-driver.deployAssets()
  
+
+def main():
+  driver = Deployer()
+  driver.printData()
+  driver.compileShaders()
+  driver.deployAssets()
+  
+
+if __name__ == "__main__":
+  main()

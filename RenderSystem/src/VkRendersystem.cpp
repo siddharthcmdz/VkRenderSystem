@@ -308,7 +308,7 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 			}
 
 			std::vector<VkRScollection> collections;
-			for (const auto& collID : view.view.collectionIDlist) {
+			for (const auto& collID : view.collectionIDlist) {
 				const VkRScollection& coll = icollectionMap[collID];
 				collections.push_back(coll);
 			}
@@ -947,7 +947,7 @@ RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
 RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
-		vkrsview.view.collectionIDlist.push_back(colID);
+		vkrsview.collectionIDlist.push_back(colID);
 		vkrsview.view.dirty = true;
 		return RSresult::SUCCESS;
 	}
@@ -961,7 +961,7 @@ RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScolle
 RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
-		vkrsview.view.collectionIDlist.erase(std::remove(vkrsview.view.collectionIDlist.begin(), vkrsview.view.collectionIDlist.end(), colID.id));
+		vkrsview.collectionIDlist.erase(std::remove(vkrsview.collectionIDlist.begin(), vkrsview.collectionIDlist.end(), colID.id));
 		vkrsview.view.dirty = true;
 
 		return RSresult::SUCCESS;
