@@ -87,7 +87,8 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 
 		if (mesh->HasNormals()) {
 			aiVector3D* norm = mesh->mNormals != nullptr ? &(mesh->mNormals[j]) : &zero3D;
-			glm::vec4 rsnorm(norm->x, norm->y, norm->z, 1.0f);
+			glm::vec4 rsnorm(norm->x, norm->y, norm->z, 0.0f);
+			rsnorm = glm::normalize(rsnorm);
 			rsnormlist.push_back(rsnorm);
 		}
 		if(mesh->HasVertexColors(0)) {

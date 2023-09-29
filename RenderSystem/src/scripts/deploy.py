@@ -15,13 +15,9 @@ class ShaderCompiler:
     print(str(len(shader_files)) + ' found in '+ self.shader_dir)
     for file in shader_files:
       if '.vert' in file or '.frag' in file:
-        # postfix = 'Vert'
-        # if '.frag' in file:
-        #   postfix = 'Frag'
-        
         dstfile = self.spv_dir+'/'+file
-        print('dstfile - ', dstfile)
-        print('spvfile - ', self.spv_dir)
+        # print('dstfile - ', dstfile)
+        # print('spvfile - ', self.spv_dir)
         if '.vert' in dstfile:
           dstfile = dstfile.replace('.vert', '_vert.spv')
         if '.frag' in dstfile:
