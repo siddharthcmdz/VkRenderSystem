@@ -10,13 +10,16 @@ HelloVulkanExample::HelloVulkanExample() {}
 void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 
+	ibbox = BoundingBox(glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
 	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
 	RSvertexAttribsInfo attribInfo;
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
 	attribInfo.attributes = attribs.data();
-	vkrs.geometryDataCreate(ientity.geomDataID, static_cast<uint32_t>(ivertices.size()), static_cast<uint32_t>(iindices.size()), attribInfo, RSbufferUsageHints::buVertices);
+	attribInfo.settings = RSvertexAttributeSettings::vasInterleaved;
+	vkrs.geometryDataCreate(ientity.geomDataID, static_cast<uint32_t>(ivertices.size()), static_cast<uint32_t>(iindices.size()), attribInfo);
 	uint32_t vertSizeInBytes = static_cast<uint32_t>(ivertices.size() * sizeof(ivertices[0]));
-	vkrs.geometryDataUpdateVertices(ientity.geomDataID, 0, vertSizeInBytes, (void*)ivertices.data());
+	vkrs.geometryDataUpdateInterleavedVertices(ientity.geomDataID, 0, vertSizeInBytes, (void*)ivertices.data());
 	uint32_t indicesSizeInBytes = static_cast<uint32_t>(iindices.size()) * sizeof(uint32_t);
 	vkrs.geometryDataUpdateIndices(ientity.geomDataID, 0, indicesSizeInBytes, (void*)iindices.data());
 	vkrs.geometryDataFinalize(ientity.geomDataID);
@@ -62,6 +65,10 @@ void HelloVulkanExample::dispose(const RSexampleGlobal& globals) {
 	vkrs.spatialDispose(ientity.spatialID);
 	vkrs.collectionInstanceDispose(ientity.collectionID, ientity.instanceID);
 	vkrs.collectionDispose(ientity.collectionID);
+}
+
+BoundingBox HelloVulkanExample::getBounds() {
+	return ibbox;
 }
 
 std::string HelloVulkanExample::getExampleName() const {

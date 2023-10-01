@@ -4,7 +4,6 @@
 #include <cmath>
 #include <iostream>
 
-#define RS_PI 3.14159265358979323846
 #include <VkRenderSystem.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include "helper.h"
@@ -20,9 +19,10 @@ void PrimitiveExample::createEntity(const RSexampleGlobal& globals, CircleEntity
 	RSvertexAttribsInfo attribInfo;
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
 	attribInfo.attributes = attribs.data();
-	vkrs.geometryDataCreate(ce.geomDataID, static_cast<uint32_t>(ce.vertices.size()), 0, attribInfo, RSbufferUsageHints::buVertices);
+	attribInfo.settings = RSvertexAttributeSettings::vasInterleaved;
+	vkrs.geometryDataCreate(ce.geomDataID, static_cast<uint32_t>(ce.vertices.size()), 0, attribInfo);
 	uint32_t vertSizeInBytes = static_cast<uint32_t>(ce.vertices.size() * sizeof(ce.vertices[0]));
-	vkrs.geometryDataUpdateVertices(ce.geomDataID, 0, vertSizeInBytes, (void*)ce.vertices.data());
+	vkrs.geometryDataUpdateInterleavedVertices(ce.geomDataID, 0, vertSizeInBytes, (void*)ce.vertices.data());
 	uint32_t indicesSizeInBytes = 0;
 	vkrs.geometryDataFinalize(ce.geomDataID);
 
@@ -98,6 +98,7 @@ std::vector<rsvd::VertexPC> PrimitiveExample::getVertices(PrimitiveType pt, floa
 			vert.color = glm::vec4(0, 0, 0, 1);
 		}
 
+		ibbox.expandBy(vert.pos);
 		vertexDataList.push_back(vert);
 	}
 
@@ -151,6 +152,10 @@ void PrimitiveExample::dispose(const RSexampleGlobal& globals) {
 
 std::string PrimitiveExample::getExampleName() const {
 	return "PrimitiveExample";
+}
+
+BoundingBox PrimitiveExample::getBounds() {
+	return ibbox;
 }
 
 void CircleEntity::dispose() {

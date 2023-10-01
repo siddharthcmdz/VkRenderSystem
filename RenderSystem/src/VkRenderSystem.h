@@ -48,6 +48,8 @@ private:
 	RSspatials ispatialMap;
 	RSstates istateMap;
 
+	std::unordered_map<RSshaderTemplate, VKRSshader> ishaderModuleMap;
+
 	//context related helpers
 	bool isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
 	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, const VkSurfaceKHR& vksurface);
@@ -80,7 +82,7 @@ private:
 	void createRenderpass(VkRSview& view);
 	void createGraphicsPipeline(const VkRScontext& ctx, const VkRSview& view, VkRScollection& collection, VkRScollectionInstance& collinst, VkRSdrawCommand& drawcmd);
 	void recordCommandBuffer(const VkRScollection* collections, uint32_t numCollections, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame);
-	VkShaderModule createShaderModule(const std::vector<char>& code);
+	VKRSshader createShaderModule(const RSshaderTemplate shaderTemplate);
 	static std::vector<char> readFile(const std::string& filename);
 	void contextDrawCollections(VkRScontext& context, VkRSview& view, const VkRScollection* collections, uint32_t numCollections);
 	void disposeCollection(VkRScollection& collection);
@@ -109,7 +111,7 @@ private:
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memProperties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	VkVertexInputBindingDescription getBindingDescription(const RSvertexAttribsInfo& attribInfo);
+	std::vector<VkVertexInputBindingDescription> getBindingDescription(const RSvertexAttribsInfo& attribInfo);
 	std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(const RSvertexAttribsInfo& attribInfo);
 
 	//texture related
@@ -155,8 +157,9 @@ public:
 	RS_EXPORT RSresult collectionDispose(const RScollectionID& colID);
 
 	RS_EXPORT bool geometryDataAvailable(const RSgeometryDataID& geomDataID);
-	RS_EXPORT RSresult geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo, RSbufferUsageHints bufferUsage);
-	RS_EXPORT RSresult geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
+	RS_EXPORT RSresult geometryDataCreate(RSgeometryDataID& outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo);
+	RS_EXPORT RSresult geometryDataUpdateInterleavedVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
+	RS_EXPORT RSresult geometryDataUpdateVertices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, RSvertexAttribute attrib, void* data);
 	RS_EXPORT RSresult geometryDataUpdateIndices(const RSgeometryDataID& gdataID, uint32_t offset, uint32_t sizeInBytes, void* data);
 	RS_EXPORT RSresult geometryDataFinalize(const RSgeometryDataID& gdataID);
 	RS_EXPORT RSresult geometryDataDispose(const RSgeometryDataID& gdataID);

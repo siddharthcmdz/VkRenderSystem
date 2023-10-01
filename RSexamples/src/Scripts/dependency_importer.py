@@ -1,5 +1,6 @@
 
 import os, shutil
+from re import S
 
 print_mode = False
 
@@ -37,7 +38,9 @@ class IngestDirectory:
   def __init__(self):
     self.current_dir = os.getcwd()
     self.project_root_dir = os.getcwd() + '/..'
+    self.thirdparty_dir = self.project_root_dir + '/../thirdparty';
     self.rs_thirdparty_dir = self.project_root_dir + '/../thirdparty/rendersystem'
+    self.assimp_dir = self.thirdparty_dir + '/assimp';
     self.rs_assets_dir = self.project_root_dir + '/../thirdparty/rendersystem/assets'
     self.rs_assets_texture_dir = self.rs_assets_dir+'/textures'
     self.rs_assets_shader_dir = self.rs_assets_dir+'/shaders'
@@ -60,6 +63,12 @@ class Ingestor:
     
     rs_debug64_pdb_src = self.ingest_directory.rs_bin_debug64_folder+'/VkRenderSystem.pdb'
     rs_debug64_pdb_dst = self.ingest_directory.target_dir+'/VkRenderSystem.pdb'
+
+    assimp_dll_src = self.ingest_directory.assimp_dir+'/win32/bin/Debug/assimp-vc143-mtd.dll'
+    assimp_dll_dst = self.ingest_directory.target_dir+'/assimp-vc143-mtd.dll'
+    
+    assimp_pdb_src = self.ingest_directory.assimp_dir+'/win32/bin/Debug/assimp-vc143-mtd.pdb'
+    assimp_pdb_dst = self.ingest_directory.target_dir+'/assimp-vc143-mtd.pdb'
     
     shutil.copy(rs_debug64_dll_src, rs_debug64_dll_dst)
     print('Copied '+rs_debug64_dll_src+' to '+rs_debug64_dll_dst+'\n')
@@ -69,6 +78,12 @@ class Ingestor:
     
     shutil.copy(rs_debug64_pdb_src, rs_debug64_pdb_dst)
     print('Copied '+rs_debug64_pdb_src+' to '+ rs_debug64_pdb_dst+'\n')
+    
+    shutil.copy(assimp_dll_src, assimp_dll_dst)
+    print('Copied '+assimp_dll_src+' to '+ assimp_dll_dst+'\n')
+    
+    shutil.copy(assimp_pdb_src, assimp_pdb_dst)
+    print('Copied '+assimp_pdb_src+' to '+ assimp_pdb_dst+'\n')
     
   def ingestAssets(self):
     #ingest shaders

@@ -22,30 +22,54 @@
     <Filter Include="Scripts">
       <UniqueIdentifier>{e0ce16a9-09cb-49a6-b95a-5cd0d4fb41cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\glsl">
+      <UniqueIdentifier>{37c6aab5-7b23-400a-803d-66253dc27425}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\spirv">
+      <UniqueIdentifier>{9358f628-a200-46b3-b9dc-5c49181773cf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\scripts\deploy.py">
       <Filter>Scripts</Filter>
     </None>
-    <None Include="..\src\shaders\passthrough.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\passthrough.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\sampleshader.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\sampleshader.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\textured.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\textured.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="..\..\ToDoList.md" />
+    <None Include="..\src\shaders\glsl\passthrough.frag">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\passthrough.vert">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\sampleshader.frag">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\sampleshader.vert">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\textured.frag">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\textured.vert">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\passthrough_frag.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\passthrough_vert.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\sampleshader_frag.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\sampleshader_vert.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\textured_frag.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\spv\textured_vert.spv">
+      <Filter>Shaders\spirv</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h">
@@ -81,21 +105,15 @@
     <ClInclude Include="..\src\VkRenderSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\VkRenderSystemEntry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\VkRSdataTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\VkRSswapChain.h">
+    <ClInclude Include="..\src\VkRSbuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\RSdataTypes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\stb_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\TextureLoader.cpp">
@@ -107,7 +125,10 @@
     <ClCompile Include="..\src\VkRSdataTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\VkRSswapChain.cpp">
+    <ClCompile Include="..\src\VkRSbuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rsenums.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

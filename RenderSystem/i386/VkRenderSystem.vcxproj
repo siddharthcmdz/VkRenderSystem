@@ -21,12 +21,18 @@
   <ItemGroup>
     <None Include="..\..\ToDoList.md" />
     <None Include="..\src\scripts\deploy.py" />
-    <None Include="..\src\shaders\passthrough.frag" />
-    <None Include="..\src\shaders\passthrough.vert" />
-    <None Include="..\src\shaders\sampleshader.frag" />
-    <None Include="..\src\shaders\sampleshader.vert" />
-    <None Include="..\src\shaders\textured.frag" />
-    <None Include="..\src\shaders\textured.vert" />
+    <None Include="..\src\shaders\glsl\passthrough.frag" />
+    <None Include="..\src\shaders\glsl\passthrough.vert" />
+    <None Include="..\src\shaders\glsl\sampleshader.frag" />
+    <None Include="..\src\shaders\glsl\sampleshader.vert" />
+    <None Include="..\src\shaders\glsl\textured.frag" />
+    <None Include="..\src\shaders\glsl\textured.vert" />
+    <None Include="..\src\shaders\spv\passthrough_frag.spv" />
+    <None Include="..\src\shaders\spv\passthrough_vert.spv" />
+    <None Include="..\src\shaders\spv\sampleshader_frag.spv" />
+    <None Include="..\src\shaders\spv\sampleshader_vert.spv" />
+    <None Include="..\src\shaders\spv\textured_frag.spv" />
+    <None Include="..\src\shaders\spv\textured_vert.spv" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h" />
@@ -40,17 +46,16 @@
     <ClInclude Include="..\src\TextureLoader.h" />
     <ClInclude Include="..\src\VertexData.h" />
     <ClInclude Include="..\src\VkRenderSystem.h" />
-    <ClInclude Include="..\src\VkRenderSystemEntry.h" />
+    <ClInclude Include="..\src\VkRSbuffer.h" />
     <ClInclude Include="..\src\VkRSdataTypes.h" />
-    <ClInclude Include="..\src\VkRSswapChain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\RSdataTypes.cpp" />
-    <ClCompile Include="..\src\stb_image.cpp" />
+    <ClCompile Include="..\src\rsenums.cpp" />
     <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VkRendersystem.cpp" />
+    <ClCompile Include="..\src\VkRSbuffer.cpp" />
     <ClCompile Include="..\src\VkRSdataTypes.cpp" />
-    <ClCompile Include="..\src\VkRSswapChain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\src\textures\texture.jpg" />
@@ -151,8 +156,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)/../../thirdparty\glfw-3.3.8.bin.WIN64\lib-vc2022;$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>python "../src/scripts/deploy.py"</Command>

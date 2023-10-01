@@ -19,23 +19,33 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\Bounds.cpp" />
+    <ClCompile Include="..\src\BoundingBox.cpp" />
     <ClCompile Include="..\src\Camera.cpp" />
     <ClCompile Include="..\src\HelloVulkanExample.cpp" />
     <ClCompile Include="..\src\helper.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\ModelData.cpp" />
+    <ClCompile Include="..\src\ModelLoadExample.cpp" />
     <ClCompile Include="..\src\PrimitiveExample.cpp" />
+    <ClCompile Include="..\src\Scene.cpp" />
+    <ClCompile Include="..\src\QuadricDataFactory.cpp" />
+    <ClCompile Include="..\src\QuadricExample.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Scripts\dependency_importer.py" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\Bounds.h" />
+    <ClInclude Include="..\src\BoundingBox.h" />
     <ClInclude Include="..\src\Camera.h" />
     <ClInclude Include="..\src\HelloVulkanExample.h" />
     <ClInclude Include="..\src\helper.h" />
+    <ClInclude Include="..\src\ModelData.h" />
+    <ClInclude Include="..\src\ModelLoadExample.h" />
     <ClInclude Include="..\src\PrimitiveExample.h" />
+    <ClInclude Include="..\src\QuadricDataFactory.h" />
+    <ClInclude Include="..\src\QuadricExample.h" />
     <ClInclude Include="..\src\RSexample.h" />
+    <ClInclude Include="..\src\Scene.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -127,15 +137,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Projects\FSI\RenderSystem\src;$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Projects\FSI\RenderSystem\src;$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(VULKAN_SDK)\Include;$(ProjectDir)/../../thirdparty/assimp/win32/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Projects\FSI\RenderSystem\i386\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>VkRenderSystem.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Projects\FSI\RenderSystem\i386\x64\Debug;C:\Projects\FSI\thirdparty\assimp\win32\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>VkRenderSystem.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>python "..\src\Scripts\dependency_importer.py"</Command>

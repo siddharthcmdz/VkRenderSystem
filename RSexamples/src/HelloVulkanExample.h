@@ -3,6 +3,9 @@
 #include <vector>
 #include <VertexData.h>
 #include "helper.h"
+#include "BoundingBox.h"
+
+using namespace ss;
 
 class HelloVulkanExample : public RSexample {
 	const std::vector<rsvd::VertexPCT> ivertices = {
@@ -22,13 +25,15 @@ class HelloVulkanExample : public RSexample {
 
 		4, 5, 6, 6, 7, 4
 	};
-
-	helper::RSsingleEntity ientity;
+	
+	BoundingBox ibbox;
+	RSsingleEntity ientity;
 
 public:
 	HelloVulkanExample();
 	void init(const RSexampleOptions& eo, const RSexampleGlobal& globals) override;
 	void render(const RSexampleGlobal& globals) override;
 	void dispose(const RSexampleGlobal& globals) override;
+	BoundingBox getBounds() override;
 	std::string getExampleName() const override;
 };

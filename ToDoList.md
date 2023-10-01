@@ -7,6 +7,9 @@
 * Support rendering luminance texture
 * Support buffer naming to see in renderdoc and nsight
 * Add support for macOS/iOS project **IN PROGRESS**
+* Move creation ShaderModules to rendersystem initialization
+* Move collectionIDlist from RSview to VkRSview
+* Implement BlinnPhong shading model - add lights to the RSview.
 
 # Rendering techniques
 * Support depth attachment in framebuffers by default
