@@ -25,6 +25,8 @@
     <None Include="..\src\shaders\glsl\passthrough.vert" />
     <None Include="..\src\shaders\glsl\sampleshader.frag" />
     <None Include="..\src\shaders\glsl\sampleshader.vert" />
+    <None Include="..\src\shaders\glsl\simplelit.frag" />
+    <None Include="..\src\shaders\glsl\simplelit.vert" />
     <None Include="..\src\shaders\glsl\textured.frag" />
     <None Include="..\src\shaders\glsl\textured.vert" />
     <None Include="..\src\shaders\spirv\passthrough_frag.spv" />

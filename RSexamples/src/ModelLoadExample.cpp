@@ -241,6 +241,10 @@ void ModelLoadExample::initRSappearance(MeshInstance& meshInstance, Appearance& 
 		}
 	}
 
+	RSappearanceInfo appInfo;
+	appInfo.diffuseTexture = meshInstance.diffuseTextureID;
+	appInfo.shaderTemplate = RSshaderTemplate::stSimpleLit;
+	vkrs.appearanceCreate(meshInstance.appearanceID, appInfo);
 }
 
 void ModelLoadExample::initRSinstance(MeshInstance& mi) {
@@ -254,7 +258,7 @@ void ModelLoadExample::initRSinstance(MeshInstance& mi) {
 	spatial.model = mi.modelmat;
 	spatial.modelInv = glm::inverse(spatial.model);
 	vkrs.spatialCreate(mi.spatialID, spatial);
-
+	
 	Appearance& app = imodelData.materials[mi.materialIdx];
 	
 	instinfo.spatialID = mi.spatialID;
@@ -275,6 +279,7 @@ void ModelLoadExample::populateRSentities(const RSexampleGlobal& globals) {
 		MeshData& md = imodelData.meshInstances[i].meshData;
 		//initRSgeomData(md);
 		MeshInstance& mi = imodelData.meshInstances[i];
+		mi.associatedCollectionID = imodelData.collectionID;
 		initRSinstance(mi);
 	}
 

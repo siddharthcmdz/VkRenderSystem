@@ -665,7 +665,7 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 
 	ishaderModuleMap[RSshaderTemplate::stPassthrough] = createShaderModule(RSshaderTemplate::stPassthrough);
     ishaderModuleMap[RSshaderTemplate::stTextured] = createShaderModule(RSshaderTemplate::stTextured);
-
+	ishaderModuleMap[RSshaderTemplate::stSimpleLit] = createShaderModule(RSshaderTemplate::stSimpleLit);
 
 	iisRSinited = true;
 	
@@ -1759,6 +1759,7 @@ RSresult VkRenderSystem::textureCreate(RStextureID& outTexID, const char* absfil
 		createTextureSampler(vkrstex);
 		outTexID.id = id;
 		itextureMap[outTexID] = vkrstex;
+
 		return RSresult::SUCCESS;
 	}
 
@@ -1771,13 +1772,13 @@ RSresult VkRenderSystem::textureCreateFromMemory(RStextureID& outTexID, unsigned
 	assert(success && "failed to create a texture ID");
 	if (success) {
 		VkRStexture vkrstex;
-		vkrstex.absPath = nullptr;
 		vkrstex.texinfo = TextureLoader::readFromMemory(encodedTexData, width, height);
 		createTextureImage(vkrstex);
 		createTextureImageView(vkrstex);
 		createTextureSampler(vkrstex);
 		outTexID.id = id;
 		itextureMap[outTexID] = vkrstex;
+
 		return RSresult::SUCCESS;
 	}
 
@@ -1878,6 +1879,7 @@ bool VkRenderSystem::createTextureImage(VkRStexture& vkrstex) {
 
 	void* data;
 	vkMapMemory(iinstance.device, stagingBufferMemory, 0, imageSize, 0, &data);
+	unsigned char* texels = static_cast<unsigned char*>(texinfo.texels);
 	memcpy(data, texinfo.texels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(iinstance.device, stagingBufferMemory);
 

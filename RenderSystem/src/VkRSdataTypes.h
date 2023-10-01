@@ -149,9 +149,9 @@ struct VkRSview {
 struct VKRSshader {
     VkShaderModule vert{};
     VkShaderModule frag{};
-    std::string shadernName;
-	std::string vertShaderContent;
-	std::string fragShaderContent;
+	std::string shadernName{};
+	std::string vertShaderContent{};
+	std::string fragShaderContent{};
 };
 
 struct VkRSqueueFamilyIndices {
