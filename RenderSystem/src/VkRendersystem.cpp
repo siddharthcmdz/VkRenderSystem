@@ -1765,6 +1765,26 @@ RSresult VkRenderSystem::textureCreate(RStextureID& outTexID, const char* absfil
 	return RSresult::FAILURE;
 }
 
+RSresult VkRenderSystem::textureCreateFromMemory(RStextureID& outTexID, unsigned char* encodedTexData, uint32_t width, uint32_t height) {
+	RSuint id;
+	bool success = itextureIDpool.CreateID(id);
+	assert(success && "failed to create a texture ID");
+	if (success) {
+		VkRStexture vkrstex;
+		vkrstex.absPath = nullptr;
+		vkrstex.texinfo = TextureLoader::readFromMemory(encodedTexData, width, height);
+		createTextureImage(vkrstex);
+		createTextureImageView(vkrstex);
+		createTextureSampler(vkrstex);
+		outTexID.id = id;
+		itextureMap[outTexID] = vkrstex;
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
+
 void VkRenderSystem::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 	{
