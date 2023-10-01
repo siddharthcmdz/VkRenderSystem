@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <assert.h>
 #include <VkRenderSystem.h>
+#include <TextureLoader.h>
 
 ModelLoadExample::ModelLoadExample() {
 }
@@ -33,7 +34,13 @@ void ModelLoadExample::traverseScene(const aiScene* scene, const aiNode* node, M
 	uint32_t n = 0;
 	for (; n < node->mNumMeshes; n++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[n]];
-		meshInstance.meshData = getMesh(mesh, meshInstance.materialIdx);
+		meshInstance.meshData = getMesh(mesh);
+		meshInstance.materialIdx = mesh->mMaterialIndex;
+		if (modelData.materials.find(meshInstance.materialIdx) == modelData.materials.end()) {
+			Appearance app;
+			initRSappearance(meshInstance, app, scene->mMaterials[meshInstance.materialIdx], scene);
+			modelData.materials[meshInstance.materialIdx] = app;
+		}
 		modelData.meshInstances.push_back(meshInstance);
 	}
 
@@ -67,17 +74,19 @@ RSvertexAttribsInfo ModelLoadExample::getRSvertexAttribData(const aiMesh* mesh) 
 	return attribsInfo;
 }
 
-ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
+ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh) {
 	ss::MeshData meshdata;
-	
+	meshdata.attribsInfo = getRSvertexAttribData(mesh);
 	if (!mesh->HasPositions()) {
 		throw std::runtime_error("mesh file has no vertex positions - invalid file");
 	}
 	
 	std::vector<glm::vec4> rsposlist;
 	std::vector<glm::vec4> rsnormlist;
+	std::vector<glm::vec4> rscolorlist;
 	std::vector<glm::vec2> rstexcoordlist;
 	aiVector3D zero3D(0.0f, 0.0f, 0.0f);
+	aiColor4D defaultColor(1.0f, 0.0f, 0.0f, 1.0f);
 	for (uint32_t j = 0; j < mesh->mNumVertices; j++) {
 		aiVector3D pos = mesh->mVertices[j];
 		glm::vec4 rspos(pos.x, pos.y, pos.z, 1.0f);
@@ -85,10 +94,15 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 
 		if (mesh->HasNormals()) {
 			aiVector3D* norm = mesh->mNormals != nullptr ? &(mesh->mNormals[j]) : &zero3D;
-			glm::vec4 rsnorm(norm->x, norm->y, norm->z, 1.0f);
+			glm::vec4 rsnorm(norm->x, norm->y, norm->z, 0.0f);
+			rsnorm = glm::normalize(rsnorm);
 			rsnormlist.push_back(rsnorm);
 		}
-
+		if(mesh->HasVertexColors(0)) {
+			aiColor4D* color = mesh->mColors != nullptr ? &(mesh->mColors[0][j]) : &defaultColor;
+			glm::vec4 rscolor(color->r, color->g, color->b, 1.0f);
+			rscolorlist.push_back(rscolor);
+		}
 		if (mesh->HasTextureCoords(0)) {
 			aiVector3D* texcoord = mesh->HasTextureCoords(0) ? &(mesh->mTextureCoords[0][j]) : &zero3D;
 			glm::vec2 rstexcoord(texcoord->x, texcoord->y);
@@ -98,7 +112,7 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 	meshdata.positions = rsposlist;
 	meshdata.normals = rsnormlist;
 	meshdata.texcoords = rstexcoordlist;
-	matIdx = mesh->mMaterialIndex;
+	meshdata.colors = rscolorlist;
 	std::vector<uint32_t> rsindexlist;
 	for (uint32_t j = 0; j < mesh->mNumFaces; j++) {
 		const aiFace& face = mesh->mFaces[j];
@@ -107,16 +121,19 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 		rsindexlist.push_back(face.mIndices[1]);
 		rsindexlist.push_back(face.mIndices[2]);
 	}
+	meshdata.iindices = rsindexlist;
 
 	initRSgeomData(meshdata);
-
+	
 	return meshdata;
 }
 
 void ModelLoadExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
 
 	Assimp::Importer importer;
-	const std::string pFile = "C:\\Projects\\FSI\\RSexamples\\models\\monkey.glb";
+	//const std::string pFile = "C:\\Projects\\FSI\\RSexamples\\models\\monkey.glb";
+	//const std::string pFile = "C:\\Projects\\gltf-sample-models\\2.0\\BoxVertexColors\\glTF-Binary\\BoxVertexColors.glb";
+	const std::string pFile = "C:\\Projects\\gltf-sample-models\\2.0\\DamagedHelmet\\glTF-Binary\\DamagedHelmet.glb";
 	const aiScene* scene = importer.ReadFile(pFile,
 		aiProcess_CalcTangentSpace |
 		aiProcess_FlipUVs|
@@ -125,7 +142,7 @@ void ModelLoadExample::init(const RSexampleOptions& eo, const RSexampleGlobal& g
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType
 	);
-
+	
 	imodelData.imdcaps.hasMesh = scene->HasMeshes();
 	imodelData.imdcaps.hasAnimations = scene->HasAnimations();
 	imodelData.imdcaps.hasCameras = scene->HasCameras();
@@ -140,58 +157,10 @@ void ModelLoadExample::init(const RSexampleOptions& eo, const RSexampleGlobal& g
 		throw std::runtime_error(importer.GetErrorString());
 	}
 
-	std::vector<Appearance> materials;
-	if (scene->HasMaterials()) {
-		Appearance app;
-		for (uint32_t j = 0; j < scene->mNumMaterials; j++) {
-			const aiMaterial* material = scene->mMaterials[j];
-			aiColor4D diffuse;
-			aiColor4D specular;
-			aiColor4D ambient;
-			aiColor4D emission;
-			ai_real shininess, strength;
-
-			if (material->GetTextureCount(aiTextureType::aiTextureType_DIFFUSE) > 0) {
-				aiString path;
-				if (material->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
-					app.diffuseTexturePath = path.data;
-				}
-			}
-
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuse)) {
-				app.diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, 1.0f);
-			}
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specular)) {
-				app.specular = glm::vec4(specular.r, specular.g, specular.b, 1.0f);
-			}
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient)) {
-				app.ambient = glm::vec4(ambient.r, ambient.g, ambient.b, 1.0f);
-			}
-			if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_EMISSIVE, &emission)) {
-				app.emissive = glm::vec4(emission.r, emission.g, emission.b, 1.0f);
-			}
-			uint32_t max = 1;
-			int ret1 = aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS, &shininess, &max);
-			if (ret1 == AI_SUCCESS) {
-				max = 1;
-				int ret2 = aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS_STRENGTH, &strength, &max);
-				if (ret2 == AI_SUCCESS) {
-					app.shininess = shininess * strength;
-				}
-				else {
-					app.shininess = shininess;
-				}
-			}
-
-			materials.push_back(app);
-		}
-	}
-	imodelData.materials = materials;
-
 	traverseScene(scene, scene->mRootNode, imodelData);
 
 	//populate rs stuff
-	populateRSentities();
+	populateRSentities(globals);
 	auto& vkrs = VkRenderSystem::getInstance();
 	assert(imodelData.collectionID.isValid() && "model data collection ID should be valid at this point");
 	vkrs.viewAddCollection(globals.viewID, imodelData.collectionID);
@@ -214,20 +183,68 @@ void ModelLoadExample::initRSgeomData(MeshData& meshdata) {
 		vkrs.geometryDataUpdateIndices(meshdata.geometryDataID, 0, numindices * sizeof(uint32_t), meshdata.iindices.data());
 	}
 
+	vkrs.geometryDataFinalize(meshdata.geometryDataID);
+
 	RSgeometryInfo geomInfo;
 	geomInfo.primType = RSprimitiveType::ptTriangle;
 	vkrs.geometryCreate(meshdata.geometryID, geomInfo);
 }
 
-void ModelLoadExample::initRSappearance(Appearance& app) {
+void ModelLoadExample::initRSappearance(MeshInstance& meshInstance, Appearance& app, aiMaterial* material, const aiScene* scene) {
 	auto& vkrs = VkRenderSystem::getInstance();
-	RSappearanceInfo appinfo;
-	if (!app.diffuseTexturePath.empty()) {
-		vkrs.textureCreate(app.textureID, app.diffuseTexturePath.c_str());
-		appinfo.diffuseTexture = app.textureID;
+	aiColor4D diffuse;
+	aiColor4D specular;
+	aiColor4D ambient;
+	aiColor4D emission;
+	ai_real shininess, strength;
+	if (material->GetTextureCount(aiTextureType::aiTextureType_DIFFUSE) > 0) {
+		uint32_t textureCount = material->GetTextureCount(aiTextureType::aiTextureType_DIFFUSE);
+		for (uint32_t i = 0; i < textureCount; i++) {
+			aiString path;
+			if (material->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
+				const aiTexture* tex = scene->GetEmbeddedTexture(path.data);
+				RSresult texres;
+				if (tex != nullptr) {
+					app.isDiffuseTextureEmbedded = true;
+					texres = vkrs.textureCreateFromMemory(meshInstance.diffuseTextureID, reinterpret_cast<unsigned char*>(tex->pcData), tex->mWidth, tex->mHeight);
+				}
+				else {
+					app.diffuseTexturePath = path.data;
+					texres = vkrs.textureCreate(meshInstance.diffuseTextureID, path.data);
+				}
+			}
+		}
 	}
 
-	vkrs.appearanceCreate(app.appearanceID, appinfo);
+	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_DIFFUSE, &diffuse)) {
+		app.diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, 1.0f);
+	}
+	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_SPECULAR, &specular)) {
+		app.specular = glm::vec4(specular.r, specular.g, specular.b, 1.0f);
+	}
+	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_AMBIENT, &ambient)) {
+		app.ambient = glm::vec4(ambient.r, ambient.g, ambient.b, 1.0f);
+	}
+	if (AI_SUCCESS == aiGetMaterialColor(material, AI_MATKEY_COLOR_EMISSIVE, &emission)) {
+		app.emissive = glm::vec4(emission.r, emission.g, emission.b, 1.0f);
+	}
+	uint32_t max = 1;
+	int ret1 = aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS, &shininess, &max);
+	if (ret1 == AI_SUCCESS) {
+		max = 1;
+		int ret2 = aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS_STRENGTH, &strength, &max);
+		if (ret2 == AI_SUCCESS) {
+			app.shininess = shininess * strength;
+		}
+		else {
+			app.shininess = shininess;
+		}
+	}
+
+	RSappearanceInfo appInfo;
+	appInfo.diffuseTexture = meshInstance.diffuseTextureID;
+	appInfo.shaderTemplate = RSshaderTemplate::stSimpleLit;
+	vkrs.appearanceCreate(meshInstance.appearanceID, appInfo);
 }
 
 void ModelLoadExample::initRSinstance(MeshInstance& mi) {
@@ -236,24 +253,21 @@ void ModelLoadExample::initRSinstance(MeshInstance& mi) {
 	RSinstanceInfo instinfo;
 	instinfo.gdataID = mi.meshData.geometryDataID;
 	instinfo.geomID = mi.meshData.geometryID;
-
+	
 	RSspatial spatial;
 	spatial.model = mi.modelmat;
 	spatial.modelInv = glm::inverse(spatial.model);
 	vkrs.spatialCreate(mi.spatialID, spatial);
-
+	
 	Appearance& app = imodelData.materials[mi.materialIdx];
-	if (!app.appearanceID.isValid()) {
-		initRSappearance(app);
-	}
-
+	
 	instinfo.spatialID = mi.spatialID;
-	instinfo.appID = app.appearanceID;
+	instinfo.appID = mi.appearanceID;
 
 	vkrs.collectionInstanceCreate(imodelData.collectionID, mi.instanceID, instinfo);
 }
 
-void ModelLoadExample::populateRSentities() {
+void ModelLoadExample::populateRSentities(const RSexampleGlobal& globals) {
 	auto& vkrs = VkRenderSystem::getInstance();
 
 	uint32_t numinsts = static_cast<uint32_t>(imodelData.meshInstances.size());
@@ -263,10 +277,13 @@ void ModelLoadExample::populateRSentities() {
 
 	for (uint32_t i = 0; i < numinsts; i++) {
 		MeshData& md = imodelData.meshInstances[i].meshData;
-		initRSgeomData(md);
+		//initRSgeomData(md);
 		MeshInstance& mi = imodelData.meshInstances[i];
+		mi.associatedCollectionID = imodelData.collectionID;
 		initRSinstance(mi);
 	}
+
+	vkrs.collectionFinalize(imodelData.collectionID, globals.ctxID, globals.viewID);
 }
 
 void ModelLoadExample::render(const RSexampleGlobal& globals) {

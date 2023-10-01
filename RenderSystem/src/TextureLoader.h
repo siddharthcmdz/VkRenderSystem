@@ -14,4 +14,5 @@ struct RStextureInfo {
 class TextureLoader {
 public:
 	static RStextureInfo readTexture(const char* filepath);
+	static RStextureInfo readFromMemory(unsigned char* encodedTexData, uint32_t width, uint32_t height);
 };

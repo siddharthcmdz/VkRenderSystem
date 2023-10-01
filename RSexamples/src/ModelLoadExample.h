@@ -9,17 +9,18 @@ using namespace ss;
 struct aiMesh;
 struct aiScene;
 struct aiNode;
+struct aiMaterial;
 
 class ModelLoadExample : public RSexample {
 private:
 	ModelData imodelData;
 
-	ss::MeshData getMesh(const aiMesh* mesh, uint32_t& matIdx);
+	ss::MeshData getMesh(const aiMesh* mesh);
 	void traverseScene(const aiScene* scene, const aiNode* node, ModelData& modelData);
-	void populateRSentities();
+	void populateRSentities(const RSexampleGlobal& globals);
 	void initRSgeomData(MeshData& meshdata);
 	void initRSinstance(MeshInstance& meshinstance);
-	void initRSappearance(Appearance& app);
+	void initRSappearance(MeshInstance& meshInstance, Appearance& app, aiMaterial* mat, const aiScene* scene);
 	RSvertexAttribsInfo getRSvertexAttribData(const aiMesh* mesh);
 
 public:

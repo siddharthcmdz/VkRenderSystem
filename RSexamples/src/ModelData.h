@@ -39,23 +39,34 @@ namespace ss {
 		glm::vec4 emissive = glm::vec4(0, 0, 0, 1);
 		float shininess = 0.0f;
 		std::string diffuseTexturePath;
-
-		RSappearanceID appearanceID;
-		RStextureID textureID;
+		bool isDiffuseTextureEmbedded = false;
 		void dispose();
 	};
 
 	struct MeshInstance {
 		MeshData meshData;
-		uint32_t materialIdx;
 		glm::mat4 modelmat;
 
 		RSinstanceID instanceID;
 		RSspatialID spatialID;
 		RSstateID stateID;
 		RScollectionID associatedCollectionID; //do not dispose this
+		RSappearanceID appearanceID;
+		RStextureID diffuseTextureID;
+		uint32_t materialIdx;
 
 		void dispose();
+	};
+
+	enum TextureType {
+		ttDiffuse,
+		ttAmbient,
+		ttSpecular
+	};
+
+	struct Texture {
+		std::string texturePath;
+		TextureType textureType;
 	};
 
 	struct ModelData {
@@ -63,7 +74,7 @@ namespace ss {
 		BoundingBox bbox;
 		ss::ModelCapabilities imdcaps;
 		std::vector<MeshInstance> meshInstances;
-		std::vector<Appearance> materials;
+		std::unordered_map<uint32_t, Appearance> materials;
 
 		RScollectionID collectionID;
 	};

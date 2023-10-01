@@ -52,23 +52,29 @@
     <None Include="..\src\shaders\glsl\textured.vert">
       <Filter>Shaders\glsl</Filter>
     </None>
-    <None Include="..\src\shaders\spv\passthrough_frag.spv">
+    <None Include="..\src\shaders\spirv\passthrough_frag.spv">
       <Filter>Shaders\spirv</Filter>
     </None>
-    <None Include="..\src\shaders\spv\passthrough_vert.spv">
+    <None Include="..\src\shaders\spirv\passthrough_vert.spv">
       <Filter>Shaders\spirv</Filter>
     </None>
-    <None Include="..\src\shaders\spv\sampleshader_frag.spv">
+    <None Include="..\src\shaders\spirv\sampleshader_frag.spv">
       <Filter>Shaders\spirv</Filter>
     </None>
-    <None Include="..\src\shaders\spv\sampleshader_vert.spv">
+    <None Include="..\src\shaders\spirv\sampleshader_vert.spv">
       <Filter>Shaders\spirv</Filter>
     </None>
-    <None Include="..\src\shaders\spv\textured_frag.spv">
+    <None Include="..\src\shaders\spirv\textured_frag.spv">
       <Filter>Shaders\spirv</Filter>
     </None>
-    <None Include="..\src\shaders\spv\textured_vert.spv">
+    <None Include="..\src\shaders\spirv\textured_vert.spv">
       <Filter>Shaders\spirv</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\simplelit.vert">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\simplelit.frag">
+      <Filter>Shaders\glsl</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

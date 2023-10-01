@@ -39,7 +39,6 @@ struct RScontextInfo {
 struct RSview {
 	glm::vec4 clearColor = glm::vec4(0.f, 0.f, 0.f, 1.f);
 	CameraType cameraType = CameraType::ORBITAL;
-	std::vector<RScollectionID> collectionIDlist;
 	glm::mat4 viewmat{};
 	glm::mat4 projmat{};
 	bool dirty = true;

@@ -49,7 +49,7 @@ std::vector<const char*> VkRenderSystem::getRequiredExtensions(const RSinitInfo&
 
 	std::vector<const char*> extensions = {
 		VK_KHR_SURFACE_EXTENSION_NAME,
-		VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+		VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 	};
 
 	if (info.enableValidation) {
@@ -93,7 +93,7 @@ void VkRenderSystem::createInstance(const RSinitInfo& info) {
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "VkRenderSystem";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_2;
 
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -304,7 +304,7 @@ RSresult VkRenderSystem::contextDrawCollections(const RScontextID& ctxID, const 
 			}
 
 			std::vector<VkRScollection> collections;
-			for (const auto& collID : view.view.collectionIDlist) {
+			for (const auto& collID : view.collectionIDlist) {
 				const VkRScollection& coll = icollectionMap[collID];
 				collections.push_back(coll);
 			}
@@ -382,10 +382,12 @@ bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKH
 	VkPhysicalDeviceFeatures supportedFeatures;
 	vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
+
 	return indices.isComplete() && extensionsSupported && swapChainAdequate && 
 		supportedFeatures.samplerAnisotropy && 
 		supportedFeatures.wideLines && 
 		supportedFeatures.fillModeNonSolid ;
+	
 }
 
 bool VkRenderSystem::checkDeviceExtensionSupport(VkPhysicalDevice device) {
@@ -484,10 +486,22 @@ void VkRenderSystem::createLogicalDevice(const VkSurfaceKHR& vksurface) {
 		createInfo.enabledLayerCount = 0;
 	}
 
+	VkPhysicalDeviceRobustness2FeaturesEXT robustness2{};
+	robustness2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+	robustness2.nullDescriptor = VK_TRUE;
+	
+	createInfo.pNext = &robustness2;
+
 	const VkResult result = vkCreateDevice(iinstance.physicalDevice, &createInfo, nullptr, &iinstance.device);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to create logical device");
 	}
+	
+	VkPhysicalDeviceFeatures2 features2{};
+	features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	features2.pNext = &robustness2;
+	vkGetPhysicalDeviceFeatures2(iinstance.physicalDevice, &features2);
+	
 
 	//get the graphics queue handle from the logical device.
 	vkGetDeviceQueue(iinstance.device, indices.graphicsFamily.value(), 0, &iinstance.graphicsQueue);
@@ -647,7 +661,7 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo& info)
 
 	ishaderModuleMap[RSshaderTemplate::stPassthrough] = createShaderModule(RSshaderTemplate::stPassthrough);
     ishaderModuleMap[RSshaderTemplate::stTextured] = createShaderModule(RSshaderTemplate::stTextured);
-
+	ishaderModuleMap[RSshaderTemplate::stSimpleLit] = createShaderModule(RSshaderTemplate::stSimpleLit);
 
 	iisRSinited = true;
 	
@@ -965,7 +979,7 @@ RSresult VkRenderSystem::viewUpdate(const RSviewID& viewID, const RSview& view)
 RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
-		vkrsview.view.collectionIDlist.push_back(colID);
+		vkrsview.collectionIDlist.push_back(colID);
 		vkrsview.view.dirty = true;
 		return RSresult::SUCCESS;
 	}
@@ -979,7 +993,7 @@ RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScolle
 RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID) {
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
-		vkrsview.view.collectionIDlist.erase(std::remove(vkrsview.view.collectionIDlist.begin(), vkrsview.view.collectionIDlist.end(), colID.id));
+		vkrsview.collectionIDlist.erase(std::remove(vkrsview.collectionIDlist.begin(), vkrsview.collectionIDlist.end(), colID.id));
 		vkrsview.view.dirty = true;
 
 		return RSresult::SUCCESS;
@@ -1235,7 +1249,9 @@ VKRSshader VkRenderSystem::createShaderModule(const RSshaderTemplate shaderTempl
     const std::vector<char>& fragfile = readFile(fragShaderPath);
     VKRSshader vkrsshader;
     vkrsshader.shadernName = spvfileName;
-    
+	vkrsshader.vertShaderContent = vertfile.data();
+	vkrsshader.fragShaderContent = fragfile.data();
+
     VkShaderModuleCreateInfo vertShaderModuleCI{};
     vertShaderModuleCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     vertShaderModuleCI.codeSize = vertfile.size();
@@ -1302,10 +1318,27 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
-	vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+	const std::vector<VkVertexInputBindingDescription> bindings = {
+		{0, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+		{1, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+		{2, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+		{3, sizeof(glm::vec2), VK_VERTEX_INPUT_RATE_VERTEX}
+	};
+	const std::vector<VkVertexInputAttributeDescription> attribs = {
+		{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+		{1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+		{2, 2, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+		{3, 3, VK_FORMAT_R32G32_SFLOAT, 0}
+	};
+	vertexInputInfo.vertexBindingDescriptionCount = 4;
+	vertexInputInfo.pVertexBindingDescriptions = bindings.data();
+	vertexInputInfo.vertexAttributeDescriptionCount = 4;
+	vertexInputInfo.pVertexAttributeDescriptions = attribs.data();
+
+	//vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+	//vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+	//vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	//vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1453,10 +1486,6 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	if (graphicsPipelineResult != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
-	
-	//TODO: maintain a table of compiled shader module and destroy them when rendersystem is disposed
-	vkDestroyShaderModule(iinstance.device, vertShaderModule, nullptr);
-	vkDestroyShaderModule(iinstance.device, fragShaderModule, nullptr);
 }
 
 void VkRenderSystem::recordCommandBuffer(const VkRScollection* collections, uint32_t numCollections, const VkRSview& view, const VkRScontext& ctx, uint32_t imageIndex, uint32_t currentFrame) {
@@ -1719,7 +1748,9 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID& colID, const R
 						cmd.vertexBuffers = { gdata.interleaved.vaBuffer };
 					} else {
 						for (uint32_t i = 0; i < gdata.attributesInfo.numVertexAttribs; i++) {
-							cmd.vertexBuffers.push_back(gdata.separate.buffers[i].buffer);
+							RSvertexAttribute attrib = gdata.attributesInfo.attributes[i];
+							uint32_t attribIdx = static_cast<uint32_t>(attrib);
+							cmd.vertexBuffers[attribIdx] = gdata.separate.buffers[attribIdx].buffer;
 						}
 					}
 					cmd.primTopology = getPrimitiveType(geom.geomInfo.primType);
@@ -1793,11 +1824,32 @@ RSresult VkRenderSystem::textureCreate(RStextureID& outTexID, const char* absfil
 		createTextureSampler(vkrstex);
 		outTexID.id = id;
 		itextureMap[outTexID] = vkrstex;
+
 		return RSresult::SUCCESS;
 	}
 
 	return RSresult::FAILURE;
 }
+
+RSresult VkRenderSystem::textureCreateFromMemory(RStextureID& outTexID, unsigned char* encodedTexData, uint32_t width, uint32_t height) {
+	RSuint id;
+	bool success = itextureIDpool.CreateID(id);
+	assert(success && "failed to create a texture ID");
+	if (success) {
+		VkRStexture vkrstex;
+		vkrstex.texinfo = TextureLoader::readFromMemory(encodedTexData, width, height);
+		createTextureImage(vkrstex);
+		createTextureImageView(vkrstex);
+		createTextureSampler(vkrstex);
+		outTexID.id = id;
+		itextureMap[outTexID] = vkrstex;
+
+		return RSresult::SUCCESS;
+	}
+
+	return RSresult::FAILURE;
+}
+
 
 void VkRenderSystem::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
@@ -1869,7 +1921,7 @@ VkImageView VkRenderSystem::createImageView(VkImage image, VkFormat format, VkIm
 	viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 	viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
-	VkImageView imageView;
+	VkImageView imageView{};
 	VkResult res = vkCreateImageView(iinstance.device, &viewInfo, nullptr, &imageView);
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture image view!");
@@ -1892,6 +1944,7 @@ bool VkRenderSystem::createTextureImage(VkRStexture& vkrstex) {
 
 	void* data;
 	vkMapMemory(iinstance.device, stagingBufferMemory, 0, imageSize, 0, &data);
+	unsigned char* texels = static_cast<unsigned char*>(texinfo.texels);
 	memcpy(data, texinfo.texels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(iinstance.device, stagingBufferMemory);
 

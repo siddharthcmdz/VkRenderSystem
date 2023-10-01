@@ -31,7 +31,8 @@ enum RSprimitiveType {
 
 enum RSshaderTemplate {
 	stPassthrough,
-	stTextured
+	stTextured,
+	stSimpleLit
 };
 
 std::string getShaderStr(const RSshaderTemplate shaderTemplate);
