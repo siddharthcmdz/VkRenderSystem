@@ -31,11 +31,11 @@ layout(location = 0) out FragDataOut fragout;
 
 void main() {
 	gl_Position = view.projMat * view.viewMat * spatial.modelMat * inPosition;
-	vec3 normal3 = (inNormal.xyz * 0.5f) + 0.5f);
+	vec3 normal3 = (inNormal.xyz * 0.5f) + 0.5f;
 	normal3 = normalize(normal3);
 	vec4 normalColor = vec4(normal3.xyz, 1.0f);
-	//fragout.color = normalColor;
-	fragout.color = vec4(inTexCoord.xy, 0.5, 1.0f);
+	fragout.color = normalColor;
+	//fragout.color = vec4(inTexCoord.xy, 0.5, 1.0f);
 	fragout.normal = inNormal;
 	fragout.texCoord = inTexCoord;
 

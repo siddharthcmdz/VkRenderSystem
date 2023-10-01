@@ -58,6 +58,17 @@ namespace ss {
 		void dispose();
 	};
 
+	enum TextureType {
+		ttDiffuse,
+		ttAmbient,
+		ttSpecular
+	};
+
+	struct Texture {
+		std::string texturePath;
+		TextureType textureType;
+	};
+
 	struct ModelData {
 		std::string modelName;
 		BoundingBox bbox;

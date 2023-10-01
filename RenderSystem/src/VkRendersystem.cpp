@@ -1835,7 +1835,7 @@ VkImageView VkRenderSystem::createImageView(VkImage image, VkFormat format) {
 	viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 	viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
-	VkImageView imageView;
+	VkImageView imageView{};
 	VkResult res = vkCreateImageView(iinstance.device, &viewInfo, nullptr, &imageView);
 	if (res != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture image view!");

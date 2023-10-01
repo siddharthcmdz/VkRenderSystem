@@ -125,7 +125,9 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh, uint32_t& matIdx) {
 void ModelLoadExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
 
 	Assimp::Importer importer;
-	const std::string pFile = "C:\\Projects\\FSI\\RSexamples\\models\\monkey.glb";
+	//const std::string pFile = "C:\\Projects\\FSI\\RSexamples\\models\\monkey.glb";
+	//const std::string pFile = "C:\\Projects\\gltf-sample-models\\2.0\\BoxVertexColors\\glTF-Binary\\BoxVertexColors.glb";
+	const std::string pFile = "C:\\Projects\\gltf-sample-models\\2.0\\DamagedHelmet\\glTF-Binary\\DamagedHelmet.glb";
 	const aiScene* scene = importer.ReadFile(pFile,
 		aiProcess_CalcTangentSpace |
 		aiProcess_FlipUVs|
@@ -159,11 +161,14 @@ void ModelLoadExample::init(const RSexampleOptions& eo, const RSexampleGlobal& g
 			aiColor4D ambient;
 			aiColor4D emission;
 			ai_real shininess, strength;
-
+			
 			if (material->GetTextureCount(aiTextureType::aiTextureType_DIFFUSE) > 0) {
-				aiString path;
-				if (material->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
-					app.diffuseTexturePath = path.data;
+				uint32_t textureCount = material->GetTextureCount(aiTextureType::aiTextureType_DIFFUSE);
+				for (uint32_t i = 0; i < textureCount; i++) {
+					aiString path;
+					if (material->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
+						app.diffuseTexturePath = path.data;
+					}
 				}
 			}
 
