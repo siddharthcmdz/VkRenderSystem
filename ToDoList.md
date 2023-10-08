@@ -10,7 +10,11 @@
 * Move creation ShaderModules to rendersystem initialization
 * Move collectionIDlist from RSview to VkRSview
 * Implement BlinnPhong shading model - add lights to the RSview.
-
+* Create a identity spatial if spatial id is invalid
+* move descriptor pool from VKRSinstance to VkRSview
+* remove spatialDescriptors from drawcommand
+  
+  
 # Rendering techniques
 * Support depth attachment in framebuffers by default
 * Support IMGUI

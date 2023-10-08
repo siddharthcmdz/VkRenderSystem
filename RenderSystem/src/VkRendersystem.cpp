@@ -991,6 +991,10 @@ RSresult VkRenderSystem::viewAddCollection(const RSviewID& viewID, const RScolle
 }
 
 RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RScollectionID& colID) {
+
+	assert(viewID.isValid() && "input viewID is not valid");
+	assert(colID.isValid() && "input collectionID is not valid");
+
 	if (viewAvailable(viewID)) {
 		VkRSview& vkrsview = iviewMap[viewID];
 		vkrsview.collectionIDlist.erase(std::remove(vkrsview.collectionIDlist.begin(), vkrsview.collectionIDlist.end(), colID.id));
@@ -998,9 +1002,6 @@ RSresult VkRenderSystem::viewRemoveCollection(const RSviewID& viewID, const RSco
 
 		return RSresult::SUCCESS;
 	}
-
-	assert(viewID.isValid() && "input viewID is not valid");
-	assert(colID.isValid() && "input collectionID is not valid");
 
 	return RSresult::FAILURE;
 }
