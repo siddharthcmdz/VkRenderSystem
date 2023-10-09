@@ -31,11 +31,13 @@
     <ClCompile Include="..\src\Scene.cpp" />
     <ClCompile Include="..\src\QuadricDataFactory.cpp" />
     <ClCompile Include="..\src\QuadricExample.cpp" />
+    <ClCompile Include="..\src\TinyGLTFexample.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Scripts\dependency_importer.py" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\thirdparty\tinygltf\tiny_gltf.h" />
     <ClInclude Include="..\src\BoundingBox.h" />
     <ClInclude Include="..\src\Camera.h" />
     <ClInclude Include="..\src\HelloVulkanExample.h" />
@@ -48,6 +50,7 @@
     <ClInclude Include="..\src\QuadricExample.h" />
     <ClInclude Include="..\src\RSexample.h" />
     <ClInclude Include="..\src\Scene.h" />
+    <ClInclude Include="..\src\TinyGLTFexample.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -137,11 +140,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)../../RenderSystem/src;$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(VULKAN_SDK)\Include;$(ProjectDir)/../../thirdparty/assimp/win32/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)../../RenderSystem/src;$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(VULKAN_SDK)\Include;$(ProjectDir)/../../thirdparty/assimp/win32/include;$(ProjectDir)/../../thirdparty/tinygltf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

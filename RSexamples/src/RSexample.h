@@ -13,6 +13,7 @@ enum RSexampleName {
 	enPrimitiveType,
 	enModelLoad,
 	enQuadric,
+	enTinyGLTFexample,
 	enMax
 };
 
@@ -21,6 +22,7 @@ const std::string RSexampleNameStr[] = {
 	"PrimitiveExample",
 	"ModelLoadExample",
 	"QuadricExample",
+	"TinyGLTFexample",
 	"None"
 };
 
