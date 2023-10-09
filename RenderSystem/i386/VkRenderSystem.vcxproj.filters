@@ -70,6 +70,12 @@
     <None Include="..\src\shaders\spirv\textured_vert.spv">
       <Filter>Shaders\spirv</Filter>
     </None>
+    <None Include="..\src\shaders\glsl\simplelit.vert">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\simplelit.frag">
+      <Filter>Shaders\glsl</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h">

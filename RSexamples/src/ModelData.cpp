@@ -30,13 +30,13 @@ namespace ss {
 
 	void Appearance::dispose() {
 		auto& vkrs = VkRenderSystem::getInstance();
-		vkrs.textureDispose(this->textureID);
-		vkrs.appearanceDispose(this->appearanceID);
 	}
 
 	void MeshInstance::dispose() {
 		auto& vkrs = VkRenderSystem::getInstance();
 		vkrs.collectionInstanceDispose(this->associatedCollectionID, this->instanceID);
+		vkrs.textureDispose(this->diffuseTextureID);
+		vkrs.appearanceDispose(this->appearanceID);
 		meshData.dispose();
 	}
 }

@@ -10,7 +10,12 @@ std::string getShaderStr(const RSshaderTemplate shaderTemplate) {
             
         case RSshaderTemplate::stPassthrough:
             shaderStr = "passthrough";
-            
+            break;
+
+        case RSshaderTemplate::stSimpleLit:
+            shaderStr = "simplelit";
+            break;
+
         default:
             break;
     }

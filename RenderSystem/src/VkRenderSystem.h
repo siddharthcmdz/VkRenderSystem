@@ -167,6 +167,7 @@ public:
 
 	RS_EXPORT bool textureAvailable(const RStextureID& texID);
 	RS_EXPORT RSresult textureCreate(RStextureID& outTexID, const char* absfilepath);
+	RS_EXPORT RSresult textureCreateFromMemory(RStextureID& outTexID, unsigned char* encodedTexData, uint32_t width, uint32_t height);
 	RS_EXPORT RSresult textureDispose(const RStextureID& texID);
 
 	RS_EXPORT bool appearanceAvailable(const RSappearanceID& appID) const;
