@@ -9,6 +9,7 @@ private:
 	
 	ss::BoundingBox ibbox;
 	std::vector<RSsingleEntity> iquadrics;
+	RScollectionID icollectionID;
 
 public:
 	QuadricExample();

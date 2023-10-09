@@ -8,13 +8,14 @@ QuadricExample::QuadricExample() {
 }
 
 void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
-	std::vector<QuadricData> qdlist = { 
+	std::vector<QuadricData> qdatalist = {
 		QuadricDataFactory::createSphere(),
 		QuadricDataFactory::createCone(),
 		QuadricDataFactory::createCylinder(),
 		QuadricDataFactory::createDisk(),
 		QuadricDataFactory::createQuad()
 	};
+
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 
 	ibbox = ss::BoundingBox(glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -25,53 +26,67 @@ void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& glo
 	attribInfo.attributes = attribs.data();
 	attribInfo.settings = RSvertexAttributeSettings::vasSeparate;
 	
-	RSsingleEntity entity;
-	vkrs.geometryDataCreate(entity.geomDataID, static_cast<uint32_t>(quadricData.positions.size()), static_cast<uint32_t>(quadricData.indices.size()), attribInfo);
-	uint32_t posSizeInBytes = static_cast<uint32_t>(quadricData.positions.size() * sizeof(quadricData.positions[0]));
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, posSizeInBytes, RSvertexAttribute::vaPosition, (void*)quadricData.positions.data());
-
-	uint32_t normSizeInBytes = static_cast<uint32_t>(quadricData.normals.size()) * sizeof(quadricData.normals[0]);
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, normSizeInBytes, RSvertexAttribute::vaNormal, (void*)quadricData.normals.data());
-
-	uint32_t colorSizeInBytes = static_cast<uint32_t>(quadricData.colors.size()) * sizeof(quadricData.colors[0]);
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, colorSizeInBytes, RSvertexAttribute::vaColor, (void*)quadricData.colors.data());
-
-	uint32_t texcoordSizeInBytes = static_cast<uint32_t>(quadricData.texcoords.size()) * sizeof(quadricData.texcoords[0]);
-	vkrs.geometryDataUpdateVertices(entity.geomDataID, 0, texcoordSizeInBytes, RSvertexAttribute::vaTexCoord, (void*)quadricData.texcoords.data());
-
-	uint32_t indicesSizeInBytes = static_cast<uint32_t>(quadricData.indices.size()) * sizeof(uint32_t);
-	vkrs.geometryDataUpdateIndices(entity.geomDataID, 0, indicesSizeInBytes, (void*)quadricData.indices.data());
-	vkrs.geometryDataFinalize(entity.geomDataID);
-
-	RSgeometryInfo geomInfo;
-	geomInfo.primType = RSprimitiveType::ptTriangle;
-	vkrs.geometryCreate(entity.geomID, geomInfo);
-
 	RScollectionInfo collInfo;
-	vkrs.collectionCreate(entity.collectionID, collInfo);
-	vkrs.viewAddCollection(globals.viewID, entity.collectionID);
-	RSinstanceInfo instInfo;
-	instInfo.gdataID = entity.geomDataID;
-	instInfo.geomID = entity.geomID;
+	vkrs.collectionCreate(icollectionID, collInfo);
+	vkrs.viewAddCollection(globals.viewID, icollectionID);
+	float start = -(qdatalist.size() * 0.5f);
+	for (size_t i = 0; i < qdatalist.size(); i++) {
+		RSsingleEntity se;
 
+		uint32_t numVertices = static_cast<uint32_t>(qdatalist[i].positions.size());
+		uint32_t numIndices = static_cast<uint32_t>(qdatalist[i].indices.size());
 
-	RSappearanceInfo appInfo;
-	appInfo.shaderTemplate = RSshaderTemplate::stPassthrough;
-	vkrs.appearanceCreate(entity.appID, appInfo);
-	instInfo.appID = entity.appID;
-	RSspatial spl;
-	spl.model = glm::scale(glm::mat4(1), glm::vec3(2.0f, 2.0f, 2.0f));
-	spl.modelInv = glm::inverse(spl.model);
-	vkrs.spatialCreate(entity.spatialID, spl);
-	instInfo.spatialID = entity.spatialID;
+		vkrs.geometryDataCreate(se.geomDataID, numVertices, numIndices, attribInfo);
+		uint32_t posSizeInBytes = numVertices * sizeof(qdatalist[i].positions[0]);
+		vkrs.geometryDataUpdateVertices(se.geomDataID, 0, posSizeInBytes, RSvertexAttribute::vaPosition, (void*)qdatalist[i].positions.data());
 
-	vkrs.collectionInstanceCreate(entity.collectionID, entity.instanceID, instInfo);
-	vkrs.collectionFinalize(entity.collectionID, globals.ctxID, globals.viewID);
+		uint32_t normSizeInBytes = numVertices * sizeof(qdatalist[i].normals[0]);
+		vkrs.geometryDataUpdateVertices(se.geomDataID, 0, normSizeInBytes, RSvertexAttribute::vaNormal, (void*)qdatalist[i].normals.data());
 
-	ibbox.expandBy(quadricData.bbox.getmin());
-	ibbox.expandBy(quadricData.bbox.getmax());
+		uint32_t colorSizeInBytes = numVertices * sizeof(qdatalist[i].colors[0]);
+		vkrs.geometryDataUpdateVertices(se.geomDataID, 0, colorSizeInBytes, RSvertexAttribute::vaColor, (void*)qdatalist[i].colors.data());
 
-	iquadrics.push_back(entity);
+		uint32_t texcoordSizeInBytes = numVertices * sizeof(qdatalist[i].texcoords[0]);
+		vkrs.geometryDataUpdateVertices(se.geomDataID, 0, texcoordSizeInBytes, RSvertexAttribute::vaTexCoord, (void*)qdatalist[i].texcoords.data());
+
+		uint32_t indicesSizeInBytes = numIndices * sizeof(uint32_t);
+		vkrs.geometryDataUpdateIndices(se.geomDataID, 0, indicesSizeInBytes, (void*)qdatalist[i].indices.data());
+		vkrs.geometryDataFinalize(se.geomDataID);
+
+		RSgeometryInfo geometry;
+		geometry.primType = RSprimitiveType::ptTriangle;
+		vkrs.geometryCreate(se.geomID, geometry);
+
+		RSappearanceInfo appInfo;
+		appInfo.shaderTemplate = RSshaderTemplate::stPassthrough;
+		vkrs.appearanceCreate(se.appID, appInfo);
+
+		RSspatial spl;
+		
+
+		spl.model = glm::translate(glm::mat4(1), glm::vec3(start, 0.0f, 0.0f));
+		spl.modelInv = glm::inverse(spl.model);
+		vkrs.spatialCreate(se.spatialID, spl);
+		start += 1.0f;
+
+		RSinstanceInfo instInfo;
+		instInfo.gdataID = se.geomDataID;
+		instInfo.geomID = se.geomID;
+		instInfo.appID = se.appID;
+		instInfo.spatialID = se.spatialID;
+
+		vkrs.collectionInstanceCreate(icollectionID, se.instanceID, instInfo);
+
+		glm::vec4 minpt = qdatalist[i].bbox.getmin();
+		glm::vec4 maxpt = qdatalist[i].bbox.getmax();
+		ibbox.expandBy(minpt);
+		ibbox.expandBy(maxpt);
+
+		iquadrics.push_back(se);
+
+	}
+
+	vkrs.collectionFinalize(icollectionID, globals.ctxID, globals.viewID);
 }
 
 void QuadricExample::render(const RSexampleGlobal& globals) {

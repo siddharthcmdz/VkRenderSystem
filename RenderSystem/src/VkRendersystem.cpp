@@ -1381,7 +1381,7 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext& ctx, const VkRSvi
 	}
 	rasterizer.lineWidth = drawcmd.lineWidth;
 	if (drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN || drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST || drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP) {
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizer.cullMode = VK_CULL_MODE_NONE/*VK_CULL_MODE_BACK_BIT*/;
 	}
 	else {
 		rasterizer.cullMode = VK_CULL_MODE_NONE;
