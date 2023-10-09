@@ -26,6 +26,7 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\ModelData.cpp" />
     <ClCompile Include="..\src\ModelLoadExample.cpp" />
+    <ClCompile Include="..\src\MultiQuadricExample.cpp" />
     <ClCompile Include="..\src\PrimitiveExample.cpp" />
     <ClCompile Include="..\src\Scene.cpp" />
     <ClCompile Include="..\src\QuadricDataFactory.cpp" />
@@ -41,6 +42,7 @@
     <ClInclude Include="..\src\helper.h" />
     <ClInclude Include="..\src\ModelData.h" />
     <ClInclude Include="..\src\ModelLoadExample.h" />
+    <ClInclude Include="..\src\MultiQuadricExample.h" />
     <ClInclude Include="..\src\PrimitiveExample.h" />
     <ClInclude Include="..\src\QuadricDataFactory.h" />
     <ClInclude Include="..\src\QuadricExample.h" />

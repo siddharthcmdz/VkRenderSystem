@@ -8,11 +8,13 @@ QuadricExample::QuadricExample() {
 }
 
 void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& globals) {
-	QuadricData quadricData = QuadricDataFactory::createSphere(1, 6, 6);
-	//QuadricData quadricData = QuadricDataFactory::createCone();
-	//QuadricData quadricData = QuadricDataFactory::createCylinder();
-	//QuadricData quadricData = QuadricDataFactory::createDisk();
-	//QuadricData quadricData = QuadricDataFactory::createQuad();
+	std::vector<QuadricData> qdlist = { 
+		QuadricDataFactory::createSphere(),
+		QuadricDataFactory::createCone(),
+		QuadricDataFactory::createCylinder(),
+		QuadricDataFactory::createDisk(),
+		QuadricDataFactory::createQuad()
+	};
 	VkRenderSystem& vkrs = VkRenderSystem::getInstance();
 
 	ibbox = ss::BoundingBox(glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
