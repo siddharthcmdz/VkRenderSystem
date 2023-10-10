@@ -41,6 +41,9 @@ struct RSview {
 	CameraType cameraType = CameraType::ORBITAL;
 	glm::mat4 viewmat{};
 	glm::mat4 projmat{};
+	glm::vec4 lightPos;
+	glm::vec4 eyePos;
+
 	bool dirty = true;
 };
 
