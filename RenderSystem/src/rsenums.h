@@ -24,9 +24,11 @@ enum RSvertexAttributeSettings {
 enum RSprimitiveType {
 	ptTriangle,
 	ptTriangleStrip,
+	ptTriangleFan,
 	ptPoint,
 	ptLine,
-	ptLineStrip
+	ptLineStrip,
+	ptLineLoop
 };
 
 enum RSshaderTemplate {

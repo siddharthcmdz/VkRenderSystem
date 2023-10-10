@@ -17,13 +17,21 @@ namespace ss {
 		bool hasCameras = false;
 	};
 
+	enum IndicesIntType {
+		iitUINT32,
+		iitUINT16,
+		iitUINT8,
+		iintInvalid,
+	};
+
 	struct MeshData {
 		std::vector<glm::vec4> positions;
 		std::vector<glm::vec4> normals;
 		std::vector<glm::vec4> colors;
 		std::vector<glm::vec2> texcoords;
 		std::vector<uint32_t> iindices;
-		
+		IndicesIntType indicesType = IndicesIntType::iitUINT32;
+
 		RSgeometryDataID geometryDataID;
 		RSgeometryID geometryID;
 		RSvertexAttribsInfo attribsInfo;
