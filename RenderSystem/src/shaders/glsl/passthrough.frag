@@ -1,9 +1,5 @@
 #version 450
 
-//layout (location = 0) in vec4 fragColor;
-//layout (location = 1) in vec4 fragNormal;
-//layout (location = 2) in vec2 fragTexCoord;
-
 struct FragDataOut {
 	vec4 color;
 	vec4 normal;
