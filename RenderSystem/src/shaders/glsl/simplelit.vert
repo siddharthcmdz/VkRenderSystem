@@ -24,7 +24,7 @@ struct FragOut {
     vec3 normal;
     vec2 texcoord;
     vec3 viewDir;
-    vec3 lightDir
+    vec3 lightDir;
 };
 
 
