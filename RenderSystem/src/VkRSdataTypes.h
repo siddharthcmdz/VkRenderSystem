@@ -17,10 +17,22 @@
 #include "TextureLoader.h"
 #include "VkRSbuffer.h"
 
-struct VkRSinstance {
-	static const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-	static const inline std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-	
+struct VkRSqueueFamilyIndices
+{
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+
+	bool isComplete()
+	{
+		return graphicsFamily.has_value() && presentFamily.has_value();
+	}
+};
+
+struct VkRSinstance
+{
+	static const inline std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+	static const inline std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
 	std::vector<std::string> gpuSupportedExtension;
 	std::vector<std::string> vkRequiredExtensions;
 	std::vector<std::string> vkExtensionProps;
@@ -31,8 +43,7 @@ struct VkRSinstance {
 	VkDevice device;
 	VkQueue graphicsQueue{};
 	VkQueue presentQueue{};
-	VkCommandPool commandPool{}; //manages the memory where command buffers are allocated from them
-	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+	VkCommandPool commandPool{}; // manages the memory where command buffers are allocated from them
 	uint32_t majorVersion = ~0;
 	uint32_t minorVersion = ~0;
 	uint32_t patchVersion = ~0;
@@ -40,11 +51,10 @@ struct VkRSinstance {
 	uint32_t maxUniformDescriptorSets = ~0;
 	uint32_t maxCombinedSamplerDescriptorSets = ~0;
 	uint32_t maxBoundDescriptorSets = ~0;
-
 };
 
-
-struct VkRScontext {
+struct VkRScontext
+{
 	static const int MAX_FRAMES_IN_FLIGHT = 2;
 	VkSurfaceKHR surface{};
 	bool resized = false;
@@ -57,57 +67,65 @@ struct VkRScontext {
 	std::vector<VkFence> inFlightFences;
 };
 
+struct AllocationID
+{
 
-struct AllocationID {
-	
 	uint32_t offset;
 	uint32_t numElements;
 	uint16_t elemSize;
 };
 
-struct VkRSinterleavedGeomBuffers {
+struct VkRSinterleavedGeomBuffers
+{
 	VkBuffer vaBuffer = VK_NULL_HANDLE;
 	VkBuffer stagingVABuffer = VK_NULL_HANDLE;
 	VkDeviceMemory vaBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory stagingVAbufferMemory = VK_NULL_HANDLE;
-	void* mappedStagingVAPtr = nullptr;
+	void *mappedStagingVAPtr = nullptr;
 };
 
-struct VkRSseparateGeomBuffers {
+struct VkRSseparateGeomBuffers
+{
 	std::array<VkRSbuffer, 4> stagingBuffers;
 	std::array<VkRSbuffer, 4> buffers;
 };
 
-struct VkRSindicesBuffers {
+struct VkRSindicesBuffers
+{
 	VkBuffer indicesBuffer = VK_NULL_HANDLE;
 	VkBuffer stagingIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory indicesBufferMemory = VK_NULL_HANDLE;
 	VkDeviceMemory stagingIndexBufferMemory = VK_NULL_HANDLE;
-	void* mappedIndexPtr = nullptr;
+	void *mappedIndexPtr = nullptr;
 };
 
-struct VkRSgeometryData {
+struct VkRSgeometryData
+{
 	uint32_t numVertices = 0;
 	uint32_t numIndices = 0;
 	RSvertexAttribsInfo attributesInfo;
-	
+
 	VkRSinterleavedGeomBuffers interleaved;
 	VkRSseparateGeomBuffers separate;
 	VkRSindicesBuffers indices;
 };
 
-struct VkRSgeometry {
+struct VkRSgeometry
+{
 	RSgeometryInfo geomInfo;
 };
 
-struct VkRScollectionInstance {
+struct VkRScollectionInstance
+{
 	RSinstanceInfo instInfo;
 	VkDescriptorSetLayout descriptorSetLayout{};
 	std::vector<VkDescriptorSet> descriptorSets;
 };
 
-struct VkRScollection {
+struct VkRScollection
+{
 	RScollectionInfo info;
+	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 
 	using DrawCommands = std::vector<VkRSdrawCommand>;
 	using RSinstances = std::unordered_map<RSinstanceID, VkRScollectionInstance, IDHasher<RSinstanceID>>;
@@ -117,25 +135,17 @@ struct VkRScollection {
 	bool dirty = true;
 };
 
-struct VkRSviewDescriptor {
+struct VkRSviewDescriptor
+{
 	glm::mat4 view;
 	glm::mat4 proj;
+	glm::vec4 lightPos{};
 };
 
-struct VkRSspatialDescriptor {
-	glm::mat4 model;
-};
-
-struct VkRSview {
+struct VkRSview
+{
 	VkRenderPass renderPass{};
 	std::vector<VkFramebuffer> swapChainFramebuffers;
-	std::vector<VkCommandBuffer> commandBuffers; //gets automatically disposed when command pool is disposed.
-	VkDescriptorSetLayout descriptorSetLayout{};
-	std::vector<VkDescriptorSet> descriptorSets;
-	std::vector<VkBuffer> uniformBuffers;
-	std::vector<VkDeviceMemory> uniformBuffersMemory;
-	std::vector<void*> uniformBuffersMapped;
-	std::vector<RScollectionID> collectionIDlist;
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	VkSwapchainKHR swapChain{};
@@ -144,35 +154,38 @@ struct VkRSview {
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
+	std::vector<VkCommandBuffer> commandBuffers; // gets automatically disposed when command pool is disposed.
+	std::vector<RScollectionID> collectionIDlist;
 
-	uint32_t currentFrame = 0;
+	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+	VkDescriptorSetLayout descriptorSetLayout{};
+	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkBuffer> uniformBuffers;
+	std::vector<VkDeviceMemory> uniformBuffersMemory;
+	std::vector<void *> uniformBuffersMapped;
+
 	RSview view;
+	uint32_t currentFrame = 0;
 };
 
-struct VKRSshader {
-    VkShaderModule vert{};
-    VkShaderModule frag{};
+struct VKRSshader
+{
+	VkShaderModule vert{};
+	VkShaderModule frag{};
 	std::string shadernName{};
 	std::string vertShaderContent{};
 	std::string fragShaderContent{};
 };
 
-struct VkRSqueueFamilyIndices {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete() {
-		return graphicsFamily.has_value() && presentFamily.has_value();
-	}
-};
-
-struct VkRSswapChainSupportDetails {
+struct VkRSswapChainSupportDetails
+{
 	VkSurfaceCapabilitiesKHR capabilities;
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 };
 
-struct VkRStexture {
+struct VkRStexture
+{
 	RStextureInfo texinfo;
 	std::string absPath;
 	VkImage textureImage = VK_NULL_HANDLE;
@@ -181,17 +194,20 @@ struct VkRStexture {
 	VkSampler textureSampler = VK_NULL_HANDLE;
 };
 
-struct VkRSspatial {
+struct VkRSspatial
+{
 	RSspatial spatial;
 };
 
-struct VkRSstate {
+struct VkRSstate
+{
 	RSstate state;
 };
 
-struct VkRSappearance {
+struct VkRSappearance
+{
 	RSappearanceInfo appInfo;
 };
 
-VkFormat getVkFormat(const RSvertexAttribute& va);
+VkFormat getVkFormat(const RSvertexAttribute &va);
 uint32_t getOffset(uint32_t numAttribs, uint32_t idx);

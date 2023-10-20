@@ -2,9 +2,10 @@
 #include <vulkan/vulkan.h>
 #include <array>
 
-struct VkRSdrawCommand {
+struct VkRSdrawCommand
+{
 	RSvertexAttributeSettings attribSetting;
-	std::array<VkBuffer, 4> vertexBuffers{ VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
+	std::array<VkBuffer, 4> vertexBuffers{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
 	VkBuffer indicesBuffer = VK_NULL_HANDLE;
 	bool isIndexed = true;
 	uint32_t numIndices = 0;
@@ -16,7 +17,6 @@ struct VkRSdrawCommand {
 	VkPipeline graphicsPipeline{};
 	std::array<VkDescriptorSet, 2> viewDescriptors;
 	std::array<VkDescriptorSet, 2> materialDescriptors;
-	std::array<VkDescriptorSet, 2> spatialDescriptors;
 	bool hasMaterialDescriptors = false;
 	RSspatial spatial;
 	float lineWidth = 1.0f;
