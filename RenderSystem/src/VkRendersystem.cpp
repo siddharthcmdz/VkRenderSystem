@@ -495,7 +495,7 @@ void VkRenderSystem::createLogicalDevice(const VkSurfaceKHR &vksurface)
 {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	iinstance.queueFamilyIndices = findQueueFamilies(iinstance.physicalDevice, vksurface);
-	std::set<uint32_t> uniqueQueueFamiles = {iiinstance.queueFamilyIndices.graphicsFamily.value(), iinstance.queueFamilyIndices.presentFamily.value()};
+	std::set<uint32_t> uniqueQueueFamiles = {iinstance.queueFamilyIndices.graphicsFamily.value(), iinstance.queueFamilyIndices.presentFamily.value()};
 
 	float queuePriority = 1.f;
 	for (uint32_t queueFamily : uniqueQueueFamiles)
@@ -749,7 +749,6 @@ bool VkRenderSystem::isRenderSystemInit()
 RSresult VkRenderSystem::renderSystemDispose()
 {
 	vkDestroyCommandPool(iinstance.device, iinstance.commandPool, nullptr);
-	vkDestroyDescriptorPool(iinstance.device, iinstance.descriptorPool, nullptr);
 	vkDestroyDevice(iinstance.device, nullptr);
 	if (iinitInfo.enableValidation)
 	{
@@ -839,7 +838,6 @@ RSresult VkRenderSystem::contextCreate(RScontextID &outCtxID, const RScontextInf
 		vkrsctx.info = info;
 
 		createSurface(vkrsctx);
-		createCommandPool(vkrsctx);
 		createSyncObjects(vkrsctx);
 		outCtxID.id = id;
 		ictxMap[outCtxID] = vkrsctx;
@@ -949,7 +947,7 @@ void VkRenderSystem::viewCreateDescriptorSets(VkRSview &view)
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = iinstance.descriptorPool;
+	allocInfo.descriptorPool = view.descriptorPool;
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
 	allocInfo.pSetLayouts = layouts.data();
 
@@ -1173,6 +1171,8 @@ void VkRenderSystem::disposeView(VkRSview &view)
 	vkDestroyDescriptorSetLayout(iinstance.device, view.descriptorSetLayout, nullptr);
 	vkDestroyRenderPass(iinstance.device, view.renderPass, nullptr);
 
+	vkDestroyDescriptorPool(iinstance.device, view.descriptorPool, nullptr);
+
 	for (const auto &imageView : view.swapChainImageViews)
 	{
 		vkDestroyImageView(iinstance.device, imageView, nullptr);
@@ -1365,7 +1365,7 @@ RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID &collID, RSinst
 		if (needsMaterialDescriptor(inst))
 		{
 			collectionInstanceCreateDescriptorSetLayout(inst);
-			collectionInstanceCreateDescriptorSet(inst);
+			collectionInstanceCreateDescriptorSet(inst, coll.descriptorPool);
 		}
 		coll.instanceMap[outInstID] = inst;
 
@@ -1883,7 +1883,7 @@ void VkRenderSystem::collectionInstanceCreateDescriptorSetLayout(VkRScollectionI
 	}
 }
 
-void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstance &inst)
+void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstance &inst, VkDescriptorPool& descriptorPool)
 {
 	if (appearanceAvailable(inst.instInfo.appID))
 	{
@@ -1897,7 +1897,7 @@ void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstanc
 
 			VkDescriptorSetAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocInfo.descriptorPool = iinstance.descriptorPool;
+			allocInfo.descriptorPool = descriptorPool;
 			allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
 			allocInfo.pSetLayouts = layouts.data();
 

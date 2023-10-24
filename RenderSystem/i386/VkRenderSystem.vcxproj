@@ -56,7 +56,6 @@
     <ClCompile Include="..\src\rsenums.cpp" />
     <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VkRendersystem.cpp" />
-    <ClCompile Include="..\src\VkRSbuffer.cpp" />
     <ClCompile Include="..\src\VkRSdataTypes.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -38,6 +38,7 @@ struct VkRSinstance
 	std::vector<std::string> vkExtensionProps;
 	std::vector<std::string> vkSupportedValidationLayers;
 	VkInstance instance;
+	VkRSqueueFamilyIndices queueFamilyIndices;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;

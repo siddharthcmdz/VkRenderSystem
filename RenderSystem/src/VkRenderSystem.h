@@ -62,7 +62,7 @@ private:
 	VkSurfaceKHR createDummySurface(const HWND hwnd, const HINSTANCE hinst);
 	void disposeDummySurface(const VkSurfaceKHR surface);
 	void createSwapChain(VkRSview &view, VkRScontext &ctx);
-	void createCommandPool(const VkRScontext &ctx);
+	void createCommandPool();
 	void createSyncObjects(VkRScontext &ctx);
 	void disposeContext(VkRScontext &ctx);
 
@@ -91,7 +91,7 @@ private:
 
 	// collection instance related helpers
 	void collectionInstanceCreateDescriptorSetLayout(VkRScollectionInstance &inst);
-	void collectionInstanceCreateDescriptorSet(VkRScollectionInstance &inst);
+	void collectionInstanceCreateDescriptorSet(VkRScollectionInstance &inst, VkDescriptorPool& discriptorPool);
 	bool needsMaterialDescriptor(VkRScollectionInstance &inst);
 
 	// view related helpers
