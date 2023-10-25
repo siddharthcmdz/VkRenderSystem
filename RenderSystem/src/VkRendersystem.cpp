@@ -1258,19 +1258,20 @@ void VkRenderSystem::createDescriptorPool(VkRScollection &vkrscollection)
 {
 	const uint32_t MAX_NUM_INSTANCES = vkrscollection.info.maxInstances;
 	const uint32_t MAX_FRAMES_IN_FLIGHT = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
-	const uint32_t maxUniformDescriptors = 10 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_INSTANCES;
+	//const uint32_t maxUniformDescriptors = 10 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_INSTANCES;
 	const uint32_t maxSamplerDescriptors = 1 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_INSTANCES;
 	const uint32_t maxDescriptorSets = 1 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_INSTANCES;
 
-	VkDescriptorPoolSize uniformPoolSize{};
-	uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uniformPoolSize.descriptorCount = maxUniformDescriptors;
+	//VkDescriptorPoolSize uniformPoolSize{};
+	//uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	//uniformPoolSize.descriptorCount = maxUniformDescriptors;
 
 	VkDescriptorPoolSize samplerPoolSize{};
 	samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerPoolSize.descriptorCount = maxSamplerDescriptors;
 
-	std::array<VkDescriptorPoolSize, 2> poolSizes = {uniformPoolSize, samplerPoolSize};
+	//std::array<VkDescriptorPoolSize, 2> poolSizes = {uniformPoolSize, samplerPoolSize};
+	std::array<VkDescriptorPoolSize, 1> poolSizes = { samplerPoolSize };
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1497,25 +1498,25 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext &ctx, const VkRSvi
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	const std::vector<VkVertexInputBindingDescription> bindings = {
-		{0, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
-		{1, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
-		{2, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
-		{3, sizeof(glm::vec2), VK_VERTEX_INPUT_RATE_VERTEX}};
-	const std::vector<VkVertexInputAttributeDescription> attribs = {
-		{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-		{1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-		{2, 2, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-		{3, 3, VK_FORMAT_R32G32_SFLOAT, 0}};
-	vertexInputInfo.vertexBindingDescriptionCount = 4;
-	vertexInputInfo.pVertexBindingDescriptions = bindings.data();
-	vertexInputInfo.vertexAttributeDescriptionCount = 4;
-	vertexInputInfo.pVertexAttributeDescriptions = attribs.data();
+	//const std::vector<VkVertexInputBindingDescription> bindings = {
+	//	{0, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+	//	{1, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+	//	{2, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+	//	{3, sizeof(glm::vec2), VK_VERTEX_INPUT_RATE_VERTEX}};
+	//const std::vector<VkVertexInputAttributeDescription> attribs = {
+	//	{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+	//	{1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+	//	{2, 2, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+	//	{3, 3, VK_FORMAT_R32G32_SFLOAT, 0}};
+	//vertexInputInfo.vertexBindingDescriptionCount = 4;
+	//vertexInputInfo.pVertexBindingDescriptions = bindings.data();
+	//vertexInputInfo.vertexAttributeDescriptionCount = 4;
+	//vertexInputInfo.pVertexAttributeDescriptions = attribs.data();
 
-	// vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
-	// vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
-	// vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-	// vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+	 vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+	 vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+	 vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	 vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

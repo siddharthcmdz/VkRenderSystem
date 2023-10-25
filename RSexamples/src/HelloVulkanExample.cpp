@@ -12,7 +12,7 @@ void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 
 	ibbox = BoundingBox(glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
+	std::vector<RSvertexAttribute> attribs = { RSvertexAttribute::vaPosition, RSvertexAttribute::vaNormal, RSvertexAttribute::vaColor, RSvertexAttribute::vaTexCoord };
 	RSvertexAttribsInfo attribInfo;
 	attribInfo.numVertexAttribs = static_cast<uint32_t>(attribs.size());
 	attribInfo.attributes = attribs.data();
@@ -29,6 +29,7 @@ void HelloVulkanExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 	vkrs.geometryCreate(ientity.geomID, geomInfo);
 
 	RScollectionInfo collInfo;
+	collInfo.maxInstances = 1;
 	vkrs.collectionCreate(ientity.collectionID, collInfo);
 	vkrs.viewAddCollection(globals.viewID, ientity.collectionID);
 	RSinstanceInfo instInfo;
