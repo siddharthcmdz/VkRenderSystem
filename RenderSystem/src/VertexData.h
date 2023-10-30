@@ -22,10 +22,10 @@ namespace rsvd {
 		glm::vec4 normal;
 	};
 
-	struct VertexPCNT {
+	struct VertexPNCT {
 		glm::vec4 pos;
-		glm::vec4 color;
 		glm::vec4 normal;
+		glm::vec4 color;
 		glm::vec2 texcoord;
 	};
 

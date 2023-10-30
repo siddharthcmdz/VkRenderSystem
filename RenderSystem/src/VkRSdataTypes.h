@@ -17,6 +17,17 @@
 #include "TextureLoader.h"
 #include "VkRSbuffer.h"
 
+struct VkRSqueueFamilyIndices
+{
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
+
+	bool isComplete()
+	{
+		return graphicsFamily.has_value() && presentFamily.has_value();
+	}
+};
+
 struct VkRSinstance
 {
 	static const inline std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -27,14 +38,13 @@ struct VkRSinstance
 	std::vector<std::string> vkExtensionProps;
 	std::vector<std::string> vkSupportedValidationLayers;
 	VkInstance instance;
+	VkRSqueueFamilyIndices queueFamilyIndices;
 	VkDebugUtilsMessengerEXT debugMessenger;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
 	VkQueue graphicsQueue{};
 	VkQueue presentQueue{};
 	VkCommandPool commandPool{}; // manages the memory where command buffers are allocated from them
-	VkRSqueueFamilyIndices queueFamilyIndices;
-	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 	uint32_t majorVersion = ~0;
 	uint32_t minorVersion = ~0;
 	uint32_t patchVersion = ~0;
@@ -116,6 +126,7 @@ struct VkRScollectionInstance
 struct VkRScollection
 {
 	RScollectionInfo info;
+	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 
 	using DrawCommands = std::vector<VkRSdrawCommand>;
 	using RSinstances = std::unordered_map<RSinstanceID, VkRScollectionInstance, IDHasher<RSinstanceID>>;
@@ -129,24 +140,13 @@ struct VkRSviewDescriptor
 {
 	glm::mat4 view;
 	glm::mat4 proj;
-};
-
-struct VkRSspatialDescriptor
-{
-	glm::mat4 model;
+	glm::vec4 lightPos{};
 };
 
 struct VkRSview
 {
 	VkRenderPass renderPass{};
 	std::vector<VkFramebuffer> swapChainFramebuffers;
-	std::vector<VkCommandBuffer> commandBuffers; // gets automatically disposed when command pool is disposed.
-	VkDescriptorSetLayout descriptorSetLayout{};
-	std::vector<VkDescriptorSet> descriptorSets;
-	std::vector<VkBuffer> uniformBuffers;
-	std::vector<VkDeviceMemory> uniformBuffersMemory;
-	std::vector<void *> uniformBuffersMapped;
-	std::vector<RScollectionID> collectionIDlist;
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	VkSwapchainKHR swapChain{};
@@ -155,9 +155,18 @@ struct VkRSview
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
+	std::vector<VkCommandBuffer> commandBuffers; // gets automatically disposed when command pool is disposed.
+	std::vector<RScollectionID> collectionIDlist;
 
-	uint32_t currentFrame = 0;
+	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+	VkDescriptorSetLayout descriptorSetLayout{};
+	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkBuffer> uniformBuffers;
+	std::vector<VkDeviceMemory> uniformBuffersMemory;
+	std::vector<void *> uniformBuffersMapped;
+
 	RSview view;
+	uint32_t currentFrame = 0;
 };
 
 struct VKRSshader
@@ -167,17 +176,6 @@ struct VKRSshader
 	std::string shadernName{};
 	std::string vertShaderContent{};
 	std::string fragShaderContent{};
-};
-
-struct VkRSqueueFamilyIndices
-{
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete()
-	{
-		return graphicsFamily.has_value() && presentFamily.has_value();
-	}
 };
 
 struct VkRSswapChainSupportDetails

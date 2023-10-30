@@ -423,26 +423,30 @@ VkRSswapChainSupportDetails VkRenderSystem::querySwapChainSupport(VkPhysicalDevi
 	return details;
 }
 
-// bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR &vksurface)
-// {
-// 	bool extensionsSupported = checkDeviceExtensionSupport(device);
-// 	VkRSqueueFamilyIndices indices = findQueueFamilies(device, vksurface);
+bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR &vksurface)
+{
+	bool extensionsSupported = checkDeviceExtensionSupport(device);
+	VkRSqueueFamilyIndices indices = findQueueFamilies(device, vksurface);
 
-// 	bool swapChainAdequate = false;
-// 	if (extensionsSupported)
-// 	{
-// 		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, vksurface);
-// 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-// 	}
+	bool swapChainAdequate = false;
+	if (extensionsSupported)
+	{
+		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, vksurface);
+		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+	}
 
-// 	VkPhysicalDeviceFeatures supportedFeatures;
-// 	vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+	// 	bool swapChainAdequate = false;
+	// 	if (extensionsSupported)
+	// 	{
+	// 		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, vksurface);
+	// 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+	// 	}
 
-// 	return indices.isComplete() && extensionsSupported && swapChainAdequate &&
-// 		   supportedFeatures.samplerAnisotropy &&
-// 		   supportedFeatures.wideLines &&
-// 		   supportedFeatures.fillModeNonSolid;
-// }
+	return indices.isComplete() && extensionsSupported && swapChainAdequate &&
+		   supportedFeatures.samplerAnisotropy &&
+		   supportedFeatures.wideLines &&
+		   supportedFeatures.fillModeNonSolid;
+}
 
 bool VkRenderSystem::checkDeviceExtensionSupport(VkPhysicalDevice device)
 {
@@ -572,10 +576,10 @@ void VkRenderSystem::createLogicalDevice(const VkSurfaceKHR &vksurface)
 	vkGetPhysicalDeviceFeatures2(iinstance.physicalDevice, &features2);
 
 	// get the graphics queue handle from the logical device.
-	vkGetDeviceQueue(iinstance.device, indices.graphicsFamily.value(), 0, &iinstance.graphicsQueue);
+	vkGetDeviceQueue(iinstance.device, iinstance.queueFamilyIndices.graphicsFamily.value(), 0, &iinstance.graphicsQueue);
 
 	// get the present queue handle from the logical device
-	vkGetDeviceQueue(iinstance.device, indices.presentFamily.value(), 0, &iinstance.presentQueue);
+	vkGetDeviceQueue(iinstance.device, iinstance.queueFamilyIndices.presentFamily.value(), 0, &iinstance.presentQueue);
 }
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
@@ -734,6 +738,11 @@ void VkRenderSystem::disposeDummySurface(const VkSurfaceKHR surface)
 
 RSresult VkRenderSystem::renderSystemInit(const RSinitInfo &info)
 {
+	if (iisRSinited)
+	{
+		return RSresult::FAILURE;
+	}
+
 	iinitInfo = info;
 
 	createInstance(info);
@@ -742,13 +751,15 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo &info)
 	pickPhysicalDevice();
 	VkSurfaceKHR dummySurface = createDummySurface(info.parentHwnd, info.parentHinst);
 	createLogicalDevice(dummySurface);
+	createCommandPool();
 	disposeDummySurface(dummySurface);
-
-	createDescriptorPool();
 
 	ishaderModuleMap[RSshaderTemplate::stPassthrough] = createShaderModule(RSshaderTemplate::stPassthrough);
 	ishaderModuleMap[RSshaderTemplate::stTextured] = createShaderModule(RSshaderTemplate::stTextured);
 	ishaderModuleMap[RSshaderTemplate::stSimpleLit] = createShaderModule(RSshaderTemplate::stSimpleLit);
+
+	RSspatial identitySpl;
+	spatialCreate(_identitySpatialID, identitySpl);
 
 	iisRSinited = true;
 
@@ -763,7 +774,6 @@ bool VkRenderSystem::isRenderSystemInit()
 RSresult VkRenderSystem::renderSystemDispose()
 {
 	vkDestroyCommandPool(iinstance.device, iinstance.commandPool, nullptr);
-	vkDestroyDescriptorPool(iinstance.device, iinstance.descriptorPool, nullptr);
 	vkDestroyDevice(iinstance.device, nullptr);
 	if (iinitInfo.enableValidation)
 	{
@@ -853,7 +863,6 @@ RSresult VkRenderSystem::contextCreate(RScontextID &outCtxID, const RScontextInf
 		vkrsctx.info = info;
 
 		createSurface(vkrsctx);
-		createCommandPool(vkrsctx);
 		createSyncObjects(vkrsctx);
 		outCtxID.id = id;
 		ictxMap[outCtxID] = vkrsctx;
@@ -924,13 +933,14 @@ void VkRenderSystem::viewCreateDescriptorSetLayout(VkRSview &view)
 	}
 }
 
-void VkRenderSystem::createDescriptorPool()
+void VkRenderSystem::createDescriptorPool(VkRSview &vkrsview)
 {
 	// counted number of individual variables in the shader. update this if we want more
+	const uint32_t MAX_NUM_VIEWS = 4;
 	const uint32_t MAX_FRAMES_IN_FLIGHT = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
-	const uint32_t maxUniformDescriptors = 4 * MAX_FRAMES_IN_FLIGHT;
-	const uint32_t maxSamplerDescriptors = 1 * MAX_FRAMES_IN_FLIGHT;
-	const uint32_t maxDescriptorSets = 3 * MAX_FRAMES_IN_FLIGHT;
+	const uint32_t maxUniformDescriptors = 10 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_VIEWS;
+	const uint32_t maxSamplerDescriptors = 1 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_VIEWS;
+	const uint32_t maxDescriptorSets = 3 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_VIEWS;
 
 	VkDescriptorPoolSize uniformPoolSize{};
 	uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -948,7 +958,8 @@ void VkRenderSystem::createDescriptorPool()
 	poolInfo.pPoolSizes = poolSizes.data();
 	poolInfo.maxSets = maxDescriptorSets;
 
-	VkResult res = vkCreateDescriptorPool(iinstance.device, &poolInfo, nullptr, &iinstance.descriptorPool);
+	VkResult res = vkCreateDescriptorPool(iinstance.device, &poolInfo, nullptr, &vkrsview.descriptorPool);
+
 	if (res != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create descriptor pool");
@@ -961,7 +972,7 @@ void VkRenderSystem::viewCreateDescriptorSets(VkRSview &view)
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = iinstance.descriptorPool;
+	allocInfo.descriptorPool = view.descriptorPool;
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
 	allocInfo.pSetLayouts = layouts.data();
 
@@ -1046,7 +1057,6 @@ bool VkRenderSystem::viewAvailable(const RSviewID &viewID) const
 
 RSresult VkRenderSystem::viewCreate(RSviewID &outViewID, const RSview &view, const RScontextID &ctxID)
 {
-
 	assert(ctxID.isValid() && "input contextID is not valid");
 	assert(contextAvailable(ctxID) && "invalid context ID");
 
@@ -1064,7 +1074,10 @@ RSresult VkRenderSystem::viewCreate(RSviewID &outViewID, const RSview &view, con
 			createSwapChain(vkrsview, vkrsctx);
 			createImageViews(vkrsview);
 			createRenderpass(vkrsview);
+			createDepthResources(vkrsview);
+			createFramebuffers(vkrsview);
 
+			createDescriptorPool(vkrsview);
 			viewCreateDescriptorSetLayout(vkrsview);
 			createUniformBuffers(vkrsview);
 			viewCreateDescriptorSets(vkrsview);
@@ -1183,6 +1196,8 @@ void VkRenderSystem::disposeView(VkRSview &view)
 	vkDestroyDescriptorSetLayout(iinstance.device, view.descriptorSetLayout, nullptr);
 	vkDestroyRenderPass(iinstance.device, view.renderPass, nullptr);
 
+	vkDestroyDescriptorPool(iinstance.device, view.descriptorPool, nullptr);
+
 	for (const auto &imageView : view.swapChainImageViews)
 	{
 		vkDestroyImageView(iinstance.device, imageView, nullptr);
@@ -1264,6 +1279,38 @@ bool VkRenderSystem::collectionAvailable(const RScollectionID &colID)
 	return colID.isValid() && (icollectionMap.find(colID) != icollectionMap.end());
 }
 
+void VkRenderSystem::createDescriptorPool(VkRScollection &vkrscollection)
+{
+	const uint32_t MAX_NUM_INSTANCES = vkrscollection.info.maxInstances;
+	const uint32_t MAX_FRAMES_IN_FLIGHT = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
+	// const uint32_t maxUniformDescriptors = 10 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_INSTANCES;
+	const uint32_t maxSamplerDescriptors = 1 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_INSTANCES;
+	const uint32_t maxDescriptorSets = 1 * MAX_FRAMES_IN_FLIGHT * MAX_NUM_INSTANCES;
+
+	// VkDescriptorPoolSize uniformPoolSize{};
+	// uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	// uniformPoolSize.descriptorCount = maxUniformDescriptors;
+
+	VkDescriptorPoolSize samplerPoolSize{};
+	samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerPoolSize.descriptorCount = maxSamplerDescriptors;
+
+	// std::array<VkDescriptorPoolSize, 2> poolSizes = {uniformPoolSize, samplerPoolSize};
+	std::array<VkDescriptorPoolSize, 1> poolSizes = {samplerPoolSize};
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	poolInfo.pPoolSizes = poolSizes.data();
+	poolInfo.maxSets = maxDescriptorSets;
+
+	VkResult res = vkCreateDescriptorPool(iinstance.device, &poolInfo, nullptr, &vkrscollection.descriptorPool);
+	if (res != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create descriptor pool");
+	}
+}
+
 RSresult VkRenderSystem::collectionCreate(RScollectionID &colID, const RScollectionInfo &collInfo)
 {
 	RSuint id;
@@ -1273,6 +1320,9 @@ RSresult VkRenderSystem::collectionCreate(RScollectionID &colID, const RScollect
 	{
 		VkRScollection vkrscol;
 		vkrscol.info = collInfo;
+
+		createDescriptorPool(vkrscol);
+
 		colID.id = id;
 		icollectionMap[colID] = vkrscol;
 		return RSresult::SUCCESS;
@@ -1333,11 +1383,15 @@ RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID &collID, RSinst
 
 		VkRScollectionInstance inst;
 		inst.instInfo = instInfo;
+		if (!instInfo.spatialID.isValid())
+		{
+			inst.instInfo.spatialID = _identitySpatialID;
+		}
 
 		if (needsMaterialDescriptor(inst))
 		{
 			collectionInstanceCreateDescriptorSetLayout(inst);
-			collectionInstanceCreateDescriptorSet(inst);
+			collectionInstanceCreateDescriptorSet(inst, coll.descriptorPool);
 		}
 		coll.instanceMap[outInstID] = inst;
 
@@ -1469,25 +1523,25 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext &ctx, const VkRSvi
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	const std::vector<VkVertexInputBindingDescription> bindings = {
-		{0, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
-		{1, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
-		{2, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
-		{3, sizeof(glm::vec2), VK_VERTEX_INPUT_RATE_VERTEX}};
-	const std::vector<VkVertexInputAttributeDescription> attribs = {
-		{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-		{1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-		{2, 2, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-		{3, 3, VK_FORMAT_R32G32_SFLOAT, 0}};
-	vertexInputInfo.vertexBindingDescriptionCount = 4;
-	vertexInputInfo.pVertexBindingDescriptions = bindings.data();
-	vertexInputInfo.vertexAttributeDescriptionCount = 4;
-	vertexInputInfo.pVertexAttributeDescriptions = attribs.data();
+	// const std::vector<VkVertexInputBindingDescription> bindings = {
+	//	{0, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+	//	{1, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+	//	{2, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX},
+	//	{3, sizeof(glm::vec2), VK_VERTEX_INPUT_RATE_VERTEX}};
+	// const std::vector<VkVertexInputAttributeDescription> attribs = {
+	//	{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+	//	{1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+	//	{2, 2, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+	//	{3, 3, VK_FORMAT_R32G32_SFLOAT, 0}};
+	// vertexInputInfo.vertexBindingDescriptionCount = 4;
+	// vertexInputInfo.pVertexBindingDescriptions = bindings.data();
+	// vertexInputInfo.vertexAttributeDescriptionCount = 4;
+	// vertexInputInfo.pVertexAttributeDescriptions = attribs.data();
 
-	// vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
-	// vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
-	// vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-	// vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+	vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1584,19 +1638,21 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext &ctx, const VkRSvi
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
 	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
 	const RSspatialID &spatialID = collinst.instInfo.spatialID;
+	VkPushConstantRange pushConstant;
+	pushConstant.offset = 0;
+	pushConstant.size = sizeof(RSspatial);
+	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	if (spatialAvailable(spatialID))
 	{
-		VkPushConstantRange pushConstant;
-		pushConstant.offset = 0;
-		pushConstant.size = sizeof(RSspatial);
-		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
+	}
+	else
+	{
+		pipelineLayoutInfo.pushConstantRangeCount = 0;
+		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 	}
 
 	const VkResult pipelineLayoutResult = vkCreatePipelineLayout(iinstance.device, &pipelineLayoutInfo, nullptr, &drawcmd.pipelineLayout);
@@ -1750,10 +1806,8 @@ void VkRenderSystem::recordCommandBuffer(const VkRScollection *collections, uint
 	}
 }
 
-void VkRenderSystem::createCommandPool(const VkRScontext &ctx)
+void VkRenderSystem::createCommandPool()
 {
-	// VkRSqueueFamilyIndices queueFamilyIndices = findQueueFamilies(iinstance.physicalDevice, ctx.surface);
-
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1816,6 +1870,7 @@ VkPrimitiveTopology getPrimitiveType(const RSprimitiveType &ptype)
 	case RSprimitiveType::ptLine:
 		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
+	case RSprimitiveType::ptLineLoop:
 	case RSprimitiveType::ptLineStrip:
 		return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
 
@@ -1854,7 +1909,7 @@ void VkRenderSystem::collectionInstanceCreateDescriptorSetLayout(VkRScollectionI
 	}
 }
 
-void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstance &inst)
+void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstance &inst, VkDescriptorPool &descriptorPool)
 {
 	if (appearanceAvailable(inst.instInfo.appID))
 	{
@@ -1868,7 +1923,7 @@ void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstanc
 
 			VkDescriptorSetAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocInfo.descriptorPool = iinstance.descriptorPool;
+			allocInfo.descriptorPool = descriptorPool;
 			allocInfo.descriptorSetCount = static_cast<uint32_t>(VkRScontext::MAX_FRAMES_IN_FLIGHT);
 			allocInfo.pSetLayouts = layouts.data();
 
@@ -1903,7 +1958,6 @@ void VkRenderSystem::collectionInstanceCreateDescriptorSet(VkRScollectionInstanc
 
 RSresult VkRenderSystem::collectionFinalize(const RScollectionID &colID, const RScontextID &ctxID, const RSviewID &viewID)
 {
-
 	assert(colID.isValid() && "input collection ID is not valid");
 	assert(ctxID.isValid() && "input context ID is not valid");
 	assert(viewID.isValid() && "input viewID is not valid");
@@ -1961,8 +2015,16 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID &colID, const R
 						cmd.materialDescriptors[i] = collinst.descriptorSets[i];
 					}
 					cmd.hasMaterialDescriptors = !collinst.descriptorSets.empty();
-					const VkRSspatial &vkrsspatial = ispatialMap[collinst.instInfo.spatialID];
-					cmd.spatial = vkrsspatial.spatial;
+					if (collinst.instInfo.spatialID.isValid())
+					{
+						const VkRSspatial &vkrsspatial = ispatialMap[collinst.instInfo.spatialID];
+						cmd.spatial = vkrsspatial.spatial;
+					}
+					else
+					{
+						cmd.spatial = RSspatial();
+					}
+
 					// create descriptorsets for instances
 					createGraphicsPipeline(ctx, view, collection, collinst, cmd);
 

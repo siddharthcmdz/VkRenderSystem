@@ -26,6 +26,7 @@ enum RSprimitiveType {
 	ptTriangleStrip,
 	ptPoint,
 	ptLine,
+	ptLineLoop,
 	ptLineStrip
 };
 

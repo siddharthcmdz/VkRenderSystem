@@ -131,9 +131,6 @@
     <ClCompile Include="..\src\VkRSdataTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\VkRSbuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\rsenums.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
