@@ -423,31 +423,6 @@ VkRSswapChainSupportDetails VkRenderSystem::querySwapChainSupport(VkPhysicalDevi
 	return details;
 }
 
-bool VkRenderSystem::isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR &vksurface)
-{
-	bool extensionsSupported = checkDeviceExtensionSupport(device);
-	VkRSqueueFamilyIndices indices = findQueueFamilies(device, vksurface);
-
-	bool swapChainAdequate = false;
-	if (extensionsSupported)
-	{
-		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, vksurface);
-		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-	}
-
-	// 	bool swapChainAdequate = false;
-	// 	if (extensionsSupported)
-	// 	{
-	// 		VkRSswapChainSupportDetails swapChainSupport = querySwapChainSupport(device, vksurface);
-	// 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-	// 	}
-
-	return indices.isComplete() && extensionsSupported && swapChainAdequate &&
-		   supportedFeatures.samplerAnisotropy &&
-		   supportedFeatures.wideLines &&
-		   supportedFeatures.fillModeNonSolid;
-}
-
 bool VkRenderSystem::checkDeviceExtensionSupport(VkPhysicalDevice device)
 {
 	uint32_t availableExtensionCount;

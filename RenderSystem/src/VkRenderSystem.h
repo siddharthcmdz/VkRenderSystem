@@ -53,7 +53,6 @@ private:
 	RSspatialID _identitySpatialID;
 
 	// context related helpers
-	bool isDeviceSuitable(VkPhysicalDevice device, const VkSurfaceKHR &vksurface);
 	VkRSswapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, const VkSurfaceKHR &vksurface);
 	VkRSqueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR &vksurface);
 	void pickPhysicalDevice();
