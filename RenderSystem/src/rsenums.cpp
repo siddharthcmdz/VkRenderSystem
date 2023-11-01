@@ -16,6 +16,10 @@ std::string getShaderStr(const RSshaderTemplate shaderTemplate) {
             shaderStr = "simplelit";
             break;
 
+        case RSshaderTemplate::stVolumeSlice:
+            shaderStr = "volumeslice";
+            break;
+
         default:
             break;
     }

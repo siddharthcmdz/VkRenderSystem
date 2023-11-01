@@ -22,7 +22,8 @@ namespace ss {
 		std::vector<glm::vec4> normals;
 		std::vector<glm::vec4> colors;
 		std::vector<glm::vec2> texcoords;
-		std::vector<uint32_t> iindices;
+		std::vector<uint32_t> indices;
+		BoundingBox bbox;
 		
 		RSgeometryDataID geometryDataID;
 		RSgeometryID geometryID;
@@ -77,5 +78,7 @@ namespace ss {
 		std::unordered_map<uint32_t, Appearance> materials;
 
 		RScollectionID collectionID;
+
+		//TODO: dispose modeldata
 	};
 }

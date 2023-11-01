@@ -121,7 +121,7 @@ ss::MeshData ModelLoadExample::getMesh(const aiMesh* mesh) {
 		rsindexlist.push_back(face.mIndices[1]);
 		rsindexlist.push_back(face.mIndices[2]);
 	}
-	meshdata.iindices = rsindexlist;
+	meshdata.indices = rsindexlist;
 
 	initRSgeomData(meshdata);
 	
@@ -171,7 +171,7 @@ void ModelLoadExample::initRSgeomData(MeshData& meshdata) {
 	
 	assert(!meshdata.positions.empty() && "mesh must have atleast position");
 	uint32_t numvertices = static_cast<uint32_t>(meshdata.positions.size());
-	uint32_t numindices = static_cast<uint32_t>(meshdata.iindices.size());
+	uint32_t numindices = static_cast<uint32_t>(meshdata.indices.size());
 	vkrs.geometryDataCreate(meshdata.geometryDataID, numvertices, numindices, meshdata.attribsInfo);
 
 	for (uint32_t i = 0; i < meshdata.attribsInfo.numVertexAttribs; i++) {
@@ -179,8 +179,8 @@ void ModelLoadExample::initRSgeomData(MeshData& meshdata) {
 		vkrs.geometryDataUpdateVertices(meshdata.geometryDataID, 0, numvertices * meshdata.attribsInfo.sizeOfAttrib(attrib), attrib, meshdata.getAttribData(attrib));
 	}
 
-	if (!meshdata.iindices.empty()) {
-		vkrs.geometryDataUpdateIndices(meshdata.geometryDataID, 0, numindices * sizeof(uint32_t), meshdata.iindices.data());
+	if (!meshdata.indices.empty()) {
+		vkrs.geometryDataUpdateIndices(meshdata.geometryDataID, 0, numindices * sizeof(uint32_t), meshdata.indices.data());
 	}
 
 	vkrs.geometryDataFinalize(meshdata.geometryDataID);
@@ -206,7 +206,7 @@ void ModelLoadExample::initRSappearance(MeshInstance& meshInstance, Appearance& 
 				RSresult texres;
 				if (tex != nullptr) {
 					app.isDiffuseTextureEmbedded = true;
-					texres = vkrs.textureCreateFromMemory(meshInstance.diffuseTextureID, reinterpret_cast<unsigned char*>(tex->pcData), tex->mWidth, tex->mHeight);
+					texres = vkrs.texture2dCreateFromMemory(meshInstance.diffuseTextureID, reinterpret_cast<unsigned char*>(tex->pcData), tex->mWidth, tex->mHeight);
 				}
 				else {
 					app.diffuseTexturePath = path.data;

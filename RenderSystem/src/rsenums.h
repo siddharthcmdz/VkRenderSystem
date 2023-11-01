@@ -33,7 +33,22 @@ enum RSprimitiveType {
 enum RSshaderTemplate {
 	stPassthrough,
 	stTextured,
-	stSimpleLit
+	stSimpleLit,
+	stVolumeSlice
+};
+
+enum RStextureFormat {
+	tfUnsignedBytes,
+	tfUnsignedShort,
+	tfRGBA8,
+	vsInvalid
+};
+
+enum RStextureType {
+	ttTexture1D,
+	ttTexture2D,
+	ttTexture3D,
+	ttInvalid
 };
 
 std::string getShaderStr(const RSshaderTemplate shaderTemplate);

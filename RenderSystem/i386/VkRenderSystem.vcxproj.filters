@@ -76,6 +76,12 @@
     <None Include="..\src\shaders\glsl\simplelit.frag">
       <Filter>Shaders\glsl</Filter>
     </None>
+    <None Include="..\src\shaders\glsl\volumeslice.vert">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\volumeslice.frag">
+      <Filter>Shaders\glsl</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h">

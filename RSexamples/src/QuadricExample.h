@@ -3,12 +3,13 @@
 #include "BoundingBox.h"
 #include <vector>
 #include <rsids.h>
+#include "ModelData.h"
 
 class QuadricExample : public RSexample {
 private:
 	
 	ss::BoundingBox ibbox;
-	std::vector<RSsingleEntity> iquadrics;
+	ss::ModelData imodelData;
 	RScollectionID icollectionID;
 
 public:

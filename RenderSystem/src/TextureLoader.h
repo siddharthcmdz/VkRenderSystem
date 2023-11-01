@@ -1,12 +1,16 @@
 #pragma once
 
 #include <cstdint>
+#include "rsenums.h"
 
 struct RStextureInfo {
-	unsigned char* texels = nullptr;
-	int texWidth = 0;
-	int texHeight = 0;
-	int texChannels = 4;
+	void* texels = nullptr;
+	RStextureFormat texelFormat = RStextureFormat::tfRGBA8;
+	RStextureType textureType = RStextureType::ttTexture2D;
+	uint32_t width = 1;
+	uint32_t height = 1;
+	uint32_t depth = 1;
+	uint32_t numChannels = 4;
 
 	void dispose();
 };

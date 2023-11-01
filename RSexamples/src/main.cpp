@@ -5,6 +5,7 @@
 #include "PrimitiveExample.h"
 #include "ModelLoadExample.h"
 #include "QuadricExample.h"
+#include "VolumeSliceExample.h"
 #include <VkRenderSystem.h>
 #include <Windows.h>
 #include <iostream>
@@ -317,6 +318,10 @@ int main(int argc, char** argv) {
 
 	case RSexampleName::enQuadric:
 		g_example = new QuadricExample();
+		break;
+
+	case RSexampleName::enVolumeSlice:
+		g_example = new VolumeSliceExample();
 		break;
 
 	case RSexampleName::enMax:

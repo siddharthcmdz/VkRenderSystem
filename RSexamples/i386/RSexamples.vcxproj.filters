@@ -37,6 +37,9 @@
     <ClCompile Include="..\src\MultiQuadricExample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\VolumeSliceExample.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\BoundingBox.h">
@@ -73,6 +76,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\MultiQuadricExample.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\VolumeSliceExample.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

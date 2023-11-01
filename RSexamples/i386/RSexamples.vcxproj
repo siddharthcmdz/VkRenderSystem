@@ -31,6 +31,7 @@
     <ClCompile Include="..\src\Scene.cpp" />
     <ClCompile Include="..\src\QuadricDataFactory.cpp" />
     <ClCompile Include="..\src\QuadricExample.cpp" />
+    <ClCompile Include="..\src\VolumeSliceExample.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\Scripts\dependency_importer.py" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\src\QuadricExample.h" />
     <ClInclude Include="..\src\RSexample.h" />
     <ClInclude Include="..\src\Scene.h" />
+    <ClInclude Include="..\src\VolumeSliceExample.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

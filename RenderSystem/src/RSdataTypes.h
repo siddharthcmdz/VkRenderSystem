@@ -91,6 +91,7 @@ struct RSinstanceInfo
 struct RSappearanceInfo
 {
 	RStextureID diffuseTexture;
+	RStextureID colormapTexture;
 	RSshaderTemplate shaderTemplate;
 };
 

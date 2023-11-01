@@ -120,10 +120,10 @@ private:
 	bool createTextureImage(VkRStexture &vkrstex);
 	void createTextureImageView(VkRStexture &vkrstex);
 	void createTextureSampler(VkRStexture &vkrstex);
-	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
-	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+	void createImage(uint32_t width, uint32_t height, uint32_t depth, VkImageType imageType, VkFormat format, VkImageUsageFlags usage, VkImage &image, VkDeviceMemory &imageMemory);
+	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth);
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+	VkImageView createImageView(VkImage image, VkImageViewType imageViewType, VkFormat format, VkImageAspectFlags aspectFlags);
 
 public:
 	RS_EXPORT static VkRenderSystem &getInstance()
@@ -154,7 +154,7 @@ public:
 	RS_EXPORT bool collectionAvailable(const RScollectionID &colID);
 	RS_EXPORT bool collectionInstanceAvailable(const RScollectionID &collID, const RSinstanceID &instanceID);
 	RS_EXPORT RSresult collectionCreate(RScollectionID &colID, const RScollectionInfo &collInfo);
-	RS_EXPORT RSresult collectionInstanceCreate(RScollectionID &collID, RSinstanceID &instID, const RSinstanceInfo &instInfo);
+	RS_EXPORT RSresult collectionInstanceCreate(const RScollectionID &collID, RSinstanceID &instID, const RSinstanceInfo &instInfo);
 	RS_EXPORT RSresult collectionInstanceDispose(RScollectionID &collID, RSinstanceID &instID);
 	RS_EXPORT RSresult collectionFinalize(const RScollectionID &colID, const RScontextID &ctxID, const RSviewID &viewID);
 	RS_EXPORT RSresult collectionDispose(const RScollectionID &colID);
@@ -173,7 +173,9 @@ public:
 
 	RS_EXPORT bool textureAvailable(const RStextureID &texID);
 	RS_EXPORT RSresult textureCreate(RStextureID &outTexID, const char *absfilepath);
-	RS_EXPORT RSresult textureCreateFromMemory(RStextureID &outTexID, unsigned char *encodedTexData, uint32_t width, uint32_t height);
+	RS_EXPORT RSresult texture2dCreateFromMemory(RStextureID &outTexID, unsigned char *encodedTexData, uint32_t width, uint32_t height);
+	RS_EXPORT RSresult texture3dCreate(RStextureID& outTexID, const RStextureInfo& texInfo);
+	RS_EXPORT RSresult texture1dCreate(RStextureID& outTexID, const RStextureInfo& texInfo);
 	RS_EXPORT RSresult textureDispose(const RStextureID &texID);
 
 	RS_EXPORT bool appearanceAvailable(const RSappearanceID &appID) const;

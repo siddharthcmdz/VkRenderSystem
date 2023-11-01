@@ -455,6 +455,10 @@ void VkRenderSystem::printPhysicalDeviceInfo(VkPhysicalDevice device)
 	std::cout << "\tDevice name: " << props.deviceName << std::endl;
 	std::cout << "\tDriver version: " << props.driverVersion << std::endl;
 	std::cout << "\tDevice Type: " << props.deviceType << std::endl;
+	std::cout << "\tmaxImageDimension3D: " << props.limits.maxImageDimension3D << std::endl;
+	std::cout << "\tmaxImageDimension2D: " << props.limits.maxImageDimension2D << std::endl;
+	std::cout << "\tmaxImageDimension1D: " << props.limits.maxImageDimension1D << std::endl;
+
 	std::cout << "\nFeatures" << std::endl;
 	std::cout << "===========" << std::endl;
 	std::cout << "\tmultiDrawIndirect: " << features.multiDrawIndirect << std::endl;
@@ -732,6 +736,7 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo &info)
 	ishaderModuleMap[RSshaderTemplate::stPassthrough] = createShaderModule(RSshaderTemplate::stPassthrough);
 	ishaderModuleMap[RSshaderTemplate::stTextured] = createShaderModule(RSshaderTemplate::stTextured);
 	ishaderModuleMap[RSshaderTemplate::stSimpleLit] = createShaderModule(RSshaderTemplate::stSimpleLit);
+	ishaderModuleMap[RSshaderTemplate::stVolumeSlice] = createShaderModule(RSshaderTemplate::stVolumeSlice);
 
 	RSspatial identitySpl;
 	spatialCreate(_identitySpatialID, identitySpl);
@@ -766,15 +771,15 @@ void VkRenderSystem::createImageViews(VkRSview &view)
 
 	for (size_t i = 0; i < view.swapChainImages.size(); ++i)
 	{
-		view.swapChainImageViews[i] = createImageView(view.swapChainImages[i], view.swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		view.swapChainImageViews[i] = createImageView(view.swapChainImages[i], VkImageViewType::VK_IMAGE_VIEW_TYPE_2D, view.swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 }
 
 void VkRenderSystem::createDepthResources(VkRSview &view)
 {
 	VkFormat depthFormat = findDepthFormat();
-	createImage(view.swapChainExtent.width, view.swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, view.depthImage, view.depthImageMemory);
-	view.depthImageView = createImageView(view.depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	createImage(view.swapChainExtent.width, view.swapChainExtent.height, 1, VK_IMAGE_TYPE_2D, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, view.depthImage, view.depthImageMemory);
+	view.depthImageView = createImageView(view.depthImage, VkImageViewType::VK_IMAGE_VIEW_TYPE_2D, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 bool VkRenderSystem::hasStencilComponent(VkFormat format)
@@ -1295,6 +1300,7 @@ RSresult VkRenderSystem::collectionCreate(RScollectionID &colID, const RScollect
 	{
 		VkRScollection vkrscol;
 		vkrscol.info = collInfo;
+		assert(collInfo.maxInstances > 0 && "must specify the maximum number of collection-instances");
 
 		createDescriptorPool(vkrscol);
 
@@ -1339,7 +1345,7 @@ bool VkRenderSystem::needsMaterialDescriptor(VkRScollectionInstance &inst)
 	return true;
 }
 
-RSresult VkRenderSystem::collectionInstanceCreate(RScollectionID &collID, RSinstanceID &outInstID, const RSinstanceInfo &instInfo)
+RSresult VkRenderSystem::collectionInstanceCreate(const  RScollectionID &collID, RSinstanceID &outInstID, const RSinstanceInfo &instInfo)
 {
 
 	assert(collID.isValid() && "input collection ID is not valid");
@@ -2070,7 +2076,7 @@ RSresult VkRenderSystem::textureCreate(RStextureID &outTexID, const char *absfil
 	return RSresult::FAILURE;
 }
 
-RSresult VkRenderSystem::textureCreateFromMemory(RStextureID &outTexID, unsigned char *encodedTexData, uint32_t width, uint32_t height)
+RSresult VkRenderSystem::texture2dCreateFromMemory(RStextureID &outTexID, unsigned char *encodedTexData, uint32_t width, uint32_t height)
 {
 	RSuint id;
 	bool success = itextureIDpool.CreateID(id);
@@ -2090,6 +2096,31 @@ RSresult VkRenderSystem::textureCreateFromMemory(RStextureID &outTexID, unsigned
 
 	return RSresult::FAILURE;
 }
+
+RSresult VkRenderSystem::texture3dCreate(RStextureID& outTexID, const RStextureInfo& texInfo) {
+	assert(texInfo.textureType == RStextureType::ttTexture3D && "invalid texture type");
+	assert(texInfo.texelFormat != RStextureFormat::vsInvalid && "unset texture format");
+	RSuint id;
+	bool success = itextureIDpool.CreateID(id);
+	assert(success && "failed to create a texture ID");
+	if (success) {
+		VkRStexture vkrstex;
+		vkrstex.texinfo = texInfo;
+		createTextureImage(vkrstex);
+		createTextureImageView(vkrstex);
+		createTextureSampler(vkrstex);
+		outTexID.id = id;
+		itextureMap[outTexID] = vkrstex;
+
+		return RSresult::SUCCESS;
+	}
+	return RSresult::FAILURE;
+}
+
+RSresult VkRenderSystem::texture1dCreate(RStextureID& outTexID, const RStextureInfo& texInfo) {
+	return RSresult::FAILURE;
+}
+
 
 void VkRenderSystem::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
@@ -2148,22 +2179,24 @@ void VkRenderSystem::transitionImageLayout(VkImage image, VkFormat format, VkIma
 	endSingleTimeCommands(commandBuffer);
 }
 
-VkImageView VkRenderSystem::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+VkImageView VkRenderSystem::createImageView(VkImage image, VkImageViewType imageViewType, VkFormat format, VkImageAspectFlags aspectFlags)
 {
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = image;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.viewType = imageViewType;
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = 1;
-	viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+	if (imageViewType == VK_IMAGE_VIEW_TYPE_2D) {
+		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+	}
 
 	VkImageView imageView{};
 	VkResult res = vkCreateImageView(iinstance.device, &viewInfo, nullptr, &imageView);
@@ -2178,14 +2211,38 @@ VkImageView VkRenderSystem::createImageView(VkImage image, VkFormat format, VkIm
 bool VkRenderSystem::createTextureImage(VkRStexture &vkrstex)
 {
 	RStextureInfo &texinfo = vkrstex.texinfo;
-	VkDeviceSize imageSize = texinfo.texWidth * texinfo.texHeight * 4;
+	VkDeviceSize imageSize;
 	if (texinfo.texels == nullptr)
 	{
 		return false;
 	}
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
+	VkBuffer stagingBuffer{};
+	VkDeviceMemory stagingBufferMemory{};
+
+	VkImageType imageType{};
+	VkFormat imageFormat{};
+	switch (vkrstex.texinfo.textureType) {
+
+	case RStextureType::ttTexture3D:
+		imageType = VK_IMAGE_TYPE_3D;
+		if (vkrstex.texinfo.texelFormat == RStextureFormat::tfUnsignedBytes) {
+			imageFormat = VK_FORMAT_R8_UNORM;
+		}
+		else if (vkrstex.texinfo.texelFormat == RStextureFormat::tfUnsignedShort) {
+			imageFormat = VK_FORMAT_R16_UNORM;
+		}
+		imageSize = texinfo.width * texinfo.height * texinfo.depth;
+		break;
+	
+	case RStextureType::ttTexture2D:
+	default:
+		imageType = VK_IMAGE_TYPE_2D;
+		imageFormat = VK_FORMAT_R8G8B8A8_SRGB;
+		assert(texinfo.numChannels == 4 && "must support 4 channel texel format");
+		imageSize = texinfo.width * texinfo.height * texinfo.numChannels;
+		break;
+	}
 
 	createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
@@ -2195,11 +2252,25 @@ bool VkRenderSystem::createTextureImage(VkRStexture &vkrstex)
 	memcpy(data, texinfo.texels, static_cast<size_t>(imageSize));
 	vkUnmapMemory(iinstance.device, stagingBufferMemory);
 
-	createImage(texinfo.texWidth, texinfo.texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vkrstex.textureImage, vkrstex.textureImageMemory);
+	createImage(texinfo.width, texinfo.height, texinfo.depth, imageType, imageFormat, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, vkrstex.textureImage, vkrstex.textureImageMemory);
 
-	transitionImageLayout(vkrstex.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	copyBufferToImage(stagingBuffer, vkrstex.textureImage, static_cast<uint32_t>(texinfo.texWidth), static_cast<uint32_t>(texinfo.texHeight));
-	transitionImageLayout(vkrstex.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	transitionImageLayout(vkrstex.textureImage, imageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	switch (vkrstex.texinfo.textureType) {
+	case RStextureType::ttTexture1D:
+		assert(texinfo.height == 1 && texinfo.depth == 1 && "invalid depth setting for 1D textures");
+		break;
+
+	case RStextureType::ttTexture2D:
+		assert(texinfo.depth == 1 && "invalid depth setting for 2D textures");
+		break;
+
+	case RStextureType::ttTexture3D:
+		assert(texinfo.depth >= 1 && "invalid depth setting for 2D textures");
+		break;
+	}
+
+	copyBufferToImage(stagingBuffer, vkrstex.textureImage, texinfo.width, texinfo.height, texinfo.depth);
+	transitionImageLayout(vkrstex.textureImage, imageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	vkDestroyBuffer(iinstance.device, stagingBuffer, nullptr);
 	vkFreeMemory(iinstance.device, stagingBufferMemory, nullptr);
@@ -2209,8 +2280,26 @@ bool VkRenderSystem::createTextureImage(VkRStexture &vkrstex)
 
 void VkRenderSystem::createTextureImageView(VkRStexture &vkrstex)
 {
+	VkImageViewType imageViewType;
+	VkFormat format;
+	switch (vkrstex.texinfo.textureType) {
+	case RStextureType::ttTexture3D:
+		imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+		if (vkrstex.texinfo.texelFormat == RStextureFormat::tfUnsignedBytes) {
+			format = VK_FORMAT_R8_UNORM;
+		}
+		else if (vkrstex.texinfo.texelFormat == RStextureFormat::tfUnsignedShort) {
+			format = VK_FORMAT_R16_UNORM;
+		}
+		break;
+
+	case RStextureType::ttTexture2D:
+	default:
+		imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+		format = VK_FORMAT_R8G8B8A8_SRGB;
+	}
 	// TODO: add more formats in future if needed
-	vkrstex.textureImageView = createImageView(vkrstex.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+	vkrstex.textureImageView = createImageView(vkrstex.textureImage, imageViewType, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void VkRenderSystem::createTextureSampler(VkRStexture &vkrstex)
@@ -2218,19 +2307,38 @@ void VkRenderSystem::createTextureSampler(VkRStexture &vkrstex)
 	VkPhysicalDeviceProperties properties{};
 	vkGetPhysicalDeviceProperties(iinstance.physicalDevice, &properties);
 
+	VkSamplerAddressMode samplerAddressMode;
+	VkBool32 enableAnisotropy;
+	VkCompareOp compareOp;
+	switch (vkrstex.texinfo.textureType) {
+
+	case RStextureType::ttTexture3D:
+		samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		enableAnisotropy = VK_FALSE;
+		compareOp = VK_COMPARE_OP_NEVER;
+		break;
+	
+	case RStextureType::ttTexture2D:
+	default:
+		samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		enableAnisotropy = VK_TRUE;
+		compareOp = VK_COMPARE_OP_ALWAYS;
+		break;
+	}
+
 	VkSamplerCreateInfo samplerInfo{};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
 	samplerInfo.minFilter = VK_FILTER_LINEAR;
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.anisotropyEnable = VK_TRUE;
-	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.addressModeU = samplerAddressMode;
+	samplerInfo.addressModeV = samplerAddressMode;
+	samplerInfo.addressModeW = samplerAddressMode;
+	samplerInfo.anisotropyEnable = enableAnisotropy;
+	samplerInfo.maxAnisotropy = enableAnisotropy ? properties.limits.maxSamplerAnisotropy : 1.0f;
 	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
 	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.compareOp = compareOp;
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.mipLodBias = 0.0f;
 	samplerInfo.minLod = 0.0f;
@@ -2243,18 +2351,18 @@ void VkRenderSystem::createTextureSampler(VkRStexture &vkrstex)
 	}
 }
 
-void VkRenderSystem::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory)
+void VkRenderSystem::createImage(uint32_t width, uint32_t height, uint32_t depth, VkImageType imageType, VkFormat format, VkImageUsageFlags usage, VkImage &image, VkDeviceMemory &imageMemory)
 {
 	VkImageCreateInfo imageInfo{};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageInfo.extent.width = static_cast<uint32_t>(width);
-	imageInfo.extent.height = static_cast<uint32_t>(height);
-	imageInfo.extent.depth = 1;
+	imageInfo.imageType = imageType;
+	imageInfo.extent.width = width;
+	imageInfo.extent.height = height;
+	imageInfo.extent.depth = depth;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
-	imageInfo.tiling = tiling;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = usage;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2315,7 +2423,7 @@ void VkRenderSystem::endSingleTimeCommands(VkCommandBuffer commandBuffer)
 	vkFreeCommandBuffers(iinstance.device, iinstance.commandPool, 1, &commandBuffer);
 }
 
-void VkRenderSystem::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+void VkRenderSystem::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t depth)
 {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 	{
@@ -2333,7 +2441,7 @@ void VkRenderSystem::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t 
 		region.imageExtent = {
 			width,
 			height,
-			1};
+			depth};
 
 		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 	}
@@ -2537,6 +2645,8 @@ RSresult VkRenderSystem::geometryDataCreate(RSgeometryDataID &outgdataID, uint32
 		gdata.numVertices = numVertices;
 		gdata.numIndices = numIndices;
 		gdata.attributesInfo = attributesInfo;
+		gdata.attributesInfo.attributes = new RSvertexAttribute[attributesInfo.numVertexAttribs];
+		std::memcpy(gdata.attributesInfo.attributes, attributesInfo.attributes, attributesInfo.numVertexAttribs * sizeof(RSvertexAttribute));
 
 		// Create buffer for position
 		bool foundPosition = false;
