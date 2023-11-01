@@ -113,7 +113,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
 		float aspectRatio = (float)ctxInfo.initWidth / (float)ctxInfo.initHeight;
 		g_camera.updateAspectRatio(aspectRatio);
-		g_camera.translate(glm::vec3(2.0f, 2.0f, 2.0f));
+		g_camera.translate(glm::vec3(2.0f, 2.0f, 350.0f));
 		view.viewmat = g_camera.getViewMatrix();
 		view.projmat = g_camera.getProjectionMatrix();
 		view.dirty = true;

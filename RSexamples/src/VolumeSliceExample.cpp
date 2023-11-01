@@ -177,7 +177,7 @@ void VolumeSliceExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 	RStextureID texture3dID;
 	vkrs.texture3dCreate(texture3dID, texInfo);
 
-	ss::MeshData md = ss::data::QuadricDataFactory::createQuad();
+	ss::MeshData md = ss::data::QuadricDataFactory::createQuad(256);
 	ss::data::QuadricDataFactory::initRSgeometry(md);
 	
 	RScollectionInfo collInfo;
@@ -186,6 +186,7 @@ void VolumeSliceExample::init(const RSexampleOptions& eo, const RSexampleGlobal&
 	vkrs.viewAddCollection(globals.viewID, icollectionID);
 	ss::MeshInstance mi;
 	ss::data::QuadricDataFactory::initRSview(md, mi, icollectionID, texture3dID, RSshaderTemplate::stVolumeSlice);
+	//ss::data::QuadricDataFactory::initRSview(md, mi, icollectionID, RStextureID(), RSshaderTemplate::stPassthrough);
 	vkrs.collectionFinalize(icollectionID, globals.ctxID, globals.viewID);
 }
 
