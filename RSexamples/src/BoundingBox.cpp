@@ -32,4 +32,9 @@ namespace ss {
 				iminpt.y <= pt.y && pt.y <= imaxpt.y &&
 				iminpt.z <= pt.z && pt.z <= imaxpt.z;
 	}
+
+	float BoundingBox::getDiagonal() const
+	{
+		return glm::length(imaxpt - iminpt);
+	}
 }

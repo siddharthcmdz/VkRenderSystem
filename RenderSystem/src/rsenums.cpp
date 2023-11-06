@@ -20,6 +20,10 @@ std::string getShaderStr(const RSshaderTemplate shaderTemplate) {
             shaderStr = "volumeslice";
             break;
 
+        case RSshaderTemplate::stLines:
+            shaderStr = "lines";
+            break;
+
         default:
             break;
     }

@@ -34,7 +34,8 @@ enum RSshaderTemplate {
 	stPassthrough,
 	stTextured,
 	stSimpleLit,
-	stVolumeSlice
+	stVolumeSlice,
+	stLines
 };
 
 enum RStextureFormat {
@@ -49,6 +50,13 @@ enum RStextureType {
 	ttTexture2D,
 	ttTexture3D,
 	ttInvalid
+};
+
+enum RSdepthFunction 
+{
+	dsAlway,
+	dsLess,
+	dsLessEquals,
 };
 
 std::string getShaderStr(const RSshaderTemplate shaderTemplate);

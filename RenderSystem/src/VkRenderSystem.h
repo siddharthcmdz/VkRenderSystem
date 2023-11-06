@@ -5,7 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <optional>
-#include "MakeID.h"
+#include <MakeID.h>
 #include "rsids.h"
 #include "rsenums.h"
 #include "rsexporter.h"
@@ -77,6 +77,8 @@ private:
 	void recreateSwapchain(VkRScontext &ctx, VkRSview &view /*, const VkRenderPass& renderpass*/);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	VkCompareOp getDepthCompare(const RSdepthFunction depthFunc);
+	VkPrimitiveTopology getPrimitiveType(const RSprimitiveType& ptype);
 
 	// collection related helpers
 	void createDescriptorPool(VkRScollection &vkrscollection);
@@ -157,7 +159,7 @@ public:
 	RS_EXPORT RSresult collectionInstanceCreate(const RScollectionID &collID, RSinstanceID &instID, const RSinstanceInfo &instInfo);
 	RS_EXPORT RSresult collectionInstanceDispose(RScollectionID &collID, RSinstanceID &instID);
 	RS_EXPORT RSresult collectionFinalize(const RScollectionID &colID, const RScontextID &ctxID, const RSviewID &viewID);
-	RS_EXPORT RSresult collectionDispose(const RScollectionID &colID);
+	RS_EXPORT RSresult collectionDispose(RScollectionID &colID);
 
 	RS_EXPORT bool geometryDataAvailable(const RSgeometryDataID &geomDataID);
 	RS_EXPORT RSresult geometryDataCreate(RSgeometryDataID &outgdataID, uint32_t numVertices, uint32_t numIndices, const RSvertexAttribsInfo attributesInfo);

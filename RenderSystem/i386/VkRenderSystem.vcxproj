@@ -21,6 +21,8 @@
   <ItemGroup>
     <None Include="..\..\ToDoList.md" />
     <None Include="..\src\scripts\deploy.py" />
+    <None Include="..\src\shaders\glsl\lines.frag" />
+    <None Include="..\src\shaders\glsl\lines.vert" />
     <None Include="..\src\shaders\glsl\passthrough.frag" />
     <None Include="..\src\shaders\glsl\passthrough.vert" />
     <None Include="..\src\shaders\glsl\sampleshader.frag" />
@@ -40,7 +42,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h" />
-    <ClInclude Include="..\src\MakeID.h" />
     <ClInclude Include="..\src\RSdataTypes.h" />
     <ClInclude Include="..\src\rsenums.h" />
     <ClInclude Include="..\src\rsexporter.h" />
@@ -153,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;STB_IMAGE_IMPLEMENTATION;RS_FILE;VK_USE_PLATFORM_WIN32_KHR;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(ProjectDir)/../../thirdparty\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)/../../thirdparty\stb_image;$(VULKAN_SDK)\Include;C:\Projects\VkRenderSystem\RenderSystem\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(ProjectDir)/../../thirdparty\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)/../../thirdparty\stb_image;$(VULKAN_SDK)\Include;C:\Projects\VkRenderSystem\RenderSystem\src;$(ProjectDir)/../../thirdparty/MakeID;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>

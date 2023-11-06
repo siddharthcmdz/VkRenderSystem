@@ -82,12 +82,15 @@
     <None Include="..\src\shaders\glsl\volumeslice.frag">
       <Filter>Shaders\glsl</Filter>
     </None>
+    <None Include="..\src\shaders\glsl\lines.vert">
+      <Filter>Shaders\glsl</Filter>
+    </None>
+    <None Include="..\src\shaders\glsl\lines.frag">
+      <Filter>Shaders\glsl</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\DrawCommand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\MakeID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\RSdataTypes.h">

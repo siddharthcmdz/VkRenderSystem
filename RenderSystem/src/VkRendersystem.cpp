@@ -737,6 +737,7 @@ RSresult VkRenderSystem::renderSystemInit(const RSinitInfo &info)
 	ishaderModuleMap[RSshaderTemplate::stTextured] = createShaderModule(RSshaderTemplate::stTextured);
 	ishaderModuleMap[RSshaderTemplate::stSimpleLit] = createShaderModule(RSshaderTemplate::stSimpleLit);
 	ishaderModuleMap[RSshaderTemplate::stVolumeSlice] = createShaderModule(RSshaderTemplate::stVolumeSlice);
+	ishaderModuleMap[RSshaderTemplate::stLines] = createShaderModule(RSshaderTemplate::stLines);
 
 	RSspatial identitySpl;
 	spatialCreate(_identitySpatialID, identitySpl);
@@ -753,7 +754,22 @@ bool VkRenderSystem::isRenderSystemInit()
 
 RSresult VkRenderSystem::renderSystemDispose()
 {
+	//dispose the shaders
+	for (const auto& iter : ishaderModuleMap)
+	{
+		if (iter.second.vert != VK_NULL_HANDLE)
+		{
+			vkDestroyShaderModule(iinstance.device, iter.second.vert, nullptr);
+		}
+		if (iter.second.frag != VK_NULL_HANDLE)
+		{
+			vkDestroyShaderModule(iinstance.device, iter.second.frag, nullptr);
+		}
+	}
+	ishaderModuleMap.clear();
+
 	vkDestroyCommandPool(iinstance.device, iinstance.commandPool, nullptr);
+
 	vkDestroyDevice(iinstance.device, nullptr);
 	if (iinitInfo.enableValidation)
 	{
@@ -1336,7 +1352,7 @@ bool VkRenderSystem::needsMaterialDescriptor(VkRScollectionInstance &inst)
 	{
 		const VkRSappearance &app = iappearanceMap[inst.instInfo.appID];
 		// put in the list of shaders that dont need a discriptor set here.
-		if (app.appInfo.shaderTemplate == stPassthrough)
+		if (app.appInfo.shaderTemplate == RSshaderTemplate::stPassthrough || app.appInfo.shaderTemplate == RSshaderTemplate::stLines)
 		{
 			return false;
 		}
@@ -1350,7 +1366,7 @@ RSresult VkRenderSystem::collectionInstanceCreate(const  RScollectionID &collID,
 
 	assert(collID.isValid() && "input collection ID is not valid");
 
-	if (!appearanceAvailable(instInfo.appID) || !geometryDataAvailable(instInfo.gdataID) || !geometryAvailable(instInfo.geomID) || !spatialAvailable(instInfo.spatialID))
+	if (!appearanceAvailable(instInfo.appID) || !geometryDataAvailable(instInfo.gdataID) || !geometryAvailable(instInfo.geomID))
 	{
 		return RSresult::FAILURE;
 	}
@@ -1564,7 +1580,7 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext &ctx, const VkRSvi
 	{
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	}
-	rasterizer.lineWidth = drawcmd.lineWidth;
+	rasterizer.lineWidth = drawcmd.state.lnstate.lineWidth;
 	if (drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN || drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST || drawcmd.primTopology == VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP)
 	{
 		rasterizer.cullMode = VK_CULL_MODE_NONE /*VK_CULL_MODE_BACK_BIT*/;
@@ -1646,7 +1662,7 @@ void VkRenderSystem::createGraphicsPipeline(const VkRScontext &ctx, const VkRSvi
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencil.depthTestEnable = VK_TRUE;
 	depthStencil.depthWriteEnable = VK_TRUE;
-	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencil.depthCompareOp = getDepthCompare(drawcmd.state.depthState.depthFunc);
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 	depthStencil.minDepthBounds = 0.0f;
 	depthStencil.maxDepthBounds = 1.0f;
@@ -1844,7 +1860,7 @@ void VkRenderSystem::createSyncObjects(VkRScontext &ctx)
 	}
 }
 
-VkPrimitiveTopology getPrimitiveType(const RSprimitiveType &ptype)
+VkPrimitiveTopology VkRenderSystem::getPrimitiveType(const RSprimitiveType &ptype)
 {
 	switch (ptype)
 	{
@@ -1866,6 +1882,30 @@ VkPrimitiveTopology getPrimitiveType(const RSprimitiveType &ptype)
 	}
 
 	return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+}
+
+VkCompareOp VkRenderSystem::getDepthCompare(const RSdepthFunction depthFunc)
+{
+	VkCompareOp compareOp = VkCompareOp::VK_COMPARE_OP_LESS;
+	switch (depthFunc)
+	{
+	case RSdepthFunction::dsAlway:
+		compareOp = VkCompareOp::VK_COMPARE_OP_ALWAYS;
+		break;
+
+	case RSdepthFunction::dsLess:
+		compareOp = VkCompareOp::VK_COMPARE_OP_LESS;
+		break;
+
+	case RSdepthFunction::dsLessEquals:
+		compareOp = VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL;
+		break;
+
+	default:
+		compareOp = VkCompareOp::VK_COMPARE_OP_LESS;
+	}
+
+	return compareOp;
 }
 
 void VkRenderSystem::collectionInstanceCreateDescriptorSetLayout(VkRScollectionInstance &inst)
@@ -1985,7 +2025,7 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID &colID, const R
 					if (stateAvailable(collinst.instInfo.stateID))
 					{
 						VkRSstate &state = istateMap[collinst.instInfo.stateID];
-						cmd.lineWidth = state.state.lnstate.lineWidth;
+						cmd.state = state.state;
 					}
 					for (uint32_t i = 0; i < view.descriptorSets.size(); i++)
 					{
@@ -2020,7 +2060,7 @@ RSresult VkRenderSystem::collectionFinalize(const RScollectionID &colID, const R
 	return RSresult::FAILURE;
 }
 
-RSresult VkRenderSystem::collectionDispose(const RScollectionID &colID)
+RSresult VkRenderSystem::collectionDispose(RScollectionID &colID)
 {
 
 	assert(colID.isValid() && "input collection ID is not valid");

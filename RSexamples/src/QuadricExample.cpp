@@ -22,12 +22,13 @@ void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& glo
 
 	RScollectionInfo collInfo;
 	collInfo.maxInstances = static_cast<uint32_t>(meshDataList.size());
+	collInfo.collectionName = "quadric";
 	vkrs.collectionCreate(icollectionID, collInfo);
 	vkrs.viewAddCollection(globals.viewID, icollectionID);
 	
 	float start = -(meshDataList.size() * 0.5f);
 	for (size_t i = 0; i < meshDataList.size(); i++) {
-		ss::MeshData md;
+		ss::MeshData md = meshDataList[i];
 		ss::data::QuadricDataFactory::initRSgeometry(md);
 		float dist = md.bbox.getmax().x - md.bbox.getmin().x;
 		start += dist;
@@ -35,7 +36,7 @@ void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& glo
 		ss::MeshInstance mi;
 		mi.meshData = md;
 		mi.associatedCollectionID = icollectionID;
-		ss::data::QuadricDataFactory::initRSview(md, mi, icollectionID, RStextureID(), RSshaderTemplate::stVolumeSlice, trans);
+		ss::data::QuadricDataFactory::initRSview(md, mi, icollectionID, RStextureID(), RSshaderTemplate::stPassthrough, trans);
 		
 		glm::vec4 minpt = trans * md.bbox.getmin();
 		glm::vec4 maxpt = trans * md.bbox.getmax();
@@ -51,7 +52,6 @@ void QuadricExample::init(const RSexampleOptions& eo, const RSexampleGlobal& glo
 void QuadricExample::render(const RSexampleGlobal& globals) {
 	auto& vkrs = VkRenderSystem::getInstance();
 	vkrs.contextDrawCollections(globals.ctxID, globals.viewID);
-
 }
 
 void QuadricExample::dispose(const RSexampleGlobal& globals) {

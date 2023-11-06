@@ -81,7 +81,7 @@ namespace ss {
 
 		MeshData QuadricDataFactory::createSphere(float radius, uint32_t numslices, uint32_t numstacks)
 		{
-			MeshData qd;
+			MeshData meshData;
 			// theta -> [0, pi] vertical plane
 			// phi -> [0, 2pi] horizontal plane
 			float phiMax = 2 * RS_PI;
@@ -107,12 +107,12 @@ namespace ss {
 					glm::vec4 color(u, v, 0.5f, 1.0f);
 					glm::vec2 texcoord(u, v);
 
-					qd.bbox.expandBy(position);
+					meshData.bbox.expandBy(position);
 
-					qd.positions.push_back(position);
-					qd.colors.push_back(color);
-					qd.normals.push_back(normal);
-					qd.texcoords.push_back(texcoord);
+					meshData.positions.push_back(position);
+					meshData.colors.push_back(color);
+					meshData.normals.push_back(normal);
+					meshData.texcoords.push_back(texcoord);
 
 					if (i < (numslices - 1) && j < (numstacks - 1))
 					{
@@ -126,60 +126,60 @@ namespace ss {
 						uint32_t idx4 = start + numstacks;
 						uint32_t idx5 = start + numstacks + 1;
 
-						qd.indices.push_back(idx0);
-						qd.indices.push_back(idx1);
-						qd.indices.push_back(idx2);
-						qd.indices.push_back(idx3);
-						qd.indices.push_back(idx4);
-						qd.indices.push_back(idx5);
+						meshData.indices.push_back(idx0);
+						meshData.indices.push_back(idx1);
+						meshData.indices.push_back(idx2);
+						meshData.indices.push_back(idx3);
+						meshData.indices.push_back(idx4);
+						meshData.indices.push_back(idx5);
 					}
 				}
 			}
 
-			return qd;
+			return meshData;
 		}
 
 		MeshData QuadricDataFactory::createQuad(float size)
 		{
 
-			MeshData qd;
+			MeshData meshData;
 			float halfsize = size / 2.f;
-			qd.positions = std::vector<glm::vec4>{
+			meshData.positions = std::vector<glm::vec4>{
 				{-halfsize, -halfsize, 0.0f, 1.0f},
 				{halfsize, -halfsize, 0.0f, 1.0f},
 				{halfsize, halfsize, 0.0f, 1.0f},
 				{-halfsize, halfsize, 0.0f, 1.0f} };
 
-			qd.normals = std::vector<glm::vec4>{
+			meshData.normals = std::vector<glm::vec4>{
 				{1.0f, 0.0f, 0.0f, 1.0f},
 				{1.0f, 0.0f, 0.0f, 1.0f},
 				{1.0f, 0.0f, 0.0f, 1.0f},
 				{1.0f, 0.0f, 0.0f, 1.0f} };
 
-			qd.colors = std::vector<glm::vec4>{
+			meshData.colors = std::vector<glm::vec4>{
 				{1.0f, 0.0f, 0.0f, 1.0f},
 				{0.0f, 1.0f, 0.0f, 1.0f},
 				{1.0f, 0.0f, 1.0f, 1.0f},
 				{1.0f, 1.0f, 0.0f, 1.0f},
 			};
 
-			qd.texcoords = std::vector<glm::vec2>{
+			meshData.texcoords = std::vector<glm::vec2>{
 				{1.0f, 0.0f},
 				{0.0f, 0.0f},
 				{0.0f, 1.0f},
 				{1.0f, 1.0f} };
 
-			qd.bbox = ss::BoundingBox(glm::vec4(-halfsize, -halfsize, 0, 1), glm::vec4(halfsize, halfsize, 0, 1));
+			meshData.bbox = ss::BoundingBox(glm::vec4(-halfsize, -halfsize, 0, 1), glm::vec4(halfsize, halfsize, 0, 1));
 
-			qd.indices = {
+			meshData.indices = {
 				0, 1, 2, 2, 3, 0 };
 
-			return qd;
+			return meshData;
 		}
 
 		MeshData QuadricDataFactory::createCylinder(float radius, uint32_t numslices, uint32_t numstacks, float zmin, float zmax, float phimax)
 		{
-			MeshData qd;
+			MeshData meshData;
 			float phiMax = phimax;
 			ss::BoundingBox bbox;
 			for (uint32_t i = 0; i < numslices; i++)
@@ -200,11 +200,11 @@ namespace ss {
 					glm::vec4 color(u, v, 0.5f, 1.0f);
 					glm::vec2 texcoord(u, v);
 
-					qd.positions.push_back(position);
-					qd.normals.push_back(normal);
-					qd.colors.push_back(color);
-					qd.texcoords.push_back(texcoord);
-					qd.bbox.expandBy(position);
+					meshData.positions.push_back(position);
+					meshData.normals.push_back(normal);
+					meshData.colors.push_back(color);
+					meshData.texcoords.push_back(texcoord);
+					meshData.bbox.expandBy(position);
 
 					if (i < (numslices - 1) && j < (numstacks - 1))
 					{
@@ -218,22 +218,22 @@ namespace ss {
 						uint32_t idx4 = start + numstacks;
 						uint32_t idx5 = start + numstacks + 1;
 
-						qd.indices.push_back(idx0);
-						qd.indices.push_back(idx1);
-						qd.indices.push_back(idx2);
-						qd.indices.push_back(idx3);
-						qd.indices.push_back(idx4);
-						qd.indices.push_back(idx5);
+						meshData.indices.push_back(idx0);
+						meshData.indices.push_back(idx1);
+						meshData.indices.push_back(idx2);
+						meshData.indices.push_back(idx3);
+						meshData.indices.push_back(idx4);
+						meshData.indices.push_back(idx5);
 					}
 				}
 			}
 
-			return qd;
+			return meshData;
 		}
 
 		MeshData QuadricDataFactory::createDisk(float innerRadius, float outerRadius, uint32_t numslices, uint32_t numstacks, float z, float phimax)
 		{
-			MeshData qd;
+			MeshData meshData;
 			ss::BoundingBox bbox;
 			for (uint32_t i = 0; i < numslices; i++)
 			{
@@ -251,12 +251,12 @@ namespace ss {
 					glm::vec4 normal = glm::normalize(glm::vec4(position.x, position.y, position.z, 0.0f));
 					glm::vec4 color(u, v, 0.5f, 1.0f);
 					glm::vec2 texcoord(u, v);
-					qd.bbox.expandBy(position);
+					meshData.bbox.expandBy(position);
 
-					qd.positions.push_back(position);
-					qd.colors.push_back(color);
-					qd.normals.push_back(normal);
-					qd.texcoords.push_back(texcoord);
+					meshData.positions.push_back(position);
+					meshData.colors.push_back(color);
+					meshData.normals.push_back(normal);
+					meshData.texcoords.push_back(texcoord);
 
 					if (i < (numslices - 1) && j < (numstacks - 1))
 					{
@@ -270,21 +270,21 @@ namespace ss {
 						uint32_t idx4 = start + numstacks;
 						uint32_t idx5 = start + numstacks + 1;
 
-						qd.indices.push_back(idx0);
-						qd.indices.push_back(idx1);
-						qd.indices.push_back(idx2);
-						qd.indices.push_back(idx3);
-						qd.indices.push_back(idx4);
-						qd.indices.push_back(idx5);
+						meshData.indices.push_back(idx0);
+						meshData.indices.push_back(idx1);
+						meshData.indices.push_back(idx2);
+						meshData.indices.push_back(idx3);
+						meshData.indices.push_back(idx4);
+						meshData.indices.push_back(idx5);
 					}
 				}
 			}
-			return qd;
+			return meshData;
 		}
 
 		MeshData QuadricDataFactory::createCone(float radius, uint32_t numslices, uint32_t numstacks, float height, float phimax)
 		{
-			MeshData qd;
+			MeshData meshData;
 			ss::BoundingBox bbox;
 			for (uint32_t i = 0; i < numslices; i++)
 			{
@@ -303,12 +303,12 @@ namespace ss {
 					glm::vec4 normal = glm::normalize(glm::vec4(position.x, position.y, position.z, 0.0f));
 					glm::vec4 color(u, v, 0.5f, 1.0f);
 					glm::vec2 texcoord(u, v);
-					qd.bbox.expandBy(position);
+					meshData.bbox.expandBy(position);
 
-					qd.positions.push_back(position);
-					qd.colors.push_back(color);
-					qd.normals.push_back(normal);
-					qd.texcoords.push_back(texcoord);
+					meshData.positions.push_back(position);
+					meshData.colors.push_back(color);
+					meshData.normals.push_back(normal);
+					meshData.texcoords.push_back(texcoord);
 
 					if (i < (numslices - 1) && j < (numstacks - 1))
 					{
@@ -322,17 +322,17 @@ namespace ss {
 						uint32_t idx4 = start + numstacks;
 						uint32_t idx5 = start + numstacks + 1;
 
-						qd.indices.push_back(idx0);
-						qd.indices.push_back(idx1);
-						qd.indices.push_back(idx2);
-						qd.indices.push_back(idx3);
-						qd.indices.push_back(idx4);
-						qd.indices.push_back(idx5);
+						meshData.indices.push_back(idx0);
+						meshData.indices.push_back(idx1);
+						meshData.indices.push_back(idx2);
+						meshData.indices.push_back(idx3);
+						meshData.indices.push_back(idx4);
+						meshData.indices.push_back(idx5);
 					}
 				}
 			}
 
-			return qd;
+			return meshData;
 		}
 	}
 }

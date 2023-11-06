@@ -58,6 +58,7 @@ struct RSview
 struct RScollectionInfo
 {
 	uint32_t maxInstances = 0;
+	std::string collectionName;
 };
 
 struct RSvertexAttribsInfo
@@ -111,8 +112,14 @@ struct RSlineState
 	float lineWidth = 1.0f;
 };
 
+struct RSdepthState
+{
+	RSdepthFunction depthFunc = RSdepthFunction::dsLess;
+};
+
 struct RSstate
 {
 	RSpointState ptstate;
 	RSlineState lnstate;
+	RSdepthState depthState;
 };

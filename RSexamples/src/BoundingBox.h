@@ -15,6 +15,7 @@ namespace ss {
 		glm::vec4 getmax() const;
 		void expandBy(const glm::vec4& pt);
 		bool isInside(const glm::vec4& pt) const;
+		float getDiagonal() const;
 	};
 }
 

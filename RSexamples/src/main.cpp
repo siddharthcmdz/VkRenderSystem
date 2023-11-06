@@ -6,17 +6,35 @@
 #include "ModelLoadExample.h"
 #include "QuadricExample.h"
 #include "VolumeSliceExample.h"
+#include "RenderableUtils.h"
 #include <VkRenderSystem.h>
 #include <Windows.h>
 #include <iostream>
 #include <glm/glm.hpp>
 #include "Camera.h"
 
+
+struct GridData
+{
+	RScollectionID collectionID;
+	ss::GridID gridID;
+	ss::GridInfo gridInfo;
+};
+
+struct TriadData
+{
+	RScollectionID collectionID;
+	ss::TriadID triadID;
+	ss::TriadInfo triadInfo;
+};
+
 RSexample* g_example = nullptr;
 RSexampleOptions g_exopts;
 RSexampleGlobal g_globals;
 Camera g_camera;
 glm::vec2 g_mousePos;
+GridData _gridData;
+TriadData _triadData;
 
 struct MouseButtons {
 	bool left = false;
@@ -84,143 +102,187 @@ void print(const glm::vec2 pt) {
 LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 
 	auto& vkrs = VkRenderSystem::getInstance();
-	switch (umsg) {
+	switch (umsg) 
+	{
+		case WM_CREATE:	
+		{
+			RSinitInfo info;
+			info.parentHwnd = hwnd;
+			info.parentHinst = GetModuleHandle(nullptr);
+			sprintf_s(info.appName, "RSexamples");
+			info.enableValidation = true;
+			info.onScreenCanvas = true;
+			getShaderPath(info);
+			vkrs.renderSystemInit(info);
 
-	case WM_CREATE:	{
-		RSinitInfo info;
-		info.parentHwnd = hwnd;
-		info.parentHinst = GetModuleHandle(nullptr);
-		sprintf_s(info.appName, "RSexamples");
-		info.enableValidation = true;
-		info.onScreenCanvas = true;
-		getShaderPath(info);
-		vkrs.renderSystemInit(info);
+			RScontextInfo ctxInfo;
+			RECT dim;
+			GetWindowRect(hwnd, &dim);
+			ctxInfo.initWidth = dim.right - dim.left;
+			ctxInfo.initHeight = dim.bottom - dim.top;
+			ctxInfo.hwnd = hwnd;
+			ctxInfo.hinst = GetModuleHandle(nullptr);
+			sprintf_s(ctxInfo.title, g_example->getExampleName().c_str());
+			g_globals.width = ctxInfo.initWidth;
+			g_globals.height = ctxInfo.initHeight;
+			vkrs.contextCreate(g_globals.ctxID, ctxInfo);
 
-		RScontextInfo ctxInfo;
-		RECT dim;
-		GetWindowRect(hwnd, &dim);
-		ctxInfo.initWidth = dim.right - dim.left;
-		ctxInfo.initHeight = dim.bottom - dim.top;
-		ctxInfo.hwnd = hwnd;
-		ctxInfo.hinst = GetModuleHandle(nullptr);
-		sprintf_s(ctxInfo.title, g_example->getExampleName().c_str());
-		g_globals.width = ctxInfo.initWidth;
-		g_globals.height = ctxInfo.initHeight;
-		vkrs.contextCreate(g_globals.ctxID, ctxInfo);
+			RSview view;
+			view.cameraType = CameraType::ORBITAL;
+			view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+			float aspectRatio = (float)ctxInfo.initWidth / (float)ctxInfo.initHeight;
+			g_camera.updateAspectRatio(aspectRatio);
+			g_camera.translate(glm::vec3(2.0f, 2.0f, 2.0f));
+			view.viewmat = g_camera.getViewMatrix();
+			view.projmat = g_camera.getProjectionMatrix();
+			view.dirty = true;
+			vkrs.viewCreate(g_globals.viewID, view, g_globals.ctxID);
+			vkrs.viewUpdate(g_globals.viewID, view);
+		
+			ss::BoundingBox worldBounds(glm::vec4(-0.5f, 0.0f, -0.5f, 1), glm::vec4(0.5f, 0.0f, 0.5f, 1.0f));
+			if (g_example) {
+				g_example->init(g_exopts, g_globals);
+				worldBounds = g_example->getBounds();
+			}
 
-		RSview view;
-		view.cameraType = CameraType::ORBITAL;
-		view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
-		float aspectRatio = (float)ctxInfo.initWidth / (float)ctxInfo.initHeight;
-		g_camera.updateAspectRatio(aspectRatio);
-		g_camera.translate(glm::vec3(2.0f, 2.0f, 350.0f));
-		view.viewmat = g_camera.getViewMatrix();
-		view.projmat = g_camera.getProjectionMatrix();
-		view.dirty = true;
-		vkrs.viewCreate(g_globals.viewID, view, g_globals.ctxID);
-		vkrs.viewUpdate(g_globals.viewID, view);
-		if (g_example) {
-			g_example->init(g_exopts, g_globals);
+			//create grid collection and data
+			RScollectionInfo gridCollInfo;
+			gridCollInfo.maxInstances = 1;
+			gridCollInfo.collectionName = "floor-grid";
+			vkrs.collectionCreate(_gridData.collectionID, gridCollInfo);
+
+			float floorSize = worldBounds.getDiagonal();
+			_gridData.gridInfo.resolution = 10;
+			_gridData.gridInfo.size = floorSize;
+			_gridData.gridID = RenderableUtils::GridCreate(_gridData.gridInfo, _gridData.collectionID);
+			vkrs.collectionFinalize(_gridData.collectionID, g_globals.ctxID, g_globals.viewID);
+			vkrs.viewAddCollection(g_globals.viewID, _gridData.collectionID);
+
+			//Create triad collection and data
+			RScollectionInfo triadCollInfo;
+			triadCollInfo.maxInstances = 1;
+			triadCollInfo.collectionName = "triad";
+			vkrs.collectionCreate(_triadData.collectionID, triadCollInfo);
+
+			_triadData.triadInfo.size = worldBounds.getDiagonal() * 0.2f;
+			_triadData.triadID = RenderableUtils::triadCreate(_triadData.triadInfo, _triadData.collectionID);
+			vkrs.collectionFinalize(_triadData.collectionID, g_globals.ctxID, g_globals.viewID);
+			vkrs.viewAddCollection(g_globals.viewID, _triadData.collectionID);
+
+			std::cout << "Window created" << std::endl;
+			break;
 		}
 
-		std::cout << "Window created" << std::endl;
-		break;
-	}
-
-	case WM_MOUSEMOVE: {
-		handleMouseMove(LOWORD(lparam), HIWORD(lparam));
-		auto& vkrs = VkRenderSystem::getInstance();
-		std::optional<RSview> optview = vkrs.viewGetData(g_globals.viewID);
-		if (optview.has_value()) {
-			optview->viewmat = g_camera.getViewMatrix();
-			vkrs.viewUpdate(g_globals.viewID, *optview);
+		case WM_MOUSEMOVE: 
+		{
+			handleMouseMove(LOWORD(lparam), HIWORD(lparam));
+			auto& vkrs = VkRenderSystem::getInstance();
+			std::optional<RSview> optview = vkrs.viewGetData(g_globals.viewID);
+			if (optview.has_value()) {
+				optview->viewmat = g_camera.getViewMatrix();
+				vkrs.viewUpdate(g_globals.viewID, *optview);
+			}
+			InvalidateRect(hwnd, nullptr, FALSE);
+			//std::cout << "Moused moved" << std::endl;
+			break;
 		}
-		InvalidateRect(hwnd, nullptr, FALSE);
-		//std::cout << "Moused moved" << std::endl;
-		break;
-	}
 
-	case WM_LBUTTONDOWN: {
-		g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
-		print(g_mousePos);
-		g_mouseButtons.left = true;
-		break;
-	}
-
-	case WM_RBUTTONDOWN: {
-		g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
-		g_mouseButtons.right = true;
-		break;
-	}
-
-	case WM_MBUTTONDOWN: {
-		g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
-		g_mouseButtons.middle = true;
-		break;
-	}
-
-	case WM_LBUTTONUP: {
-		g_mouseButtons.left = false;
-		break;
-	}
-
-	case WM_RBUTTONUP: {
-		g_mouseButtons.right = false;
-		break;
-	}
-
-	case WM_MBUTTONUP: {
-		g_mouseButtons.middle = false;
-		break;
-	}
-
-	case WM_MOUSEWHEEL: {
-		short wheelDelta = GET_WHEEL_DELTA_WPARAM(wparam);
-		g_camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.005f));
-		break;
-	}
-
-	case WM_SIZE: {
-		g_globals.width = LOWORD(lparam);
-		g_globals.height = HIWORD(lparam);
-		float aspectRatio = (float)g_globals.width / (float)g_globals.height;
-		std::cout << "new aspect ratio: " << aspectRatio << std::endl;
-		g_camera.updateAspectRatio(aspectRatio);
-		std::optional<RSview> view = vkrs.viewGetData(g_globals.viewID);
-		if (view.has_value()) {
-			view->projmat = g_camera.getProjectionMatrix();
-			vkrs.viewUpdate(g_globals.viewID, *view);
+		case WM_LBUTTONDOWN: 
+		{
+			g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
+			print(g_mousePos);
+			g_mouseButtons.left = true;
+			break;
 		}
-		if (g_example) { 
-			vkrs.contextResized(g_globals.ctxID, g_globals.viewID, g_globals.width, g_globals.height);
+
+		case WM_RBUTTONDOWN: 
+		{
+			g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
+			g_mouseButtons.right = true;
+			break;
 		}
-		std::cout << "Window resized - width: "<<g_globals.width<<" , height: "<<g_globals.height << std::endl;
-		break;
-	}
 
-	case WM_PAINT: {
-		ValidateRect(hwnd, nullptr);
-		if (g_example) {
-			g_example->render(g_globals);
+		case WM_MBUTTONDOWN: 
+		{
+			g_mousePos = glm::vec2((float)LOWORD(lparam), (float)HIWORD(lparam));
+			g_mouseButtons.middle = true;
+			break;
 		}
-		//std::cout << "Window painting " << std::endl;
-		break;
-	}
 
-	case WM_DESTROY: {
-		if (g_example != nullptr) {
-			g_example->dispose(g_globals);
+		case WM_LBUTTONUP: 
+		{
+			g_mouseButtons.left = false;
+			break;
 		}
-		vkrs.viewDispose(g_globals.viewID);
-		vkrs.contextDispose(g_globals.ctxID);
-		vkrs.renderSystemDispose();
 
-		DestroyWindow(hwnd);
-		PostQuitMessage(0);
+		case WM_RBUTTONUP: 
+		{
+			g_mouseButtons.right = false;
+			break;
+		}
 
-		std::cout << "Window destroying" << std::endl;
-		break;
-	}
+		case WM_MBUTTONUP: 
+		{
+			g_mouseButtons.middle = false;
+			break;
+		}
+
+		case WM_MOUSEWHEEL: 
+		{
+			short wheelDelta = GET_WHEEL_DELTA_WPARAM(wparam);
+			g_camera.translate(glm::vec3(0.0f, 0.0f, (float)wheelDelta * 0.005f));
+			break;
+		}
+
+		case WM_SIZE: 
+		{
+			g_globals.width = LOWORD(lparam);
+			g_globals.height = HIWORD(lparam);
+			float aspectRatio = (float)g_globals.width / (float)g_globals.height;
+			std::cout << "new aspect ratio: " << aspectRatio << std::endl;
+			g_camera.updateAspectRatio(aspectRatio);
+			std::optional<RSview> view = vkrs.viewGetData(g_globals.viewID);
+			if (view.has_value()) {
+				view->projmat = g_camera.getProjectionMatrix();
+				vkrs.viewUpdate(g_globals.viewID, *view);
+			}
+			if (g_example) { 
+				vkrs.contextResized(g_globals.ctxID, g_globals.viewID, g_globals.width, g_globals.height);
+			}
+			std::cout << "Window resized - width: "<<g_globals.width<<" , height: "<<g_globals.height << std::endl;
+			break;
+		}
+
+		case WM_PAINT: 
+		{
+			ValidateRect(hwnd, nullptr);
+			auto& vkrs = VkRenderSystem::getInstance();
+			//Draw the collections added to the view
+			{
+				vkrs.contextDrawCollections(g_globals.ctxID, g_globals.viewID);
+			}
+			if (g_example) {
+				g_example->render(g_globals);
+			}
+			//std::cout << "Window painting " << std::endl;
+			break;
+		}
+
+		case WM_DESTROY: 
+		{
+			//dispose the grid data
+			RenderableUtils::GridDispose(_gridData.gridID, _gridData.collectionID);
+			vkrs.collectionDispose(_gridData.collectionID);
+			if (g_example != nullptr) {
+				g_example->dispose(g_globals);
+			}
+			vkrs.viewDispose(g_globals.viewID);
+			vkrs.contextDispose(g_globals.ctxID);
+			vkrs.renderSystemDispose();
+
+			std::cout << "Window destroying" << std::endl;
+			break;
+		}
 	}
 
 	return (DefWindowProc(hwnd, umsg, wparam, lparam));
