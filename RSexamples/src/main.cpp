@@ -84,12 +84,18 @@ void handleMouseMove(int32_t x, int32_t y) {
 		std::cout << "rotation delta: " << rotationDelta.x << ", " << rotationDelta.y << ", " << rotationDelta.z << std::endl;
 		g_camera.rotate(rotationDelta);
 	}
+	float zoomFactor = 0.005f;
+	if (g_example != nullptr)
+	{
+		zoomFactor = 0.005f * g_example->getBounds().getDiagonal();
+	}
+
 	if (g_mouseButtons.right) {
-		glm::vec3 translationDelta = glm::vec3(-0.0f, 0.0f, dy * .005f);
+		glm::vec3 translationDelta = glm::vec3(-0.0f, 0.0f, dy * zoomFactor);
 		g_camera.translate(translationDelta);
 	}
 	if (g_mouseButtons.middle) {
-		glm::vec3 translationDelta = glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f);
+		glm::vec3 translationDelta = glm::vec3(-dx * zoomFactor, -dy * zoomFactor, 0.0f);
 		g_camera.translate(translationDelta);
 	}
 	g_mousePos = glm::vec2((float)x, (float)y);
@@ -132,7 +138,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 			view.clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
 			float aspectRatio = (float)ctxInfo.initWidth / (float)ctxInfo.initHeight;
 			g_camera.updateAspectRatio(aspectRatio);
-			g_camera.translate(glm::vec3(2.0f, 2.0f, 2.0f));
 			view.viewmat = g_camera.getViewMatrix();
 			view.projmat = g_camera.getProjectionMatrix();
 			view.dirty = true;
@@ -144,6 +149,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 				g_example->init(g_exopts, g_globals);
 				worldBounds = g_example->getBounds();
 			}
+			float worldDiagonal = worldBounds.getDiagonal();
+			float radius = worldDiagonal * 0.5f;
+			g_camera.translate(glm::vec3(0.0f, 0.0f, -worldDiagonal));
 
 			//create grid collection and data
 			RScollectionInfo gridCollInfo;
@@ -151,7 +159,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 			gridCollInfo.collectionName = "floor-grid";
 			vkrs.collectionCreate(_gridData.collectionID, gridCollInfo);
 
-			float floorSize = worldBounds.getDiagonal();
+			float floorSize = worldDiagonal;
 			_gridData.gridInfo.resolution = 10;
 			_gridData.gridInfo.size = floorSize;
 			_gridData.gridID = RenderableUtils::GridCreate(_gridData.gridInfo, _gridData.collectionID);

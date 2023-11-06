@@ -177,6 +177,8 @@ void Camera::updateViewMatrix() {
 	rotM = glm::rotate(rotM, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	//rotM = glm::rotate(rotM, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
+	std::cout << "rot x: " << rotation.x << ", rot y: " << rotation.y << ", rot z: " << rotation.z << std::endl;
+	std::cout << "pos x: " << position.x << ", pos y: " << position.y << ", pos z: " << position.z << std::endl;
 	glm::vec3 translation = position;
 	if (flipY) {
 		translation.y *= -1.0f;

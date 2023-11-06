@@ -203,7 +203,7 @@ void VolumeSliceExample::dispose(const RSexampleGlobal& globals)
 
 ss::BoundingBox VolumeSliceExample::getBounds() 
 {
-	return ibbox;
+	return ss::BoundingBox(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec4(256.0f, 256.0f, 256.0f, 1.0f));
 }
 
 std::string VolumeSliceExample::getExampleName() const 
