@@ -1,0 +1,109 @@
+// =================================================================================
+// Copyright (c) 2023, See All Surgical Inc. All rights reserved.
+//
+// This software is the property of See All Surgical Inc. The software may not be reproduced,
+// modified, distributed, or transferred without the express written permission of See All Surgical Inc.
+//
+// In no event shall See All Surgical Inc. be liable for any claim, damages or other liability,
+// whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software
+// or the use or other dealings in the software.
+// =================================================================================
+
+
+/**
+\page sdd_rendersystem RenderSystem
+
+The RenderSystem deals with constructs that defines graphics primitives to render and several ways of visualizing those entities onto one or more viewports. This module contains
+    - Introduction
+    - ID system
+    - Rendering construct ID definitions
+    - Rendering API facade
+    - RenderSystem construct entity relationships
+
+Introduction
+============
+Our IPad application UI is implemented usig SwiftUI. The SwiftUI internally communicates with exposed Objective C interfaces that internally consumes C++ Vulkan rendering engine that we shall call “RenderSystem”. RenderSystem is a facade of APIs that manages the lifecycle of these constructs and follows a RAII pattern. It has APIs to create, retrieve, update and disposing of these graphics resources as described in detail below.
+
+ID system
+==========
+The RenderSystem is a singleton facade of APIs that enables you to Create, Retrieve, Update and Dispose rendering components. These components are identified via unique IDs. They are essentially a struct (that defines its semantic) containing a unique uint32_t number. Some properties of ID generation are 
+    - They are contiguous. For example - if you create 4 views, its values will be 0, 1, 2, 3. 
+    - If you dispose an ID, its is returned to its memory pool and the same value can be reused. For example - dispose viewID 0, and recreate a viewID - will return a 0. 
+    - An invalid ID, will have value ~0 (-1 for a uint32_t)
+
+Below, each construct is represented by the names of their ID.
+
+
+Rendering construct ID definitions
+===============================
+
+RScontextID
+-----------
+A context represents information regarding a window surface or widget. For iOS, we use the native handle to CAMetalLayer. Its the application’s responsibility to let the RenderSystem know that a context is being resized and provide the new width and height. The context internally will house a hardware accelerated swap chain described below. 
+
+Swapchain
+---------
+A swap chain defines two or more images that the engine with render to that will be displayed to monitor. Consider two images in the created swap chain - image A and image B. Rendering engine would be rendering to image B in the swap chain at the same time it presents image A to the monitor. We do not want to be modifying resources (due to rendering process) for image A as it is being presented to monitor. So we actually create two X GPU resources for each images in the swap chain. For example - 2x UBOs for view, 2x framebuffers, 2x  command buffers etc.
+
+When a window resizes (when ipad orientation changes), we need to destroy the swap chain and all the resources for each image and recreate them for subsequent renderings.
+
+RSViewID
+--------
+A view represents the viewport and everything rendered within it. This can be thought of as a “Scene” that contains the view, projection matrix, lighting information and anything global that is common for every artifact being rendered into the viewport. 
+
+RSgeometryDataID
+----------------
+A geometry data represents the vertex attributes of the data we are trying to visualize. We first describe the permutation of VertexAttributes - the number of vertex attribute types and the types we intend to use. Ex- Position, TexCoord or Position, Normal, TexCoord or Position, Normal etc. For each vertex attribute we send the vertex attribute values which internally a copy is made and uploaded to the GPU. The geometry data also takes in indices that is needed to reference the vertices. By default it is uint32_t. The geometry data is just raw data and it does not tell how to use this data (for example a line or triangle or quad).
+
+RSgeometryID
+------------
+A Geometry references a geometry data and describes how to interpret the geometry data for rendering purpose. I.e, it describes the primitive topology - line, lines, triangles, triangle strip etc. You could also describe the offset and number of elements you need to take from geometry data.
+
+RSappearanceID
+--------------
+An appearance refers to the material of the entity we want to render. This may contain which shader we want to use for our rendering. Its the client’s responsibility to identify the right shader enum and the right vertex attribute format that is inline with the shader. An appearance may reference one more texture IDs that references textures needed as resources for the shader. 
+
+RStextureID
+-----------
+A texture refers to an image that can be read from disk or be sent in as an array of unsigned bytes representing a 2D texture. We do not support 1D or 3D textures. A texture could represent RGBA values or a luminence unsigned byte values. The former can be used as a diffuse texture and the former for a volume slice rendering.
+
+RSstateID
+---------
+A state refers to one or more rasterization state in the graphics rendering pipeline - example depth testing, blending, point size, line width, stencil testing etc. 
+
+RSinstanceID
+------------
+A collection instance is a visual representation of an entity to be rendered. A collection instance references  geometry (and hence geometry data),  the appearance or material, one or more textures and state information that is needed to render that entity. Currently there is one draw command for each instance. Future implementation can substantially improve rendering performance by batching multiple instances with same properties.
+
+RScollectionID
+--------------
+A collection is a bag of collection instances. Once all instances have been added to a collection, a collection finalize operation is performed that lets the VkRenderSystem to create Draw Commands that is invoked for every frame. We follow retained method of rendering, i.e, gather as much information as possible afront and there is no branching during the time of rendering (or atleast try to minimize branching).
+
+
+Rendering API facade
+====================
+The API facade is seen in a singleton class VkRenderSystem. This facade follows CRUD pattern where:
+
+Creation
+--------
+Each construct described above in "Rendering construct ID definitions" is represented by an ID that is returned when calling a creation method. For example, in order to create a view, one calls - VkRenderSystem::getInstance().viewCreate(..). This returns a RSviewID which is an ID that uniquely identifies that view that is backed by the RenderSystem. The RenderSystem does not expose internal implementation of these constructs and only provides an ID that is later on passed back to RenderSystem to manipulate or dispose it.
+
+Retrieve
+--------
+The unique ID that was provided at the time of the construct creation, can be used to query the rendersystem to get the latest view of the backed data. For example, if you want to get the latest data of the view that RenderSystem is tracking, you can call - VkRenderSystem::getInstance().viewGetData(const RSviewID& viewID) that returns RSview struct.
+
+Update
+------
+The unique ID for the construct can be used to update specific or whole data of the backing data of the construct maintained by the RenderSystem. 
+
+Dispose
+-------
+The unique ID for the construct when no longer needed has to be explicitly disposed by the client of the rendering engine. For example, when a view is removed and no longer needed, one calls VkRenderSystem::getInstance().viewDispose(const RSviewID& viewID).
+
+
+RenderSystem construct entity relationships
+===========================================
+\image html RenderSystem.drawio.png
+
+\page_footer
+*/
