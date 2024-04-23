@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VkRenderSystem", "RenderSys
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SceneSystem", "SceneSystem\i386\SceneSystem.vcxproj", "{B3C2A0B4-CD69-423A-9C34-CC50A397051F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RSexamples", "RSexamples\i386\RSexamples.vcxproj", "{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,14 +31,6 @@ Global
 		{B3C2A0B4-CD69-423A-9C34-CC50A397051F}.Release|x64.Build.0 = Release|x64
 		{B3C2A0B4-CD69-423A-9C34-CC50A397051F}.Release|x86.ActiveCfg = Release|Win32
 		{B3C2A0B4-CD69-423A-9C34-CC50A397051F}.Release|x86.Build.0 = Release|Win32
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Debug|x64.ActiveCfg = Debug|x64
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Debug|x64.Build.0 = Debug|x64
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Debug|x86.ActiveCfg = Debug|Win32
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Debug|x86.Build.0 = Debug|Win32
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Release|x64.ActiveCfg = Release|x64
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Release|x64.Build.0 = Release|x64
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Release|x86.ActiveCfg = Release|Win32
-		{FC583844-BBA0-4BF5-AA6E-EDD4409058F4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

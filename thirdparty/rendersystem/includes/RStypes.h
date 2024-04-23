@@ -1,14 +1,15 @@
 #pragma once
 
 enum RSresult {
-	SUCCESS,
-	FAILURE
+    SUCCESS,
+    FAILURE
 };
 
 enum CameraType {
-	ORBITAL,
-	POV
+    ORBITAL,
+    POV
 };
 
 #define RSuint uint32_t
+
 

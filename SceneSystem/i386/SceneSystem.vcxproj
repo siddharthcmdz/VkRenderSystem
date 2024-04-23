@@ -19,51 +19,57 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\AbstractWorldDrawable.cpp" />
-    <ClCompile Include="..\AssetFolder.cpp" />
-    <ClCompile Include="..\BenchmarkDrawable.cpp" />
-    <ClCompile Include="..\BoundingBox.cpp" />
-    <ClCompile Include="..\Camera.cpp" />
-    <ClCompile Include="..\Gizmo2dDrawable.cpp" />
-    <ClCompile Include="..\GLTFmodelDrawable.cpp" />
-    <ClCompile Include="..\GLTFmodelLoader.cpp" />
-    <ClCompile Include="..\MainDrawable.cpp" />
-    <ClCompile Include="..\MathUtils.cpp" />
-    <ClCompile Include="..\ModelData.cpp" />
-    <ClCompile Include="..\MultiQuadricDrawable.cpp" />
-    <ClCompile Include="..\QuadricDataFactory.cpp" />
-    <ClCompile Include="..\QuadricDrawable.cpp" />
-    <ClCompile Include="..\RenderableUtils.cpp" />
-    <ClCompile Include="..\TextureLoader.cpp" />
-    <ClCompile Include="..\VolumeSliceDrawable.cpp" />
-    <ClCompile Include="..\WorldDrawable.cpp" />
+    <None Include="..\scripts\dependency.py" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\AbstractWorldDrawable.h" />
-    <ClInclude Include="..\AssetFolder.h" />
-    <ClInclude Include="..\BenchmarkDrawable.h" />
-    <ClInclude Include="..\BoundingBox.h" />
-    <ClInclude Include="..\Camera.h" />
-    <ClInclude Include="..\Gizmo2dDrawable.h" />
-    <ClInclude Include="..\GLTFmodelDrawable.h" />
-    <ClInclude Include="..\GLTFmodelLoader.h" />
-    <ClInclude Include="..\Image3dModel.h" />
-    <ClInclude Include="..\MainDrawable.h" />
-    <ClInclude Include="..\MathUtils.h" />
-    <ClInclude Include="..\MetalViewController.h" />
-    <ClInclude Include="..\ModelData.h" />
-    <ClInclude Include="..\MultiQuadricDrawable.h" />
-    <ClInclude Include="..\PoseModel.h" />
-    <ClInclude Include="..\QuadricDataFactory.h" />
-    <ClInclude Include="..\QuadricDrawable.h" />
-    <ClInclude Include="..\RenderableUtils.h" />
-    <ClInclude Include="..\SceneViewController.h" />
-    <ClInclude Include="..\SSdataTypes.h" />
-    <ClInclude Include="..\ssenums.h" />
-    <ClInclude Include="..\ssids.h" />
-    <ClInclude Include="..\TextureLoader.h" />
-    <ClInclude Include="..\VolumeSliceDrawable.h" />
-    <ClInclude Include="..\WorldDrawable.h" />
+    <ClInclude Include="..\..\thirdparty\tinygltf-2.8.21\json.hpp" />
+    <ClInclude Include="..\..\thirdparty\tinygltf-2.8.21\tiny_gltf.h" />
+    <ClInclude Include="..\src\AbstractWorldDrawable.h" />
+    <ClInclude Include="..\src\AssetFolder.h" />
+    <ClInclude Include="..\src\BenchmarkDrawable.h" />
+    <ClInclude Include="..\src\BoundingBox.h" />
+    <ClInclude Include="..\src\Camera.h" />
+    <ClInclude Include="..\src\Gizmo2dDrawable.h" />
+    <ClInclude Include="..\src\GLTFmodelDrawable.h" />
+    <ClInclude Include="..\src\GLTFmodelLoader.h" />
+    <ClInclude Include="..\src\Image3dModel.h" />
+    <ClInclude Include="..\src\MainDrawable.h" />
+    <ClInclude Include="..\src\MathUtils.h" />
+    <ClInclude Include="..\src\MetalViewController.h" />
+    <ClInclude Include="..\src\ModelData.h" />
+    <ClInclude Include="..\src\MultiQuadricDrawable.h" />
+    <ClInclude Include="..\src\PoseModel.h" />
+    <ClInclude Include="..\src\QuadricDataFactory.h" />
+    <ClInclude Include="..\src\QuadricDrawable.h" />
+    <ClInclude Include="..\src\RenderableUtils.h" />
+    <ClInclude Include="..\src\SceneViewController.h" />
+    <ClInclude Include="..\src\SSdataTypes.h" />
+    <ClInclude Include="..\src\ssenums.h" />
+    <ClInclude Include="..\src\ssids.h" />
+    <ClInclude Include="..\src\TextureLoader.h" />
+    <ClInclude Include="..\src\VolumeSliceDrawable.h" />
+    <ClInclude Include="..\src\WorldDrawable.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\thirdparty\tinygltf-2.8.21\tiny_gltf.cc" />
+    <ClCompile Include="..\src\AbstractWorldDrawable.cpp" />
+    <ClCompile Include="..\src\AssetFolder.cpp" />
+    <ClCompile Include="..\src\BenchmarkDrawable.cpp" />
+    <ClCompile Include="..\src\BoundingBox.cpp" />
+    <ClCompile Include="..\src\Camera.cpp" />
+    <ClCompile Include="..\src\Gizmo2dDrawable.cpp" />
+    <ClCompile Include="..\src\GLTFmodelDrawable.cpp" />
+    <ClCompile Include="..\src\GLTFmodelLoader.cpp" />
+    <ClCompile Include="..\src\MainDrawable.cpp" />
+    <ClCompile Include="..\src\MathUtils.cpp" />
+    <ClCompile Include="..\src\ModelData.cpp" />
+    <ClCompile Include="..\src\MultiQuadricDrawable.cpp" />
+    <ClCompile Include="..\src\QuadricDataFactory.cpp" />
+    <ClCompile Include="..\src\QuadricDrawable.cpp" />
+    <ClCompile Include="..\src\RenderableUtils.cpp" />
+    <ClCompile Include="..\src\TextureLoader.cpp" />
+    <ClCompile Include="..\src\VolumeSliceDrawable.cpp" />
+    <ClCompile Include="..\src\WorldDrawable.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -87,7 +93,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -156,12 +162,17 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/../../thirdparty/glm-0.9.9.8/glm;$(ProjectDir)/../../thirdparty/rendersystem/includes;$(ProjectDir)/../../thirdparty/MakeID;$(ProjectDir)/../../thirdparty/stb_image;$(ProjectDir)/.../../thirdparty/tinygltf-2.8.21;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>python "../scripts/dependency.py"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>

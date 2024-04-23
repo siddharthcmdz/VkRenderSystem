@@ -59,7 +59,7 @@ class ArtifactCopier:
         else:
           if len(ext) != 0 and ext in src_file:
             shutil.copy(final_src_file, final_dst_file)
-          else:
+          if len(ext) == 0:
             shutil.copy(final_src_file, final_dst_file)
         print('Copied '+final_src_file+' to '+final_dst_file)
     print('\n')
@@ -94,10 +94,10 @@ class Deployer:
     dst_sub_dirs = ['shaders', 'textures']
     copier = ArtifactCopier(src_dirs, self.deploy_dirs.target_dir+'/assets', dst_sub_dirs)
     
-    # #deploy header files
-    # src_dirs = [self.deploy_dirs.project_root_dir+'/src']
-    # dst_sub_dirs = ['includes']
-    # copier = ArtifactCopier(src_dirs, self.deploy_dirs.target_dir, dst_sub_dirs)
+    #deploy header files
+    src_dirs = [self.deploy_dirs.project_root_dir+'/src']
+    dst_sub_dirs = ['includes']
+    copier = ArtifactCopier(src_dirs, self.deploy_dirs.target_dir, dst_sub_dirs, '.h')
     
     #deploy .lib, .dll and .pdb
     src_dll_file = self.deploy_dirs.project_root_dir+'/i386/x64/Debug/VkRenderSystem.dll'
