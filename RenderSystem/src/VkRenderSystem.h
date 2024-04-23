@@ -146,22 +146,22 @@ private:
     VkCompareOp getDepthCompare(const RSdepthFunction depthFunc);
     
 public:
-    static VkRenderSystem& getInstance() 
+    static RS_EXPORT VkRenderSystem& getInstance()
     {
         static VkRenderSystem INSTANCE;
         
         return INSTANCE;
     }
     
-    VkRSinstance getVkInstanceData();
+    RS_EXPORT VkRSinstance getVkInstanceData();
     
-    RSresult renderSystemInit(const RSinitInfo& info);
+    RS_EXPORT RSresult renderSystemInit(const RSinitInfo& info);
     
-    bool isRenderSystemInited();
+    RS_EXPORT bool isRenderSystemInited();
     
-    RSresult renderSystemDispose();
+    RS_EXPORT RSresult renderSystemDispose();
     
-    bool viewAvailable(const RSviewID& viewID) const;
+    RS_EXPORT bool viewAvailable(const RSviewID& viewID) const;
     
 
     RS_EXPORT RSresult viewCreate(RSviewID& outViewID, const RSview& view, const RScontextID& associatedContextID);
@@ -212,10 +212,5 @@ public:
     RS_EXPORT bool stateAvailable(const RSstateID& stateID);
     RS_EXPORT RSresult stateCreate(RSstateID& outStateID, const RSstate& state);
     
-    /**
-     * @brief Disposes the state and the resources associated with it backed by rendersystem.
-     * @param stateID the specified stateID that represents the backing state.
-     * @result SUCCESSFULL if state is disposed, FAILURE otherwise
-     */
-    RSresult stateDispose(const RSstateID& stateID);
+    RS_EXPORT RSresult stateDispose(const RSstateID& stateID);
 };

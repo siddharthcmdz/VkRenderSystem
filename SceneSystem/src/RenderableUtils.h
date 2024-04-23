@@ -203,39 +203,39 @@ namespace ss
              */
             static void boundsDispose(const BoundsID& boundsID, RScollectionID& collectionID);
             
-            /**
-             * @brief Creates and caches 3d glb models that are created in memory.
-             * @param inMemoryModel the specified pointer to the memory location that has the encoded 3d gltf model
-             * @param memcount the specifed number of bytes in the memory location
-             * @param uniqueID the specified trackable ID that uniquely identifies this model
-             * @param collectionID the specified rs collection ID to which this model will be added to
-             * @return the unique ID that represent this model
-             */
-            static AssetModelID modelCreate(const unsigned char* inMemoryModel, uint32_t memcount, uint32_t uniqueID, const RScollectionID& collectionID, const std::string& dbgname="");
-            
-            /**
-             *
-             */
-            static BoundingBox modelGetBounds(const AssetModelID& modelID);
+            ///**
+            // * @brief Creates and caches 3d glb models that are created in memory.
+            // * @param inMemoryModel the specified pointer to the memory location that has the encoded 3d gltf model
+            // * @param memcount the specifed number of bytes in the memory location
+            // * @param uniqueID the specified trackable ID that uniquely identifies this model
+            // * @param collectionID the specified rs collection ID to which this model will be added to
+            // * @return the unique ID that represent this model
+            // */
+            //static AssetModelID modelCreate(const unsigned char* inMemoryModel, uint32_t memcount, uint32_t uniqueID, const RScollectionID& collectionID, const std::string& dbgname="");
+            //
+            ///**
+            // *
+            // */
+            //static BoundingBox modelGetBounds(const AssetModelID& modelID);
         
-            /**
-             *
-             */
-            static std::vector<RSinstanceID> modelGetInstances(const AssetModelID& modelID);
+            ///**
+            // *
+            // */
+            //static std::vector<RSinstanceID> modelGetInstances(const AssetModelID& modelID);
         
-            /**
-             * @brief Updates the model's transformation matrix.
-             * @param modelID the specified model ID to update its transformation
-             * @param spatial the specified transformation matrices
-             */
-            static void modelUpdate(const AssetModelID& modelID, const RSspatial& spatial);
-            
-            /**
-             * @brief Disposes the model in the cache
-             * @param modelID the specified unique model ID
-             * @param collectionID the specified collection from which the model should be removed.
-             */
-            static void modelDispose(const AssetModelID& modelID, const RScollectionID& collectionID);
+            ///**
+            // * @brief Updates the model's transformation matrix.
+            // * @param modelID the specified model ID to update its transformation
+            // * @param spatial the specified transformation matrices
+            // */
+            //static void modelUpdate(const AssetModelID& modelID, const RSspatial& spatial);
+            //
+            ///**
+            // * @brief Disposes the model in the cache
+            // * @param modelID the specified unique model ID
+            // * @param collectionID the specified collection from which the model should be removed.
+            // */
+            //static void modelDispose(const AssetModelID& modelID, const RScollectionID& collectionID);
         
     };
 

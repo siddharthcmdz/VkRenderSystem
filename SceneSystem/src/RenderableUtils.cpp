@@ -555,97 +555,97 @@ namespace ss
         }
     }
 
-    AssetModelID RenderableUtils::modelCreate(const unsigned char* inMemoryModel, uint32_t memcount, uint32_t uniqueID, const RScollectionID& collectionID, const std::string& dbgname)
-    {
-        uint32_t id;
-        RUassetModel rumodel;
-        AssetModelID outID;
-        bool success = _assetModelIDpool.CreateID(id);
-        if (success)
-        {
-            outID.id = id;
-            RUassetModel ruam;
-            ruam.meshDataMap = GLTFmodelLoader::loadModelGeometryFromMemory(inMemoryModel, memcount, uniqueID);
-            ruam.modelData.collectionID = collectionID;
-            ruam.modelData.modelName = dbgname;
-            GLTFmodelLoader::loadModelInstance(uniqueID, ruam.meshDataMap, ruam.modelData);
-            
-            _assetModelMap[outID] = ruam;
-        }
-        
-        return outID;
-    }
+    //AssetModelID RenderableUtils::modelCreate(const unsigned char* inMemoryModel, uint32_t memcount, uint32_t uniqueID, const RScollectionID& collectionID, const std::string& dbgname)
+    //{
+    //    uint32_t id;
+    //    RUassetModel rumodel;
+    //    AssetModelID outID;
+    //    bool success = _assetModelIDpool.CreateID(id);
+    //    if (success)
+    //    {
+    //        outID.id = id;
+    //        RUassetModel ruam;
+    //        ruam.meshDataMap = GLTFmodelLoader::loadModelGeometryFromMemory(inMemoryModel, memcount, uniqueID);
+    //        ruam.modelData.collectionID = collectionID;
+    //        ruam.modelData.modelName = dbgname;
+    //        GLTFmodelLoader::loadModelInstance(uniqueID, ruam.meshDataMap, ruam.modelData);
+    //        
+    //        _assetModelMap[outID] = ruam;
+    //    }
+    //    
+    //    return outID;
+    //}
 
-    BoundingBox RenderableUtils::modelGetBounds(const AssetModelID& modelID)
-    {
-        BoundingBox bbox;
-        if(_assetModelMap.find(modelID) != _assetModelMap.end())
-        {
-            RUassetModel& ruam = _assetModelMap[modelID];
-            bbox = ruam.bbox;
-        }
-        
-        return bbox;
-    }
+    //BoundingBox RenderableUtils::modelGetBounds(const AssetModelID& modelID)
+    //{
+    //    BoundingBox bbox;
+    //    if(_assetModelMap.find(modelID) != _assetModelMap.end())
+    //    {
+    //        RUassetModel& ruam = _assetModelMap[modelID];
+    //        bbox = ruam.bbox;
+    //    }
+    //    
+    //    return bbox;
+    //}
 
-    std::vector<RSinstanceID> RenderableUtils::modelGetInstances(const AssetModelID& modelID)
-    {
-        assert(modelID.isValid() && "invalid asset model ID");
-        std::vector<RSinstanceID> instanceList;
-        
-        if(modelID.isValid() && _assetModelMap.find(modelID) != _assetModelMap.end())
-        {
-            RUassetModel& ruam = _assetModelMap[modelID];
-            for(const MeshInstance& mi : ruam.modelData.meshInstances)
-            {
-                instanceList.push_back(mi.instanceID);
-            }
-        }
-        
-        return instanceList;
-    }
+    //std::vector<RSinstanceID> RenderableUtils::modelGetInstances(const AssetModelID& modelID)
+    //{
+    //    assert(modelID.isValid() && "invalid asset model ID");
+    //    std::vector<RSinstanceID> instanceList;
+    //    
+    //    if(modelID.isValid() && _assetModelMap.find(modelID) != _assetModelMap.end())
+    //    {
+    //        RUassetModel& ruam = _assetModelMap[modelID];
+    //        for(const MeshInstance& mi : ruam.modelData.meshInstances)
+    //        {
+    //            instanceList.push_back(mi.instanceID);
+    //        }
+    //    }
+    //    
+    //    return instanceList;
+    //}
 
-    void RenderableUtils::modelUpdate(const AssetModelID& modelID, const RSspatial& spatial)
-    {
-        if(_assetModelMap.find(modelID) != _assetModelMap.end())
-        {
-            auto& vkrs = VkRenderSystem::getInstance();
-            RUassetModel& ruam = _assetModelMap[modelID];
-            for(auto& meshInst : ruam.modelData.meshInstances)
-            {
-                vkrs.spatialSetData(meshInst.spatialID, spatial);
-            }
-        }
-    }
+    //void RenderableUtils::modelUpdate(const AssetModelID& modelID, const RSspatial& spatial)
+    //{
+    //    if(_assetModelMap.find(modelID) != _assetModelMap.end())
+    //    {
+    //        auto& vkrs = VkRenderSystem::getInstance();
+    //        RUassetModel& ruam = _assetModelMap[modelID];
+    //        for(auto& meshInst : ruam.modelData.meshInstances)
+    //        {
+    //            vkrs.spatialSetData(meshInst.spatialID, spatial);
+    //        }
+    //    }
+    //}
 
-    void RenderableUtils::modelDispose(const AssetModelID& modelID, const RScollectionID& collectionID)
-    {
-        assert(modelID.isValid() && "invalid model ID");
-        assert(collectionID.isValid() && "invalid collection ID");
-        if(modelID.isValid() && _assetModelMap.find(modelID) != _assetModelMap.end() && collectionID.isValid())
-        {
-            RUassetModel& ruam = _assetModelMap[modelID];
-            for(auto& iter : ruam.meshDataMap)
-            {
-                for(auto& iter1 : iter.second)
-                {
-                    iter1.dispose();
-                }
-            }
-            ruam.meshDataMap.clear();
-            
-            //Dispose mesh instances
-            uint32_t numMeshInsts = static_cast<uint32_t>(ruam.modelData.meshInstances.size());
-            for(MeshInstance& mi : ruam.modelData.meshInstances)
-            {
-                mi.dispose();
-            }
-            
-            if(ruam.modelData.collectionID.isValid())
-            {
-                auto& vkrs = VkRenderSystem::getInstance();
-                vkrs.collectionDispose(ruam.modelData.collectionID);
-            }
-        }
-    }
+    //void RenderableUtils::modelDispose(const AssetModelID& modelID, const RScollectionID& collectionID)
+    //{
+    //    assert(modelID.isValid() && "invalid model ID");
+    //    assert(collectionID.isValid() && "invalid collection ID");
+    //    if(modelID.isValid() && _assetModelMap.find(modelID) != _assetModelMap.end() && collectionID.isValid())
+    //    {
+    //        RUassetModel& ruam = _assetModelMap[modelID];
+    //        for(auto& iter : ruam.meshDataMap)
+    //        {
+    //            for(auto& iter1 : iter.second)
+    //            {
+    //                iter1.dispose();
+    //            }
+    //        }
+    //        ruam.meshDataMap.clear();
+    //        
+    //        //Dispose mesh instances
+    //        uint32_t numMeshInsts = static_cast<uint32_t>(ruam.modelData.meshInstances.size());
+    //        for(MeshInstance& mi : ruam.modelData.meshInstances)
+    //        {
+    //            mi.dispose();
+    //        }
+    //        
+    //        if(ruam.modelData.collectionID.isValid())
+    //        {
+    //            auto& vkrs = VkRenderSystem::getInstance();
+    //            vkrs.collectionDispose(ruam.modelData.collectionID);
+    //        }
+    //    }
+    //}
 }

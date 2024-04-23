@@ -35,18 +35,15 @@
     <ClInclude Include="..\src\Image3dModel.h" />
     <ClInclude Include="..\src\MainDrawable.h" />
     <ClInclude Include="..\src\MathUtils.h" />
-    <ClInclude Include="..\src\MetalViewController.h" />
     <ClInclude Include="..\src\ModelData.h" />
     <ClInclude Include="..\src\MultiQuadricDrawable.h" />
     <ClInclude Include="..\src\PoseModel.h" />
     <ClInclude Include="..\src\QuadricDataFactory.h" />
     <ClInclude Include="..\src\QuadricDrawable.h" />
     <ClInclude Include="..\src\RenderableUtils.h" />
-    <ClInclude Include="..\src\SceneViewController.h" />
     <ClInclude Include="..\src\SSdataTypes.h" />
     <ClInclude Include="..\src\ssenums.h" />
     <ClInclude Include="..\src\ssids.h" />
-    <ClInclude Include="..\src\TextureLoader.h" />
     <ClInclude Include="..\src\VolumeSliceDrawable.h" />
     <ClInclude Include="..\src\WorldDrawable.h" />
   </ItemGroup>
@@ -60,6 +57,7 @@
     <ClCompile Include="..\src\Gizmo2dDrawable.cpp" />
     <ClCompile Include="..\src\GLTFmodelDrawable.cpp" />
     <ClCompile Include="..\src\GLTFmodelLoader.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\MainDrawable.cpp" />
     <ClCompile Include="..\src\MathUtils.cpp" />
     <ClCompile Include="..\src\ModelData.cpp" />
@@ -67,7 +65,6 @@
     <ClCompile Include="..\src\QuadricDataFactory.cpp" />
     <ClCompile Include="..\src\QuadricDrawable.cpp" />
     <ClCompile Include="..\src\RenderableUtils.cpp" />
-    <ClCompile Include="..\src\TextureLoader.cpp" />
     <ClCompile Include="..\src\VolumeSliceDrawable.cpp" />
     <ClCompile Include="..\src\WorldDrawable.cpp" />
   </ItemGroup>
@@ -167,8 +164,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(ProjectDir)/../../thirdparty/rendersystem/bin/Debug64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;VkRenderSystem.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>python "../scripts/dependency.py"</Command>
