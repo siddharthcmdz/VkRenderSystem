@@ -16,7 +16,7 @@ namespace ss
         _viewType = vt;
         switch (vt)
         {
-            case ViewType::vtAxial:
+            case ViewType::vtFromFront:
 #ifdef DEMO_ORIENTATION
             {
                 glm::mat4 flipY = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, -1.0f, 1.0f));
@@ -28,7 +28,7 @@ namespace ss
 #endif
                 break;
                 
-            case ViewType::vtSaggital:
+            case ViewType::vtFromRight:
             {
 #ifdef DEMO_ORIENTATION
                 glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -44,7 +44,7 @@ namespace ss
                 break;
             }
                 
-            case ViewType::vtCoronal:
+            case ViewType::vtFromTop:
                 _defaultOrientation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 break;
                 
@@ -64,7 +64,7 @@ namespace ss
 
     bool Camera::isAnatomicalView() const
     {
-        return _viewType == ViewType::vtAxial || _viewType == ViewType::vtCoronal || _viewType == ViewType::vtSaggital;
+        return _viewType == ViewType::vtFromFront || _viewType == ViewType::vtFromTop || _viewType == ViewType::vtFromRight;
     }
 
     float Camera::getFarClip() const 
@@ -166,11 +166,11 @@ namespace ss
         float pitch = 0.0f, yaw = 0.0f, roll = 0.0f;
         glm::extractEulerAngleXYZ(oblique4, pitch, yaw, roll);
         
-        if(_viewType == ViewType::vtAxial)
+        if(_viewType == ViewType::vtFromFront)
         {
             _obliqueMat = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
         }
-        else if(_viewType == ViewType::vtSaggital)
+        else if(_viewType == ViewType::vtFromRight)
         {
 //            _obliqueMat = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
             glm::mat4 rot90 = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -247,11 +247,11 @@ namespace ss
             viewScaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(_orthographic.zoomscale));
         }
         glm::mat4 lookatMat = glm::mat4(1.0f);
-        if (_viewType == ViewType::vtAxial)
+        if (_viewType == ViewType::vtFromFront)
         {
             lookatMat = glm::mat4(_obliqueMat);
         }
-        else if(_viewType == ViewType::vtSaggital)
+        else if(_viewType == ViewType::vtFromRight)
         {
             lookatMat = glm::mat4(_obliqueMat);
 

@@ -25,6 +25,7 @@
     <ClInclude Include="..\..\thirdparty\tinygltf-2.8.21\json.hpp" />
     <ClInclude Include="..\..\thirdparty\tinygltf-2.8.21\tiny_gltf.h" />
     <ClInclude Include="..\src\AbstractWorldDrawable.h" />
+    <ClInclude Include="..\src\App.h" />
     <ClInclude Include="..\src\AssetFolder.h" />
     <ClInclude Include="..\src\BenchmarkDrawable.h" />
     <ClInclude Include="..\src\BoundingBox.h" />
@@ -32,12 +33,10 @@
     <ClInclude Include="..\src\Gizmo2dDrawable.h" />
     <ClInclude Include="..\src\GLTFmodelDrawable.h" />
     <ClInclude Include="..\src\GLTFmodelLoader.h" />
-    <ClInclude Include="..\src\Image3dModel.h" />
     <ClInclude Include="..\src\MainDrawable.h" />
     <ClInclude Include="..\src\MathUtils.h" />
     <ClInclude Include="..\src\ModelData.h" />
     <ClInclude Include="..\src\MultiQuadricDrawable.h" />
-    <ClInclude Include="..\src\PoseModel.h" />
     <ClInclude Include="..\src\QuadricDataFactory.h" />
     <ClInclude Include="..\src\QuadricDrawable.h" />
     <ClInclude Include="..\src\RenderableUtils.h" />
@@ -46,10 +45,12 @@
     <ClInclude Include="..\src\ssids.h" />
     <ClInclude Include="..\src\VolumeSliceDrawable.h" />
     <ClInclude Include="..\src\WorldDrawable.h" />
+    <ClInclude Include="Helper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\thirdparty\tinygltf-2.8.21\tiny_gltf.cc" />
     <ClCompile Include="..\src\AbstractWorldDrawable.cpp" />
+    <ClCompile Include="..\src\App.cpp" />
     <ClCompile Include="..\src\AssetFolder.cpp" />
     <ClCompile Include="..\src\BenchmarkDrawable.cpp" />
     <ClCompile Include="..\src\BoundingBox.cpp" />
@@ -67,6 +68,7 @@
     <ClCompile Include="..\src\RenderableUtils.cpp" />
     <ClCompile Include="..\src\VolumeSliceDrawable.cpp" />
     <ClCompile Include="..\src\WorldDrawable.cpp" />
+    <ClCompile Include="Helper.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

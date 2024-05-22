@@ -30,12 +30,10 @@ namespace ss {
      */
     enum ViewType
     {
-        vtAxial,
-        vtSaggital,
-        vtCoronal,
+        vtFromFront,
+        vtFromRight,
+        vtFromTop,
         vt3D,
-        vtScrewGuide,
-        vtLandingGuide,
         vtInvalid
     };
 
