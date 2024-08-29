@@ -26,21 +26,21 @@ namespace ss
         constexpr static float DEFAULT_ZFAR = 10000.0f;
         constexpr static float DEFAULT_ZOOM_SCALE = 1.0f;
 
-        struct
+        struct Perspective
         {
             float fov = DEFAULT_PERSP_FOVY;
             float znear = DEFAULT_ZNEAR, zfar = DEFAULT_ZFAR;
         } _perspective;
         
-        struct
+        struct Orthographic
         {
             float left = DEFAULT_ORTHO_LEFT, right = DEFAULT_ORTHO_RIGHT;
             float bottom = DEFAULT_ORTHO_BOTTOM, top = DEFAULT_ORTHO_TOP;
-            float near = DEFAULT_ZNEAR, far = DEFAULT_ZFAR;
+            float znear = DEFAULT_ZNEAR, zfar = DEFAULT_ZFAR;
             float zoomscale = DEFAULT_ZOOM_SCALE;
         } _orthographic;
 
-        struct
+        struct Matrices
         {
             glm::mat4 projection;
             glm::mat4 view;

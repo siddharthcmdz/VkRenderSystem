@@ -8,8 +8,10 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include "Camera.h"
+#include "Helper.h"
+#include "App.h"
 
-Camera g_camera;
+ss::Camera g_camera;
 glm::vec2 g_mousePos;
 
 struct MouseButtons {
@@ -18,7 +20,29 @@ struct MouseButtons {
 	bool middle = false;
 };
 
+
 MouseButtons g_mouseButtons;
+GlobalContext g_globals;
+AppInfo g_appInfo;
+
+App* g_app = nullptr;
+
+
+void App::init(const AppInfo& appInfo, const GlobalContext& gctx) {
+	_name = appInfo.name;
+}
+
+std::string App::getExampleName() const {
+	return _name;
+}
+
+void App::render(const GlobalContext& ctx) const {
+
+}
+
+void App::dispose(const GlobalContext& ctx) {
+
+}
 
 
 void getShaderPath(RSinitInfo& initInfo) {
@@ -81,7 +105,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		ctxInfo.initHeight = dim.bottom - dim.top;
 		ctxInfo.hwnd = hwnd;
 		ctxInfo.hinst = GetModuleHandle(nullptr);
-		sprintf_s(ctxInfo.title, g_example->getExampleName().c_str());
+		sprintf_s(ctxInfo.title, g_app->getExampleName().c_str());
 		g_globals.width = ctxInfo.initWidth;
 		g_globals.height = ctxInfo.initHeight;
 		vkrs.contextCreate(g_globals.ctxID, ctxInfo);
@@ -97,8 +121,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 		view.dirty = true;
 		vkrs.viewCreate(g_globals.viewID, view, g_globals.ctxID);
 		vkrs.viewUpdate(g_globals.viewID, view);
-		if (g_example) {
-			g_example->init(g_exopts, g_globals);
+		if (g_app) {
+			g_app->init(g_appInfo, g_globals);
 		}
 
 		std::cout << "Window created" << std::endl;
@@ -169,7 +193,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 			view->projmat = g_camera.getProjectionMatrix();
 			vkrs.viewUpdate(g_globals.viewID, *view);
 		}
-		if (g_example) {
+		if (g_app) {
 			vkrs.contextResized(g_globals.ctxID, g_globals.viewID, g_globals.width, g_globals.height);
 		}
 		std::cout << "Window resized - width: " << g_globals.width << " , height: " << g_globals.height << std::endl;
@@ -178,16 +202,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 
 	case WM_PAINT: {
 		ValidateRect(hwnd, nullptr);
-		if (g_example) {
-			g_example->render(g_globals);
+		if (g_app) {
+			g_app->render(g_globals);
 		}
 		//std::cout << "Window painting " << std::endl;
 		break;
 	}
 
 	case WM_DESTROY: {
-		if (g_example != nullptr) {
-			g_example->dispose(g_globals);
+		if (g_app != nullptr) {
+			g_app->dispose(g_globals);
 		}
 		vkrs.viewDispose(g_globals.viewID);
 		vkrs.contextDispose(g_globals.ctxID);
@@ -278,4 +302,13 @@ void renderloop() {
 			}
 		}
 	}
+}
+
+
+int main(int argc, char** argv) {
+	std::cout << "Hello World" << std::endl;
+	g_appInfo.name = "DefaultApp";
+	g_app = new App();
+
+	return 0;
 }

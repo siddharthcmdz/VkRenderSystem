@@ -87,8 +87,8 @@ namespace ss
         _orthographic.right = right;
         _orthographic.bottom = bottom;
         _orthographic.top = top;
-        _orthographic.near = znear;
-        _orthographic.far = zfar;
+        _orthographic.znear = znear;
+        _orthographic.zfar = zfar;
         if(_projType == ProjectionType::ptOrthographic)
         {
             _matrices.projection = glm::ortho(left, right, bottom, top, znear, zfar);

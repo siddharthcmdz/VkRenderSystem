@@ -33,6 +33,7 @@
     <ClInclude Include="..\src\Gizmo2dDrawable.h" />
     <ClInclude Include="..\src\GLTFmodelDrawable.h" />
     <ClInclude Include="..\src\GLTFmodelLoader.h" />
+    <ClInclude Include="..\src\Helper.h" />
     <ClInclude Include="..\src\MainDrawable.h" />
     <ClInclude Include="..\src\MathUtils.h" />
     <ClInclude Include="..\src\ModelData.h" />
@@ -45,7 +46,6 @@
     <ClInclude Include="..\src\ssids.h" />
     <ClInclude Include="..\src\VolumeSliceDrawable.h" />
     <ClInclude Include="..\src\WorldDrawable.h" />
-    <ClInclude Include="Helper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\thirdparty\tinygltf-2.8.21\tiny_gltf.cc" />
@@ -58,7 +58,7 @@
     <ClCompile Include="..\src\Gizmo2dDrawable.cpp" />
     <ClCompile Include="..\src\GLTFmodelDrawable.cpp" />
     <ClCompile Include="..\src\GLTFmodelLoader.cpp" />
-    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\Helper.cpp" />
     <ClCompile Include="..\src\MainDrawable.cpp" />
     <ClCompile Include="..\src\MathUtils.cpp" />
     <ClCompile Include="..\src\ModelData.cpp" />
@@ -68,7 +68,6 @@
     <ClCompile Include="..\src\RenderableUtils.cpp" />
     <ClCompile Include="..\src\VolumeSliceDrawable.cpp" />
     <ClCompile Include="..\src\WorldDrawable.cpp" />
-    <ClCompile Include="Helper.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
